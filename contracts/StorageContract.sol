@@ -10,7 +10,6 @@ import "./MiningLib.sol";
 abstract contract StorageContract is DecentralizedKV {
     struct Config {
         uint256 maxKvSizeBits;
-        uint256 chunkSizeBits;
         uint256 shardSizeBits;
         uint256 randomChecks;
         uint256 minimumDiff;
@@ -20,10 +19,12 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 treasuryShare; // 10000 = 1.0
     }
 
+    uint256 public constant sampleSizeBits = 5; // 32 bytes per sample
+
     uint256 public immutable maxKvSizeBits;
     uint256 public immutable shardSizeBits;
     uint256 public immutable shardEntryBits;
-    uint256 public immutable chunkLenBits;
+    uint256 public immutable sampleLenBits;
     uint256 public immutable randomChecks;
     uint256 public immutable minimumDiff;
     uint256 public immutable targetIntervalSec;
@@ -48,13 +49,13 @@ abstract contract StorageContract is DecentralizedKV {
     ) payable DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor) {
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
-        require(_config.maxKvSizeBits >= _config.chunkSizeBits, "maxKvSize too small");
+        require(_config.maxKvSizeBits >= sampleSizeBits, "maxKvSize too small");
         require(_config.randomChecks > 0, "At least one checkpoint needed");
 
         shardSizeBits = _config.shardSizeBits;
         maxKvSizeBits = _config.maxKvSizeBits;
         shardEntryBits = _config.shardSizeBits - _config.maxKvSizeBits;
-        chunkLenBits = _config.maxKvSizeBits - _config.chunkSizeBits;
+        sampleLenBits = _config.maxKvSizeBits - sampleSizeBits;
         randomChecks = _config.randomChecks;
         minimumDiff = _config.minimumDiff;
         targetIntervalSec = _config.targetIntervalSec;
@@ -104,11 +105,11 @@ abstract contract StorageContract is DecentralizedKV {
      * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
      */
     function decodeAndCheckInclusive(
-        uint256 chunkIdx,
+        uint256 sampleIdx,
         PhyAddr memory kvInfo,
         address miner,
-        bytes memory encodedData,
-        bytes memory inclusiveProof
+        bytes32 encodedSamples,
+        bytes calldata inclusiveProof
     ) public view virtual returns (bool);
 
     /*
@@ -122,35 +123,27 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 shardLenBits,
         bytes32 hash0,
         address miner,
-        bytes[] memory inclusiveProof,
-        bytes[] memory maskedData
+        bytes32[] memory encodedSamples,
+        bytes[] calldata inclusiveProofs
     ) internal view returns (bytes32) {
-        require(maskedData.length == randomChecks, "data length mismatch");
-        require(inclusiveProof.length == randomChecks, "proof length mismatch");
-        // calculate the number of chunks range of the sample check
-        uint256 rows = 1 << (shardEntryBits + shardLenBits + chunkLenBits);
-        uint256 chunkSize = 1 << chunkLenBits;
+        require(encodedSamples.length == randomChecks, "data length mismatch");
+        require(inclusiveProofs.length == randomChecks, "proof length mismatch");
+        // calculate the number of samples range of the sample check
+        uint256 rows = 1 << (shardEntryBits + shardLenBits + sampleLenBits);
 
         for (uint256 i = 0; i < randomChecks; i++) {
-            require(maskedData[i].length == chunkSize, "invalid sample size");
             uint256 parent = uint256(hash0) % rows;
-            uint256 chunkIdx = parent + (startShardId << (shardEntryBits + chunkLenBits));
-            uint256 kvIdx = chunkIdx >> chunkLenBits;
+            uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
+            uint256 kvIdx = sampleIdx >> sampleLenBits;
+            uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
             PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
             require(
-                decodeAndCheckInclusive(chunkIdx, kvInfo, miner, maskedData[i], inclusiveProof[i]),
+                decodeAndCheckInclusive(sampleIdxInKv, kvInfo, miner, encodedSamples[i], inclusiveProofs[i]),
                 "invalid samples"
             );
 
-            /* NOTICE: we should use the maskedChunkData merged with the `hash0` to calculate the new `hash0`
-             *          because the miner executes this `hash0` calculation off-chain in this way. */
-            bytes memory maskedChunkData = maskedData[i];
-            assembly {
-                mstore(maskedChunkData, hash0)
-                hash0 := keccak256(maskedChunkData, add(chunkSize, 0x20))
-                mstore(maskedChunkData, chunkSize)
-            }
+            hash0 = keccak256(abi.encode(hash0, encodedSamples[i]));
         }
         return hash0;
     }
@@ -204,8 +197,8 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 shardId,
         address miner,
         uint256 nonce,
-        bytes[] memory proof,
-        bytes[] memory maskedData
+        bytes32[] memory encodedSamples,
+        bytes[] calldata proofs
     ) internal {
         // Obtain the blockhash of the block number of recent blocks
         require(block.number - blockNumber <= 64, "block number too old");
@@ -219,7 +212,7 @@ abstract contract StorageContract is DecentralizedKV {
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
-        hash0 = _verifySamples(shardId, 0, hash0, miner, proof, maskedData);
+        hash0 = _verifySamples(shardId, 0, hash0, miner, encodedSamples, proofs);
 
         // Check difficulty
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
@@ -237,9 +230,9 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 shardId,
         address miner,
         uint256 nonce,
-        bytes[] memory proof,
-        bytes[] memory maskedData
+        bytes32[] memory encodedSamples,
+        bytes[] calldata proofs
     ) public virtual {
-        return _mine(blockNumber, shardId, miner, nonce, proof, maskedData);
+        return _mine(blockNumber, shardId, miner, nonce, encodedSamples, proofs);
     }
 }
