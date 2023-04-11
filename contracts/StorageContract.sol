@@ -30,10 +30,12 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 public immutable cutoff;
     uint256 public immutable diffAdjDivisor;
     uint256 public immutable treasuryShare; // 10000 = 1.0
+    uint256 public immutable prepaidAmount;
 
     mapping(uint256 => MiningLib.MiningInfo) public infos;
-    uint256 public nonceLimit;          // maximum nonce per block
+    uint256 public nonceLimit; // maximum nonce per block
     address public treasury;
+    uint256 public prepaidLastMineTime;
 
     constructor(
         Config memory _config,
@@ -41,16 +43,9 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 _storageCost,
         uint256 _dcfFactor,
         uint256 _nonceLimit,
-        address _treasury
-    )
-        payable
-        DecentralizedKV(
-            1 << _config.maxKvSizeBits,
-            _startTime,
-            _storageCost,
-            _dcfFactor
-        )
-    {
+        address _treasury,
+        uint256 _prepaidAmount
+    ) payable DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor) {
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
         require(_config.maxKvSizeBits >= _config.chunkSizeBits, "maxKvSize too small");
@@ -66,29 +61,43 @@ abstract contract StorageContract is DecentralizedKV {
         cutoff = _config.cutoff;
         diffAdjDivisor = _config.diffAdjDivisor;
         treasuryShare = _config.treasuryShare;
-        // Shard 0 and 1 is ready to mine.
-        infos[0].lastMineTime = _startTime;
-        infos[1].lastMineTime = _startTime;
         nonceLimit = _nonceLimit;
         treasury = _treasury;
+        prepaidAmount = _prepaidAmount;
+        prepaidLastMineTime = _startTime;
     }
 
     function sendValue() public payable {}
 
-    function _preparePutWithTimestamp(uint256 timestamp) internal {
-        if (((lastKvIdx + 1) % (1 << shardEntryBits)) == 0) {
-            // Open a new shard.
-            // The current shard should be already mined.
-            // The next shard is ready to mine (although it has no data).
+    function _prepareAppendWithTimestamp(uint256 timestamp) internal {
+        uint256 totalEntries = lastKvIdx + 1; // include the one to be put
+        uint256 shardId = lastKvIdx >> shardEntryBits; // shard id of the new KV
+        if ((totalEntries % (1 << shardEntryBits)) == 1) {
+            // Open a new shard if the KV is the first one of the shard
+            // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
-            // The previous put must cover payment from [lastMineTime, inf) >= that of [block.timestamp, inf)
-            uint256 nextShardId = ((lastKvIdx + 1) >> shardEntryBits) + 1;
-            infos[nextShardId].lastMineTime = timestamp;
+            infos[shardId].lastMineTime = timestamp;
+        }
+
+        require(msg.value >= _upfrontPayment(infos[shardId].lastMineTime), "not enough payment");
+    }
+
+    // Upfront payment for the next insertion
+    function upfrontPayment() public view virtual override returns (uint256) {
+        uint256 totalEntries = lastKvIdx + 1; // include the one to be put
+        uint256 shardId = lastKvIdx >> shardEntryBits; // shard id of the new KV
+        if ((totalEntries % (1 << shardEntryBits)) == 1) {
+            // Open a new shard if the KV is the first one of the shard
+            // and mark the shard is ready to mine.
+            // (TODO): Setup shard difficulty as current difficulty / factor?
+            return _upfrontPayment(block.timestamp);
+        } else {
+            return _upfrontPayment(infos[shardId].lastMineTime);
         }
     }
 
-    function _preparePut() internal virtual override {
-        return _preparePutWithTimestamp(block.timestamp);
+    function _prepareAppend() internal virtual override {
+        return _prepareAppendWithTimestamp(block.timestamp);
     }
 
     /*
@@ -129,7 +138,10 @@ abstract contract StorageContract is DecentralizedKV {
             uint256 kvIdx = chunkIdx >> chunkLenBits;
             PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
-            require(decodeAndCheckInclusive(chunkIdx, kvInfo, miner, maskedData[i], inclusiveProof[i]), "invalid samples");
+            require(
+                decodeAndCheckInclusive(chunkIdx, kvInfo, miner, maskedData[i], inclusiveProof[i]),
+                "invalid samples"
+            );
 
             /* NOTICE: we should use the maskedChunkData merged with the `hash0` to calculate the new `hash0`
              *          because the miner executes this `hash0` calculation off-chain in this way. */
@@ -143,54 +155,45 @@ abstract contract StorageContract is DecentralizedKV {
         return hash0;
     }
 
-    // obtain the difficulty of the shard
+    // Obtain the difficulty of the shard
     function _calculateDiffAndInitHashSingleShard(
         uint256 shardId,
         uint256 minedTs
-    )
-        internal
-        view
-        returns (
-            uint256 diff
-        )
-    {
+    ) internal view returns (uint256 diff) {
         MiningLib.MiningInfo storage info = infos[shardId];
         require(minedTs >= info.lastMineTime, "minedTs too small");
         diff = MiningLib.expectedDiff(info, minedTs, targetIntervalSec, cutoff, diffAdjDivisor, minimumDiff);
     }
 
-    function lastMinableShardIdx() public view returns (uint256) {
-        return (lastKvIdx >> shardEntryBits) + 1;
-    }
-
-    function _rewardMiner(
-        uint256 shardId,
-        address miner,
-        uint256 minedTs,
-        uint256 diff
-    ) internal {
+    function _rewardMiner(uint256 shardId, address miner, uint256 minedTs, uint256 diff) internal {
         // Mining is successful.
         // Send reward to coinbase and miner.
-        uint256 totalReward = 0;
-        uint256 lastPayableShardIdx = lastMinableShardIdx();
-
-        if (shardId <= lastPayableShardIdx) {
-            // Make a full shard payment.
-            MiningLib.MiningInfo storage info = infos[shardId];
-            totalReward += _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
-
-            // Update mining info.
-            MiningLib.update(infos[shardId], minedTs, diff);
+        MiningLib.MiningInfo storage info = infos[shardId];
+        uint256 lastShardIdx = (lastKvIdx - 1) >> shardEntryBits;
+        uint256 reward = 0;
+        if (shardId < lastShardIdx) {
+            reward = _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
+        } else if (shardId == lastShardIdx) {
+            reward = _paymentIn(storageCost * (lastKvIdx % (1 << shardEntryBits)), info.lastMineTime, minedTs);
+            // Additional prepaid for the last shard
+            if (prepaidLastMineTime < minedTs) {
+                reward += _paymentIn(prepaidAmount, prepaidLastMineTime, minedTs);
+                prepaidLastMineTime = minedTs;
+            }
         }
-        uint256 treasuryReward = (totalReward * treasuryShare) / 10000;
-        uint256 minerReward = totalReward - treasuryReward;
+
+        // Update mining info.
+        MiningLib.update(infos[shardId], minedTs, diff);
+
+        uint256 treasuryReward = (reward * treasuryShare) / 10000;
+        uint256 minerReward = reward - treasuryReward;
         // TODO: avoid reentrancy attack
         payable(treasury).transfer(treasuryReward);
         payable(miner).transfer(minerReward);
     }
 
-    /* In fact, this is on-chain function used for verifying whether what a miner claims,
-     * is satisfying the truth, or not.
+    /*
+     * On-chain verification of storage proof of sufficient sampling.
      * On-chain verifier will go same routine as off-chain data host, will check the encoded samples by decoding
      * to decoded one. The decoded samples will be used to perform inclusive check with on-chain datahashes.
      * The encoded samples will be used to calculate the solution hash, and if the hash passes the difficulty check,
@@ -204,9 +207,12 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] memory proof,
         bytes[] memory maskedData
     ) internal {
-        // Obtain the blockhash of the block number of recent 256 blocks
+        // Obtain the blockhash of the block number of recent blocks
+        require(block.number - blockNumber <= 64, "block number too old");
         bytes32 bh = blockhash(blockNumber);
         require(bh != bytes32(0), "failed to obtain blockhash");
+        // Estimate block timestamp
+        uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
         require(nonce < nonceLimit, "nonce too big");
@@ -216,19 +222,16 @@ abstract contract StorageContract is DecentralizedKV {
         hash0 = _verifySamples(shardId, 0, hash0, miner, proof, maskedData);
 
         // Check difficulty
-        uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, block.timestamp);
-        uint256 required = uint256(2**256 - 1) / diff;
+        uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
+        uint256 required = uint256(2 ** 256 - 1) / diff;
         require(uint256(hash0) <= required, "diff not match");
 
         // Reward the miner with the current timestamp. Note that, we use the fee in interval
         // [lastMiningTime, now) to reward the miner, which means the miner may collect more fee
         // by submitting the tx later at the risk of invaliding the tx if the blockhash expires.
-        _rewardMiner(shardId, miner, block.timestamp, diff);
+        _rewardMiner(shardId, miner, mineTs, diff);
     }
 
-    // We allow cross mine multiple shards by aggregating their difficulties.
-    // For some reasons, we never use checkIdList but if we remove it, we will get
-    // a `Stack too deap error`
     function mine(
         uint256 blockNumber,
         uint256 shardId,

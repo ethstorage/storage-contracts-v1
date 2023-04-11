@@ -5,11 +5,7 @@ import "./BinaryRelated.sol";
 
 library MerkleLib {
     // Calculate the Merkle root of a given data with chunk size and number of maximum chunks in the data limit.
-    function merkleRoot(
-        bytes memory data,
-        uint256 chunkSize,
-        uint256 nChunkBits
-    ) internal pure returns (bytes32) {
+    function merkleRoot(bytes memory data, uint256 chunkSize, uint256 nChunkBits) internal pure returns (bytes32) {
         uint256 nChunks = 1 << nChunkBits;
         bytes32[] memory nodes = new bytes32[](nChunks);
         for (uint256 i = 0; i < nChunks; i++) {

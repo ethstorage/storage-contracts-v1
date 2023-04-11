@@ -36,11 +36,7 @@ library MiningLib {
         return diff;
     }
 
-    function update(
-        MiningInfo storage info,
-        uint256 mineTime,
-        uint256 diff
-    ) internal {
+    function update(MiningInfo storage info, uint256 mineTime, uint256 diff) internal {
         // A block is mined!
         info.blockMined = info.blockMined + 1;
         info.difficulty = diff;

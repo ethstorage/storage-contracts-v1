@@ -30,12 +30,7 @@ contract DecentralizedKV {
     /* index - skey, reverse lookup */
     mapping(uint256 => bytes32) internal idxMap;
 
-    constructor(
-        uint256 _maxKvSize,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor
-    ) payable {
+    constructor(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor) payable {
         startTime = _startTime;
         maxKvSize = _maxKvSize;
         storageCost = _storageCost;
@@ -47,11 +42,7 @@ contract DecentralizedKV {
     }
 
     // Evaluate payment from [t0, t1) seconds
-    function _paymentInInterval(
-        uint256 x,
-        uint256 t0,
-        uint256 t1
-    ) internal view returns (uint256) {
+    function _paymentInInterval(uint256 x, uint256 t0, uint256 t1) internal view returns (uint256) {
         return (x * (pow(dcfFactor, t0) - pow(dcfFactor, t1))) >> 128;
     }
 
@@ -61,11 +52,7 @@ contract DecentralizedKV {
     }
 
     // Evaluate payment from timestamp [fromTs, toTs)
-    function _paymentIn(
-        uint256 x,
-        uint256 fromTs,
-        uint256 toTs
-    ) internal view returns (uint256) {
+    function _paymentIn(uint256 x, uint256 fromTs, uint256 toTs) internal view returns (uint256) {
         return _paymentInInterval(x, fromTs - startTime, toTs - startTime);
     }
 
@@ -78,20 +65,21 @@ contract DecentralizedKV {
         return _upfrontPayment(block.timestamp);
     }
 
-    function _preparePut() internal virtual {}
+    function _prepareAppend() internal virtual {
+        require(msg.value >= upfrontPayment(), "not enough payment");
+    }
 
     function _getDataHash(uint256 blobIdx) internal virtual returns (bytes32) {}
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
     function put(bytes32 key, uint256 blobIdx, uint256 length) public payable {
         require(length <= maxKvSize, "data too large");
-        _preparePut();
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
         PhyAddr memory paddr = kvMap[skey];
 
         if (paddr.hash == 0) {
             // append (require payment from sender)
-            require(msg.value >= upfrontPayment(), "not enough payment");
+            _prepareAppend();
             paddr.kvIdx = lastKvIdx;
             idxMap[paddr.kvIdx] = skey;
             lastKvIdx = lastKvIdx + 1;
@@ -117,11 +105,7 @@ contract DecentralizedKV {
     }
 
     // Return the keyed data given off and len.  This function can be only called in JSON-RPC context.
-    function get(
-        bytes32 key,
-        uint256 off,
-        uint256 len
-    ) public view returns (bytes memory) {
+    function get(bytes32 key, uint256 off, uint256 len) public view returns (bytes memory) {
         // ES node will override this method to return actual data.
         require(false, "get() must be called on ES node");
     }
