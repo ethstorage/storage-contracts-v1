@@ -17,8 +17,7 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 targetIntervalSec;
         uint256 cutoff;
         uint256 diffAdjDivisor;
-        uint256 coinbaseShare; // 10000 = 1.0
-        ISystemContractDaggerHashimoto systemContract;
+        uint256 treasuryShare; // 10000 = 1.0
     }
 
     uint256 public immutable maxKvSizeBits;
@@ -30,8 +29,7 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 public immutable targetIntervalSec;
     uint256 public immutable cutoff;
     uint256 public immutable diffAdjDivisor;
-    uint256 public immutable coinbaseShare; // 10000 = 1.0
-    ISystemContractDaggerHashimoto public immutable systemContract;
+    uint256 public immutable treasuryShare; // 10000 = 1.0
 
     mapping(uint256 => MiningLib.MiningInfo) public infos;
     uint256 public nonceLimit;          // maximum nonce per block
@@ -47,9 +45,7 @@ abstract contract StorageContract is DecentralizedKV {
     )
         payable
         DecentralizedKV(
-            _config.systemContract,
             1 << _config.maxKvSizeBits,
-            1 << _config.chunkSizeBits,
             _startTime,
             _storageCost,
             _dcfFactor
@@ -60,7 +56,6 @@ abstract contract StorageContract is DecentralizedKV {
         require(_config.maxKvSizeBits >= _config.chunkSizeBits, "maxKvSize too small");
         require(_config.randomChecks > 0, "At least one checkpoint needed");
 
-        systemContract = _config.systemContract;
         shardSizeBits = _config.shardSizeBits;
         maxKvSizeBits = _config.maxKvSizeBits;
         shardEntryBits = _config.shardSizeBits - _config.maxKvSizeBits;
@@ -70,7 +65,7 @@ abstract contract StorageContract is DecentralizedKV {
         targetIntervalSec = _config.targetIntervalSec;
         cutoff = _config.cutoff;
         diffAdjDivisor = _config.diffAdjDivisor;
-        coinbaseShare = _config.coinbaseShare;
+        treasuryShare = _config.treasuryShare;
         // Shard 0 and 1 is ready to mine.
         infos[0].lastMineTime = _startTime;
         infos[1].lastMineTime = _startTime;
@@ -125,10 +120,10 @@ abstract contract StorageContract is DecentralizedKV {
         require(inclusiveProof.length == randomChecks, "proof length mismatch");
         // calculate the number of chunks range of the sample check
         uint256 rows = 1 << (shardEntryBits + shardLenBits + chunkLenBits);
+        uint256 chunkSize = 1 << chunkLenBits;
 
         for (uint256 i = 0; i < randomChecks; i++) {
-            uint256 mChunkSize = chunkSize;
-            require(maskedData[i].length == mChunkSize, "invalid sample size");
+            require(maskedData[i].length == chunkSize, "invalid sample size");
             uint256 parent = uint256(hash0) % rows;
             uint256 chunkIdx = parent + (startShardId << (shardEntryBits + chunkLenBits));
             uint256 kvIdx = chunkIdx >> chunkLenBits;
@@ -141,8 +136,8 @@ abstract contract StorageContract is DecentralizedKV {
             bytes memory maskedChunkData = maskedData[i];
             assembly {
                 mstore(maskedChunkData, hash0)
-                hash0 := keccak256(maskedChunkData, add(mChunkSize, 0x20))
-                mstore(maskedChunkData, mChunkSize)
+                hash0 := keccak256(maskedChunkData, add(chunkSize, 0x20))
+                mstore(maskedChunkData, chunkSize)
             }
         }
         return hash0;
@@ -187,7 +182,7 @@ abstract contract StorageContract is DecentralizedKV {
             // Update mining info.
             MiningLib.update(infos[shardId], minedTs, diff);
         }
-        uint256 treasuryReward = (totalReward * coinbaseShare) / 10000;
+        uint256 treasuryReward = (totalReward * treasuryShare) / 10000;
         uint256 minerReward = totalReward - treasuryReward;
         // TODO: avoid reentrancy attack
         payable(treasury).transfer(treasuryReward);
@@ -195,44 +190,40 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /* In fact, this is on-chain function used for verifying whether what a miner claims,
-       is satisfying the truth, or not.
-       Nonce, along with maskedData, associated with mineTs and idx, are proof.
-       On-chain verifier will go same routine as off-chain data host, will check the soundness of data,
-       by running hashimoto algorithm, to get hash H. Then if it passes the difficulty check,
-       the miner, or say the proof provider, shall be rewarded by the token number from out economic models */
+     * is satisfying the truth, or not.
+     * On-chain verifier will go same routine as off-chain data host, will check the encoded samples by decoding
+     * to decoded one. The decoded samples will be used to perform inclusive check with on-chain datahashes.
+     * The encoded samples will be used to calculate the solution hash, and if the hash passes the difficulty check,
+     * the miner, or say the storage provider, shall be rewarded by the token number from out economic models
+     */
     function _mine(
         uint256 blockNumber,
-        uint256 startShardId,
-        uint256 shardLenBits,
+        uint256 shardId,
         address miner,
-        uint256 minedTs,
         uint256 nonce,
         bytes[] memory proof,
         bytes[] memory maskedData
     ) internal {
-        // obtain the blockhash of the block number
+        // Obtain the blockhash of the block number of recent 256 blocks
         bytes32 bh = blockhash(blockNumber);
         require(bh != bytes32(0), "failed to obtain blockhash");
-        // given a blockhash and a miner, we only allow sampling up to nonce times.
+
+        // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
         require(nonce < nonceLimit, "nonce too big");
-        // obtain estimate mined time (TODO: prove timestamp of the header)
-        // TODO: old timestamp may be incorrect for fee
-        minedTs = block.timestamp - (block.number - blockNumber) * 12;
-        uint256 shardLen = 1 << shardLenBits;
-        // only allow storage proof on a single shard
-        require(shardLen == 1, "shardLenBits must be 0");
-        uint256 diff = _calculateDiffAndInitHashSingleShard(startShardId, minedTs);
 
+        // Check if the data matches the hash in metadata and obtain the solution hash.
         bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
-        hash0 = _verifySamples(startShardId, shardLenBits, hash0, miner, proof, maskedData);
+        hash0 = _verifySamples(shardId, 0, hash0, miner, proof, maskedData);
 
-        // Check if the data matches the hash in metadata.
-        {
-            uint256 required = uint256(2**256 - 1) / diff;
-            require(uint256(hash0) <= required, "diff not match");
-        }
+        // Check difficulty
+        uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, block.timestamp);
+        uint256 required = uint256(2**256 - 1) / diff;
+        require(uint256(hash0) <= required, "diff not match");
 
-        _rewardMiner(startShardId, miner, minedTs, diff);
+        // Reward the miner with the current timestamp. Note that, we use the fee in interval
+        // [lastMiningTime, now) to reward the miner, which means the miner may collect more fee
+        // by submitting the tx later at the risk of invaliding the tx if the blockhash expires.
+        _rewardMiner(shardId, miner, block.timestamp, diff);
     }
 
     // We allow cross mine multiple shards by aggregating their difficulties.
@@ -240,14 +231,12 @@ abstract contract StorageContract is DecentralizedKV {
     // a `Stack too deap error`
     function mine(
         uint256 blockNumber,
-        uint256 startShardId,
-        uint256 shardLenBits,
+        uint256 shardId,
         address miner,
-        uint256 minedTs,
         uint256 nonce,
         bytes[] memory proof,
         bytes[] memory maskedData
     ) public virtual {
-        return _mine(blockNumber, startShardId, shardLenBits, miner, minedTs, nonce, proof, maskedData);
+        return _mine(blockNumber, shardId, miner, nonce, proof, maskedData);
     }
 }

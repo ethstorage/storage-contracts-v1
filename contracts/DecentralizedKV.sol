@@ -1,26 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IStorageManager.sol";
 import "./MerkleLib.sol";
 import "./BinaryRelated.sol";
 
 contract DecentralizedKV {
+    event Put(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
+    event Remove(uint256 indexed kvIdx, uint256 indexed lastKvIdx);
+
     uint256 public immutable storageCost; // Upfront storage cost (pre-dcf)
     // Discounted cash flow factor in seconds
     // E.g., 0.85 yearly discount in second = 0.9999999948465585 = 340282365167313208607671216367074279424 in Q128.128
     uint256 public immutable dcfFactor;
     uint256 public immutable startTime;
     uint256 public immutable maxKvSize;
-    uint256 public immutable chunkSize;
     uint40 public lastKvIdx = 0; // number of entries in the store
-
-    IStorageManager public immutable storageManager;
 
     struct PhyAddr {
         /* Internal address seeking */
         uint40 kvIdx;
-        /* Block Size */
+        /* BLOB size */
         uint24 kvSize;
         /* Commitment */
         bytes24 hash;
@@ -32,21 +31,15 @@ contract DecentralizedKV {
     mapping(uint256 => bytes32) internal idxMap;
 
     constructor(
-        IStorageManager _storageManager,
         uint256 _maxKvSize,
-        uint256 _chunkSize,
         uint256 _startTime,
         uint256 _storageCost,
         uint256 _dcfFactor
     ) payable {
-        storageManager = _storageManager;
         startTime = _startTime;
         maxKvSize = _maxKvSize;
         storageCost = _storageCost;
         dcfFactor = _dcfFactor;
-        chunkSize = _chunkSize;
-        require(_chunkSize <= _maxKvSize, "KV: size mismatch");
-        require((_chunkSize != 0) && ((_chunkSize & (_chunkSize - 1)) == 0), "chunkSize aligned with 2^n");
     }
 
     function pow(uint256 fp, uint256 n) internal pure returns (uint256) {
@@ -87,9 +80,11 @@ contract DecentralizedKV {
 
     function _preparePut() internal virtual {}
 
+    function _getDataHash(uint256 blobIdx) internal virtual returns (bytes32) {}
+
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
-    function put(bytes32 key, bytes memory data) public payable {
-        require(data.length <= maxKvSize, "data too large");
+    function put(bytes32 key, uint256 blobIdx, uint256 length) public payable {
+        require(length <= maxKvSize, "data too large");
         _preparePut();
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
         PhyAddr memory paddr = kvMap[skey];
@@ -101,18 +96,12 @@ contract DecentralizedKV {
             idxMap[paddr.kvIdx] = skey;
             lastKvIdx = lastKvIdx + 1;
         }
-        paddr.kvSize = uint24(data.length);
-        // Register a commitment on meta data
-        paddr.hash = bytes24(MerkleLib.merkleRootWithMinTree(data, chunkSize));
+        paddr.kvSize = uint24(length);
+        bytes32 dataHash = _getDataHash(blobIdx);
+        paddr.hash = bytes24(dataHash);
         kvMap[skey] = paddr;
 
-        // Weird that cannot call precompiled contract like this (solidity issue?)
-        // storageManager.putRaw(paddr.kvIdx, data);
-        // Use call directly instead.
-        (bool success, ) = address(storageManager).call(
-            abi.encodeWithSelector(IStorageManager.putRaw.selector, paddr.kvIdx, data)
-        );
-        require(success, "failed to putRaw");
+        emit Put(paddr.kvIdx, paddr.kvSize, dataHash);
     }
 
     // Return the size of the keyed value
@@ -133,72 +122,17 @@ contract DecentralizedKV {
         uint256 off,
         uint256 len
     ) public view returns (bytes memory) {
-        if (len == 0) {
-            return new bytes(0);
-        }
-
-        bytes32 skey = keccak256(abi.encode(msg.sender, key));
-        PhyAddr memory paddr = kvMap[skey];
-        if (off >= paddr.kvSize) {
-            return new bytes(0);
-        }
-
-        if (len + off > paddr.kvSize) {
-            len = paddr.kvSize - off;
-        }
-
-        // Weird that we cannot call a precompile contract like this (solidity issue?).
-        // return storageManager.getRaw(paddr.hash, paddr.kvIdx, off, len);
-        // Use staticcall directly instead.
-        (bool success, bytes memory data) = address(storageManager).staticcall(
-            abi.encodeWithSelector(IStorageManager.getRaw.selector, paddr.hash, paddr.kvIdx, off, len)
-        );
-        require(success, "failed to getRaw");
-        return abi.decode(data, (bytes));
+        // ES node will override this method to return actual data.
+        require(false, "get() must be called on ES node");
     }
 
     // Remove an existing KV pair to a recipient.  Refund the cost accordingly.
     function removeTo(bytes32 key, address to) public {
-        bytes32 skey = keccak256(abi.encode(msg.sender, key));
-        PhyAddr memory paddr = kvMap[skey];
-        uint40 kvIdx = paddr.kvIdx;
-
-        require(paddr.hash != 0, "kv not exist");
-
-        // clear kv data
-        kvMap[skey] = PhyAddr({kvIdx: 0, kvSize: 0, hash: 0});
-
-        // move last kv to current kv
-        bytes32 lastSkey = idxMap[lastKvIdx - 1];
-        idxMap[kvIdx] = lastSkey;
-        kvMap[lastSkey].kvIdx = kvIdx;
-
-        // remove the last Kv
-        idxMap[lastKvIdx - 1] = 0x0;
-        lastKvIdx = lastKvIdx - 1;
-
-        storageManager.removeRaw(lastKvIdx, kvIdx);
-
-        payable(to).transfer(upfrontPayment());
+        require(false, "removeTo() unimplemented");
     }
 
     // Remove an existing KV pair.  Refund the cost accordingly.
     function remove(bytes32 key) public {
         removeTo(key, msg.sender);
-    }
-
-    // Verify if the value matches a keyed value.
-    function verify(bytes32 key, bytes memory data) public view returns (bool) {
-        bytes32 skey = keccak256(abi.encode(msg.sender, key));
-        PhyAddr memory paddr = kvMap[skey];
-
-        require(paddr.hash != 0, "kv not exist");
-
-        if (paddr.kvSize != data.length) {
-            return false;
-        }
-
-        bytes24 dataHash = bytes24(MerkleLib.merkleRootWithMinTree(data, chunkSize));
-        return paddr.hash == dataHash;
     }
 }
