@@ -1,1 +1,1 @@
-# storage-contracts-v1
+# EthStorage Decentralized Storage Contracts V1
