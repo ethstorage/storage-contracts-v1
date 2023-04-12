@@ -125,7 +125,7 @@ abstract contract StorageContract is DecentralizedKV {
         address miner,
         bytes32[] memory encodedSamples,
         bytes[] calldata inclusiveProofs
-    ) internal returns (bytes32) {
+    ) internal view returns (bytes32) {
         require(encodedSamples.length == randomChecks, "data length mismatch");
         require(inclusiveProofs.length == randomChecks, "proof length mismatch");
         // calculate the number of samples range of the sample check
