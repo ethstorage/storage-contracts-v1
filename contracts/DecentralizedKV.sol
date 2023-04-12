@@ -5,7 +5,6 @@ import "./MerkleLib.sol";
 import "./BinaryRelated.sol";
 
 contract DecentralizedKV {
-    event Put(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
     event Remove(uint256 indexed kvIdx, uint256 indexed lastKvIdx);
 
     uint256 public immutable storageCost; // Upfront storage cost (pre-dcf)
@@ -69,10 +68,7 @@ contract DecentralizedKV {
         require(msg.value >= upfrontPayment(), "not enough payment");
     }
 
-    function _getDataHash(uint256 blobIdx) internal virtual returns (bytes32) {}
-
-    // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
-    function put(bytes32 key, uint256 blobIdx, uint256 length) public payable {
+    function _putInternal(bytes32 key, bytes32 dataHash, uint256 length) internal returns (uint256) {
         require(length <= maxKvSize, "data too large");
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
         PhyAddr memory paddr = kvMap[skey];
@@ -85,11 +81,10 @@ contract DecentralizedKV {
             lastKvIdx = lastKvIdx + 1;
         }
         paddr.kvSize = uint24(length);
-        bytes32 dataHash = _getDataHash(blobIdx);
         paddr.hash = bytes24(dataHash);
         kvMap[skey] = paddr;
 
-        emit Put(paddr.kvIdx, paddr.kvSize, dataHash);
+        return paddr.kvIdx;
     }
 
     // Return the size of the keyed value
