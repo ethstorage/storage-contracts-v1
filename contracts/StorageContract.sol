@@ -110,7 +110,7 @@ abstract contract StorageContract is DecentralizedKV {
         address miner,
         bytes32 encodedSamples,
         bytes calldata inclusiveProof
-    ) public view virtual returns (bool);
+    ) public virtual returns (bool);
 
     /*
      * Verify the samples of the BLOBs by the miner (storage provider) including
@@ -125,7 +125,7 @@ abstract contract StorageContract is DecentralizedKV {
         address miner,
         bytes32[] memory encodedSamples,
         bytes[] calldata inclusiveProofs
-    ) internal view returns (bytes32) {
+    ) internal returns (bytes32) {
         require(encodedSamples.length == randomChecks, "data length mismatch");
         require(inclusiveProofs.length == randomChecks, "proof length mismatch");
         // calculate the number of samples range of the sample check
