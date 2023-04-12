@@ -68,29 +68,30 @@ contract EthStorageContract is StorageContract, Decoder {
             mstore(add(pointer, 0x80), _e)
             mstore(add(pointer, 0xa0), _m)
 
-            // Call the precompiled contract 0x05 = bigModExp, reuse pointer for return data
-            if iszero(staticcall(not(0), 0x05, pointer, 0xc0, pointer, 0x20)) {
+            // Call the precompiled contract 0x05 = bigModExp, reuse scratch to get the results
+            if iszero(staticcall(not(0), 0x05, pointer, 0xc0, 0x0, 0x20)) {
                 revert(0, 0)
             }
 
-            result := mload(pointer)
+            result := mload(0x0)
+
+            // Clear memory or exclude the memory
+            mstore(0x40, add(pointer, 0xc0))
         }
     }
 
     function pointEvaluation(bytes memory input) internal view returns (uint256 versionedHash, uint256 x, uint256 y) {
         assembly {
-            // Store the result
-            let pointer := mload(0x40)
+            versionedHash := mload(add(input, 0x40))
+            x := mload(add(input, 0x60))
+            y := mload(add(input, 0x80))
 
-            versionedHash := mload(add(input, 0x20))
-            x := mload(add(input, 0x40))
-            y := mload(add(input, 0x60))
-
-            // Call the precompiled contract 0x14 = point evaluation, reuse memory pointer to get the results
-            if iszero(staticcall(not(0), 0x14, add(input, 0x20), 0xc0, pointer, 0x40)) {
+            // Call the precompiled contract 0x14 = point evaluation, reuse scratch to get the results
+            if iszero(staticcall(not(0), 0x14, add(input, 0x40), 0xc0, 0x0, 0x40)) {
                 revert(0, 0)
             }
 
+            // TODO: Check the results
         }
     }
 }
