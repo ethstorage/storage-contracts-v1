@@ -110,7 +110,7 @@ abstract contract StorageContract is DecentralizedKV {
         address miner,
         bytes32 encodedSamples,
         bytes calldata inclusiveProof
-    ) public virtual returns (bool);
+    ) public view virtual returns (bool);
 
     /*
      * Verify the samples of the BLOBs by the miner (storage provider) including
