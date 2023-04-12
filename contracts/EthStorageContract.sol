@@ -24,26 +24,36 @@ contract EthStorageContract is StorageContract, Decoder {
         address miner,
         bytes32 encodedData,
         bytes calldata inclusiveProof
-    ) public virtual override returns (bool) {
+    ) public view virtual override returns (bool) {
         uint256 encodingKey = uint256(keccak256(abi.encode(kvInfo.hash, miner, sampleIdxInKV)));
-        uint256 ru = 4158865282786404163413953114870269622875596290766033564087307867933865333818;
-        uint256 prime = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
-        uint256 x = modExp(ru, sampleIdxInKV, prime);
-        uint256 mask = 0;
-        Proof memory proof;
-        (proof, mask) = abi.decode(inclusiveProof, (Proof, uint256));
+        uint256 ruBn256 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
+        uint256 modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
+
+        (Proof memory proof, uint256 mask, bytes memory peInput) = abi.decode(inclusiveProof, (Proof, uint256, bytes));
+        
+        // BLOB decoding check
         uint256[] memory input = new uint256[](3);
         input[0] = encodingKey;
-        input[1] = x;
+        input[1] = modExp(ruBn256, sampleIdxInKV, modulusBn254);
         input[2] = mask;
         if (verifyDecoding(input, proof) != 0) {
             return false;
         }
-        // inclusive proof of decodedData = mask ^ encodedData
-        return true;
+        
+        // Inclusive proof of decodedData = mask ^ encodedData
+        (uint256 versionedHash, uint256 evalX, uint256 evalY) = pointEvaluation(peInput);
+        uint256 ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
+        uint256 modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
+        uint256 expectedX = modExp(ruBls, sampleIdxInKV, modulusBls);
+        if (evalX != expectedX || bytes24(bytes32(versionedHash)) != kvInfo.hash) {
+            return false;
+        }
+
+        uint256 expectedEncodedData = evalY ^ mask;
+        return bytes32(expectedEncodedData) == encodedData;
     }
 
-    function modExp(uint256 _b, uint256 _e, uint256 _m) internal returns (uint256 result) {
+    function modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {
         assembly {
             // Free memory pointer
             let pointer := mload(0x40)
@@ -58,15 +68,29 @@ contract EthStorageContract is StorageContract, Decoder {
             mstore(add(pointer, 0x80), _e)
             mstore(add(pointer, 0xa0), _m)
 
-            // Store the result
-            let value := mload(0xc0)
-
-            // Call the precompiled contract 0x05 = bigModExp
-            if iszero(call(not(0), 0x05, 0, pointer, 0xc0, value, 0x20)) {
+            // Call the precompiled contract 0x05 = bigModExp, reuse pointer for return data
+            if iszero(staticcall(not(0), 0x05, pointer, 0xc0, pointer, 0x20)) {
                 revert(0, 0)
             }
 
-            result := mload(value)
+            result := mload(pointer)
+        }
+    }
+
+    function pointEvaluation(bytes memory input) internal view returns (uint256 versionedHash, uint256 x, uint256 y) {
+        assembly {
+            // Store the result
+            let pointer := mload(0x40)
+
+            versionedHash := mload(add(input, 0x20))
+            x := mload(add(input, 0x40))
+            y := mload(add(input, 0x60))
+
+            // Call the precompiled contract 0x14 = point evaluation, reuse memory pointer to get the results
+            if iszero(staticcall(not(0), 0x14, add(input, 0x20), 0xc0, pointer, 0x40)) {
+                revert(0, 0)
+            }
+
         }
     }
 }
