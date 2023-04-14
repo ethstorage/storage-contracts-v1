@@ -100,13 +100,13 @@ contract DecentralizedKV {
     }
 
     // Return the keyed data given off and len.  This function can be only called in JSON-RPC context.
-    function get(bytes32 key, uint256 off, uint256 len) public view returns (bytes memory) {
+    function get(bytes32 key, uint256 off, uint256 len) public view virtual returns (bytes memory) {
         // ES node will override this method to return actual data.
         require(false, "get() must be called on ES node");
     }
 
     // Remove an existing KV pair to a recipient.  Refund the cost accordingly.
-    function removeTo(bytes32 key, address to) public {
+    function removeTo(bytes32 key, address to) public virtual {
         require(false, "removeTo() unimplemented");
     }
 
