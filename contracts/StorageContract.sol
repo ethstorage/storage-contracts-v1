@@ -107,7 +107,6 @@ abstract contract StorageContract is DecentralizedKV {
     function decodeAndCheckInclusive(
         uint256 kvIdx,
         uint256 sampleIdx,
-        PhyAddr memory kvInfo,
         address miner,
         bytes32 encodedSamples,
         bytes calldata inclusiveProof
@@ -137,10 +136,9 @@ abstract contract StorageContract is DecentralizedKV {
             uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
             uint256 kvIdx = sampleIdx >> sampleLenBits;
             uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
-            PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
             require(
-                decodeAndCheckInclusive(kvIdx, sampleIdxInKv, kvInfo, miner, encodedSamples[i], inclusiveProofs[i]),
+                decodeAndCheckInclusive(kvIdx, sampleIdxInKv, miner, encodedSamples[i], inclusiveProofs[i]),
                 "invalid samples"
             );
 
