@@ -100,15 +100,17 @@ contract EthStorageContract is StorageContract, Decoder {
     function decodeAndCheckInclusive(
         uint256 kvIdx,
         uint256 sampleIdxInKv,
-        PhyAddr memory kvInfo,
         address miner,
         bytes32 encodedData,
-        bytes calldata inclusiveProof
+        bytes calldata proof
     ) public view virtual override returns (bool) {
-        (Proof memory proof, uint256 mask, bytes memory peInput) = abi.decode(inclusiveProof, (Proof, uint256, bytes));
+        PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
+        (Proof memory decodeProof, uint256 mask, bytes memory peInput) = abi.decode(proof, (Proof, uint256, bytes));
 
         // BLOB decoding check
-        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)) {
+        if (
+            !decodeSample(decodeProof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
+        ) {
             return false;
         }
 

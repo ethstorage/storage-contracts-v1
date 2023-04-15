@@ -33,24 +33,30 @@ contract TestEthStorageContract is EthStorageContract {
         _putInternal(key, dataHash, data.length);
     }
 
+    function getEncodingKey(uint256 kvIdx, address miner) public view returns (bytes32) {
+        return keccak256(abi.encode(kvMap[idxMap[kvIdx]].hash, miner, kvIdx));
+    }
+
     /*
      * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
      */
     function decodeAndCheckInclusive(
         uint256 kvIdx,
         uint256 sampleIdxInKv,
-        PhyAddr memory kvInfo,
         address miner,
         bytes32 encodedData,
-        bytes calldata inclusiveProof
+        bytes calldata proof
     ) public view virtual override returns (bool) {
-        (Proof memory proof, uint256 mask, MerkleProof memory mProof) = abi.decode(
-            inclusiveProof,
+        PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
+        (Proof memory decodeProof, uint256 mask, MerkleProof memory mProof) = abi.decode(
+            proof,
             (Proof, uint256, MerkleProof)
         );
 
         // BLOB decoding check
-        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)) {
+        if (
+            !decodeSample(decodeProof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
+        ) {
             return false;
         }
 
