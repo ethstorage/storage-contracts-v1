@@ -105,6 +105,7 @@ abstract contract StorageContract is DecentralizedKV {
      * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
      */
     function decodeAndCheckInclusive(
+        uint256 kvIdx,
         uint256 sampleIdx,
         PhyAddr memory kvInfo,
         address miner,
@@ -139,7 +140,7 @@ abstract contract StorageContract is DecentralizedKV {
             PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
             require(
-                decodeAndCheckInclusive(sampleIdxInKv, kvInfo, miner, encodedSamples[i], inclusiveProofs[i]),
+                decodeAndCheckInclusive(kvIdx, sampleIdxInKv, kvInfo, miner, encodedSamples[i], inclusiveProofs[i]),
                 "invalid samples"
             );
 

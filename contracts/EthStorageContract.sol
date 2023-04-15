@@ -59,47 +59,61 @@ contract EthStorageContract is StorageContract, Decoder {
         }
     }
 
+    function decodeSample(
+        Proof memory proof,
+        uint256 encodingKey,
+        uint256 sampleIdxInKv,
+        uint256 mask
+    ) public view returns (bool) {
+        uint256 ruBn254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
+        uint256 modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
+        uint256 xBn254 = modExp(ruBn254, sampleIdxInKv, modulusBn254);
+
+        uint256[] memory input = new uint256[](3);
+        // TODO: simple hash to curve mapping
+        input[0] = encodingKey % modulusBn254;
+        input[1] = xBn254;
+        input[2] = mask;
+        return (verifyDecoding(input, proof) == 0);
+    }
+
+    function checkInclusive(
+        bytes32 dataHash,
+        uint256 sampleIdxInKv,
+        uint256 decodedData,
+        bytes memory peInput
+    ) public view returns (bool) {
+        uint256 ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
+        uint256 modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
+        uint256 xBls = modExp(ruBls, sampleIdxInKv, modulusBls);
+        (uint256 versionedHash, uint256 evalX, uint256 evalY) = pointEvaluation(peInput);
+        if (evalX != xBls || bytes24(bytes32(versionedHash)) != dataHash) {
+            return false;
+        }
+
+        return evalY == decodedData;
+    }
+
     /*
      * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
      */
     function decodeAndCheckInclusive(
-        uint256 sampleIdxInKV,
+        uint256 kvIdx,
+        uint256 sampleIdxInKv,
         PhyAddr memory kvInfo,
         address miner,
         bytes32 encodedData,
         bytes calldata inclusiveProof
     ) public view virtual override returns (bool) {
-        uint256 xBn254;
-        uint256 xBls;
-        {
-            uint256 ruBn254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
-            uint256 modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
-            xBn254 = modExp(ruBn254, sampleIdxInKV, modulusBn254);
-
-            uint256 ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
-            uint256 modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
-            xBls = modExp(ruBls, sampleIdxInKV, modulusBls);
-        }
-
         (Proof memory proof, uint256 mask, bytes memory peInput) = abi.decode(inclusiveProof, (Proof, uint256, bytes));
 
         // BLOB decoding check
-        uint256[] memory input = new uint256[](3);
-        input[0] = uint256(keccak256(abi.encode(kvInfo.hash, miner, sampleIdxInKV)));
-        input[1] = xBn254;
-        input[2] = mask;
-        if (verifyDecoding(input, proof) != 0) {
+        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)) {
             return false;
         }
 
         // Inclusive proof of decodedData = mask ^ encodedData
-        (uint256 versionedHash, uint256 evalX, uint256 evalY) = pointEvaluation(peInput);
-        if (evalX != xBls || bytes24(bytes32(versionedHash)) != kvInfo.hash) {
-            return false;
-        }
-
-        uint256 expectedEncodedData = evalY ^ mask;
-        return bytes32(expectedEncodedData) == encodedData;
+        return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), peInput);
     }
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
