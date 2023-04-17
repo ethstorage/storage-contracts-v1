@@ -218,9 +218,6 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 required = uint256(2 ** 256 - 1) / diff;
         require(uint256(hash0) <= required, "diff not match");
 
-        // Reward the miner with the current timestamp. Note that, we use the fee in interval
-        // [lastMiningTime, now) to reward the miner, which means the miner may collect more fee
-        // by submitting the tx later at the risk of invaliding the tx if the blockhash expires.
         _rewardMiner(shardId, miner, mineTs, diff);
     }
 
