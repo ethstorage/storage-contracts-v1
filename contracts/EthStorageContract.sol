@@ -46,12 +46,12 @@ contract EthStorageContract is StorageContract, Decoder {
 
     function pointEvaluation(bytes memory input) internal view returns (uint256 versionedHash, uint256 x, uint256 y) {
         assembly {
-            versionedHash := mload(add(input, 0x40))
-            x := mload(add(input, 0x60))
-            y := mload(add(input, 0x80))
+            versionedHash := mload(add(input, 0x20))
+            x := mload(add(input, 0x40))
+            y := mload(add(input, 0x60))
 
             // Call the precompiled contract 0x14 = point evaluation, reuse scratch to get the results
-            if iszero(staticcall(not(0), 0x14, add(input, 0x40), 0xc0, 0x0, 0x40)) {
+            if iszero(staticcall(not(0), 0x14, add(input, 0x20), 0xc0, 0x0, 0x40)) {
                 revert(0, 0)
             }
 
