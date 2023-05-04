@@ -120,7 +120,6 @@ abstract contract StorageContract is DecentralizedKV {
      */
     function _verifySamples(
         uint256 startShardId,
-        uint256 shardLenBits,
         bytes32 hash0,
         address miner,
         bytes32[] memory encodedSamples,
@@ -129,7 +128,7 @@ abstract contract StorageContract is DecentralizedKV {
         require(encodedSamples.length == randomChecks, "data length mismatch");
         require(inclusiveProofs.length == randomChecks, "proof length mismatch");
         // calculate the number of samples range of the sample check
-        uint256 rows = 1 << (shardEntryBits + shardLenBits + sampleLenBits);
+        uint256 rows = 1 << (shardEntryBits + sampleLenBits);
 
         for (uint256 i = 0; i < randomChecks; i++) {
             uint256 parent = uint256(hash0) % rows;
@@ -211,7 +210,7 @@ abstract contract StorageContract is DecentralizedKV {
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
-        hash0 = _verifySamples(shardId, 0, hash0, miner, encodedSamples, proofs);
+        hash0 = _verifySamples(shardId, hash0, miner, encodedSamples, proofs);
 
         // Check difficulty
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);

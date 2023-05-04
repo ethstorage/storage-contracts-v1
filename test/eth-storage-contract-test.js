@@ -115,6 +115,7 @@ describe("EthStorageContract Test", function () {
     expect(encodingKey1).to.equal(encodingKey);
 
     const sampleIdxInKv = 84;
+    // note that mask is generated using 128KB blob size
     const mask = "0x1a3526f58594d237ca2cddc84670a3ebb004e745a57b22acbbaf335d2c13fcd2";
     const decodeProof = [
       [
@@ -175,5 +176,21 @@ describe("EthStorageContract Test", function () {
         proof
       )
     ).to.equal(false);
+
+    let initHash = "0x0000000000000000000000000000000000000000000000000000000000000054";
+
+    expect(
+      await sc.verifySamples(
+        0, // shardIdx
+        initHash, // hash0
+        miner,
+        [encodedSample],
+        [proof]
+      )
+    ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([initHash, encodedSample])));
+  });
+
+  it("verify-sample-8k-blob-2-samples-test", async function () {
+    // TODO
   });
 });

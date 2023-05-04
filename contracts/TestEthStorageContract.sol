@@ -68,4 +68,14 @@ contract TestEthStorageContract is EthStorageContract {
         uint256 expectedEncodedData = uint256(mProof.data) ^ mask;
         return bytes32(expectedEncodedData) == encodedData;
     }
+
+    function verifySamples(
+        uint256 startShardId,
+        bytes32 hash0,
+        address miner,
+        bytes32[] memory encodedSamples,
+        bytes[] calldata inclusiveProofs
+    ) public view returns (bytes32) {
+        return _verifySamples(startShardId, hash0, miner, encodedSamples, inclusiveProofs);
+    }
 }
