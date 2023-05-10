@@ -281,7 +281,7 @@ describe("EthStorageContract Test", function () {
     expect(await ml.verify(decodedSample, sampleIdxInKv, root, merkleProof)).to.equal(true);
 
     // =================================== The Second Samples =================================
-    let hash0 = "0x1110000000000000000000000000000000000000000000000000000000000000";
+    let hash0 = "0x0000000000000000000000000000000000000000000000000000000000000054";
     let nextHash0 = await sc.getNextHash0(hash0,encodedSample);
 
     let [nextSampleIdx,nextKvIdx,nextSampleIdxInKv] = await sc.getSampleIdx(0, nextHash0)
@@ -292,40 +292,41 @@ describe("EthStorageContract Test", function () {
 
     let blobArray1 = ethers.utils.arrayify(blob);
     let nextDecodedSample = ethers.BigNumber.from(blobArray.slice(nextSampleIdxInKv* 32, (nextSampleIdxInKv + 1) * 32));
-    let nextEncodedSample = ethers.BigNumber.from(mask).xor(nextDecodedSample);
+    let nextMask = "0x2b089b15a828c57b3eb07108a7a36488f3430d1b478b499253d06e3367378342"
+    let nextEncodedSample = ethers.BigNumber.from(nextMask).xor(nextDecodedSample);
 
     let nextMerkleProof = await ml.getProof(blob, 32, 8, nextSampleIdxInKv); 
     expect(await ml.verify(nextDecodedSample, nextSampleIdxInKv, root, nextMerkleProof)).to.equal(true);
 
     // calculate encoding key 
     const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
-    console.log(nextEncodingKey) // 0xc032edf8d39a441b2be0f636d94c20774ea39194a6813efc10688437602f8873
-    let nextMask = "0x29eb3987b926014ed5d96b83971f68ddf978f169e8aeb6725da729b9ca18d469"
+    // 0x663bb8e714f953af09f3b9e17bf792824da0834fcfc4a9ff56e6d3d9a4a1e5ce
+    // 0x05731c015296135b99532e7478f4e1c7fd38b2bedc51c8dccf22e8b1c4a1e5cc [mod]
+    console.log(nextEncodingKey)
     const nextDecodeProof = [
       [
-        "0x20c2a11030ec40412150209b282d2df845f0b12c6c758d2e06605900faade319",
-        "0x0d023df9f0dff4812e1b96c23d5085678faaac3d310c00878e269688f3ee3cf6",
+        "0x21eaa5a171f25bf2643a93700c04cf21da572e5b946fb9ca6ca3cf7a41256db2", 
+        "0x269cddd043e10fd0733bbeb2df6594a9e28008065e1f1b752b38b8621b265a30"
       ],
       [
         [
-          "0x0618ea43b52c7baa0dec5387fa0ce33bb5300e11697d1be9619e9ce70ab21581",
-          "0x0e37c09eccbf7cd7a23de4e62de4d52b70ebfe140b980d456514d93c59471fb8",
+          "0x22fcb16796bb4d4c84507269a83c6ee3b78ecfb5329fe09a4a0609f4f2afdfb1", 
+          "0x14a94f013f6afe0af55e7ecad5ed05c28e56a3e9409755329f93895126567406"
         ],
         [
-          "0x2dc3196a69b092ea51ee934247ee6c1f1317e756df2306f4853bc3aa80590f33",
-          "0x0da0413edb2d0103fc80854e0184381d0960696efaf53e7392948b8eaecee557",
-        ],
+          "0x199c15935f667824d3c8636a3b8173a52b7c932fcc3539c369be1d6b5c601b0a", 
+          "0x0f3cac0df863f017443f1b20214d7ec0d900b5cdfa72e394aa175b08c7c849d8"
+        ]
       ],
       [
-        "0x2b25f8a08811cc7652418cbffa9e3782b0ad852f000c2cc6ea6d1c8cba770a4b",
-        "0x2152f624f679989cc326eb3f827e6cc786e4869ba76ddcb6981fa0268a2d3ca7",
+        "0x198895d717cabc4065e3b957a854fe880872378605c4ac4f30b10bca1cc2c833", 
+        "0x2cc767691f3559288663f70488d5c610886d0aa8d7e497eb4277f5e0a055c0b5"
       ],
     ];
     expect(await sc.decodeSample(nextDecodeProof, nextEncodingKey, nextSampleIdxInKv, nextMask)).to.equal(true);
 
     
     // ================== verify samples ================== 
-
       // combine all proof into single decode-and-inclusive proof
       const proof = abiCoder.encode(
         [
@@ -346,8 +347,6 @@ describe("EthStorageContract Test", function () {
         )
       ).to.equal(true);
 
-
-
       // combine all proof into single decode-and-inclusive proof
       const nextProof = abiCoder.encode(
         [
@@ -355,13 +354,13 @@ describe("EthStorageContract Test", function () {
           "uint256",
           "tuple(bytes32, bytes32, bytes32[])",
         ],
-        [nextDecodeProof, nextMask, [nextDecodeProof, root, nextMerkleProof]]
+        [nextDecodeProof, nextMask, [nextDecodedSample, root, nextMerkleProof]]
       );
   
       expect(
         await sc.decodeAndCheckInclusive(
           nextKvIdx, // kvIdx
-          nextSampleIdx,
+          nextSampleIdxInKv,
           miner,
           nextEncodedSample,
           nextProof
@@ -377,6 +376,6 @@ describe("EthStorageContract Test", function () {
         [encodedSample,nextEncodedSample],
         [proof,nextProof]
       )
-    ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([initHash, encodedSample])));
+    ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([nextHash0, nextEncodedSample])));
   });
 });
