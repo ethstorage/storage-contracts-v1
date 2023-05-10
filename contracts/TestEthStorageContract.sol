@@ -78,4 +78,24 @@ contract TestEthStorageContract is EthStorageContract {
     ) public view returns (bytes32) {
         return _verifySamples(startShardId, hash0, miner, encodedSamples, inclusiveProofs);
     }
+
+    function getSampleIdx(
+            uint256 startShardId,
+            bytes32 hash0
+        ) public view returns(uint256,uint256,uint256){
+        // calculate the number of samples range of the sample check
+        uint256 rows = 1 << (shardEntryBits + sampleLenBits); // kvNumbersPerShard * smapleNumersPerKV 
+
+        uint256 parent = uint256(hash0) % rows;
+        uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
+        uint256 kvIdx = sampleIdx >> sampleLenBits;
+        uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
+
+        return (sampleIdx,kvIdx,sampleIdxInKv);
+    }
+
+    function getNextHash0(bytes32 hash0, bytes32 encodedSample)public pure returns(bytes32){
+        hash0 = keccak256(abi.encode(hash0, encodedSample));
+        return hash0;
+    }
 }
