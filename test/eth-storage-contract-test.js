@@ -1,6 +1,14 @@
 const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const {
+  getSampleIdxByHash,
+  modEncodingKey,
+  getEncodingKey,
+  createBlob,
+  getMerkleProof,
+  getIntegrityProof
+}  = require("./lib/help")
 
 /* declare const key */
 const key1 = "0x0000000000000000000000000000000000000000000000000000000000000001";
@@ -191,7 +199,6 @@ describe("EthStorageContract Test", function () {
   });
 
   it("verify-sample-8k-blob-2-samples-test", async function () {
-    // TODO
 
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
     const sc = await EthStorageContract.deploy(
@@ -225,28 +232,18 @@ describe("EthStorageContract Test", function () {
       elements1[i] = ethers.utils.formatBytes32String(i.toString());
     }
 
-    let blob = ethers.utils.hexConcat(elements);
-    let blob1 = ethers.utils.hexConcat(elements);
+    let blob = createBlob(0,0,256)
+    let blob1 = createBlob(1,0,256)
     sc.put(key1, blob);
     sc.put(key2, blob1);
 
-
     const miner = "0xabcd000000000000000000000000000000000000";
-    // 0x663bb8e714f953af09f3b9e17bf792824da0834fcfc4a9ff56e6d3d9a4a1e5ce
-    const encodingKey1 = await sc.getEncodingKey(0, miner);
-    const abiCoder = new ethers.utils.AbiCoder();
-    const root = await ml.merkleRootMinTree(blob, 32);
-    let rootArray = ethers.utils.arrayify(root);
-    // convert bytes32 to bytes 24
-    for (let i = 24; i < 32; i++) {
-      rootArray[i] = 0;
-    }
-    const encodingKey = ethers.utils.keccak256(
-      abiCoder.encode(["bytes32", "address", "uint256"], [ethers.utils.hexlify(rootArray), miner, 0])
-    );
-    expect(encodingKey1).to.equal(encodingKey);
+    ecodingKeyFromSC = await getEncodingKey(0,miner,true,sc,null);
+    ecodingKeyFromLocal = await getEncodingKey(0,miner,false, null, ml );
+    expect(ecodingKeyFromSC).to.equal(ecodingKeyFromLocal);
 
     // ==== decodeSample check ==== 
+    const kvIdx = 0 
     const sampleIdxInKv = 84;
     // note that mask is generated using 128KB blob size
     const mask = "0x1a3526f58594d237ca2cddc84670a3ebb004e745a57b22acbbaf335d2c13fcd2";
@@ -276,28 +273,13 @@ describe("EthStorageContract Test", function () {
     let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
     let encodedSample = ethers.BigNumber.from(mask).xor(decodedSample);
 
-    // evaluate merkle proof 
-    let merkleProof = await ml.getProof(blob, 32, 8, sampleIdxInKv); 
-    expect(await ml.verify(decodedSample, sampleIdxInKv, root, merkleProof)).to.equal(true);
-
     // =================================== The Second Samples =================================
     let hash0 = "0x0000000000000000000000000000000000000000000000000000000000000054";
     let nextHash0 = await sc.getNextHash0(hash0,encodedSample);
-
-    let [nextSampleIdx,nextKvIdx,nextSampleIdxInKv] = await sc.getSampleIdx(0, nextHash0)
-    // 46  0  46 
-    console.log(nextSampleIdx,",",nextKvIdx,",",nextSampleIdxInKv)
-    // nextSampleIdx = nextSampleIdx.toNumber() 
-    nextSampleIdxInKv = nextSampleIdxInKv.toNumber()
-
-    let blobArray1 = ethers.utils.arrayify(blob);
-    let nextDecodedSample = ethers.BigNumber.from(blobArray.slice(nextSampleIdxInKv* 32, (nextSampleIdxInKv + 1) * 32));
     let nextMask = "0x2b089b15a828c57b3eb07108a7a36488f3430d1b478b499253d06e3367378342"
-    let nextEncodedSample = ethers.BigNumber.from(nextMask).xor(nextDecodedSample);
 
-    let nextMerkleProof = await ml.getProof(blob, 32, 8, nextSampleIdxInKv); 
-    expect(await ml.verify(nextDecodedSample, nextSampleIdxInKv, root, nextMerkleProof)).to.equal(true);
-
+    let [nextKvIdx,nextSampleIdxInKv,nextDecodedSample,nextEncodedSample] =  await getSampleIdxByHash(sc,0,nextHash0,nextMask)
+    await getMerkleProof(nextKvIdx,nextSampleIdxInKv,nextDecodedSample,sc,ml)
     // calculate encoding key 
     const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
     // 0x663bb8e714f953af09f3b9e17bf792824da0834fcfc4a9ff56e6d3d9a4a1e5ce
@@ -323,20 +305,11 @@ describe("EthStorageContract Test", function () {
         "0x2cc767691f3559288663f70488d5c610886d0aa8d7e497eb4277f5e0a055c0b5"
       ],
     ];
-    expect(await sc.decodeSample(nextDecodeProof, nextEncodingKey, nextSampleIdxInKv, nextMask)).to.equal(true);
 
+    let     proof = await getIntegrityProof(decodeProof,mask,encodingKey,kvIdx,sampleIdxInKv,decodedSample,sc,ml);
+    let nextProof = await getIntegrityProof(nextDecodeProof,nextMask,nextEncodingKey,nextKvIdx,nextSampleIdxInKv,nextDecodedSample,sc,ml);
     
-    // ================== verify samples ================== 
-      // combine all proof into single decode-and-inclusive proof
-      const proof = abiCoder.encode(
-        [
-          "tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))",
-          "uint256",
-          "tuple(bytes32, bytes32, bytes32[])",
-        ],
-        [decodeProof, mask, [decodedSample, root, merkleProof]]
-      );
-  
+    // ================== verify samples ==================   
       expect(
         await sc.decodeAndCheckInclusive(
           0, // kvIdx
@@ -348,14 +321,6 @@ describe("EthStorageContract Test", function () {
       ).to.equal(true);
 
       // combine all proof into single decode-and-inclusive proof
-      const nextProof = abiCoder.encode(
-        [
-          "tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))",
-          "uint256",
-          "tuple(bytes32, bytes32, bytes32[])",
-        ],
-        [nextDecodeProof, nextMask, [nextDecodedSample, root, nextMerkleProof]]
-      );
   
       expect(
         await sc.decodeAndCheckInclusive(
@@ -378,4 +343,8 @@ describe("EthStorageContract Test", function () {
       )
     ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([nextHash0, nextEncodedSample])));
   });
+
+  it("full process for mining",async function(){
+    
+  })
 });
