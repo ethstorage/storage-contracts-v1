@@ -7,6 +7,7 @@ const {
   getEncodingKey,
   createBlob,
   getMerkleProof,
+  getSampleIdxByHashWithMask,
   getIntegrityProof
 }  = require("./lib/help")
 
@@ -267,7 +268,7 @@ describe("EthStorageContract Test", function () {
         "0x1f1a2e683ab254d22156e964448b53742c4baf04e009ad532728391135f97716",
       ],
     ];
-    expect(await sc.decodeSample(decodeProof, encodingKey, sampleIdxInKv, mask)).to.equal(true);
+    expect(await sc.decodeSample(decodeProof, ecodingKeyFromSC, sampleIdxInKv, mask)).to.equal(true);
     
     let blobArray = ethers.utils.arrayify(blob);
     let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
@@ -278,7 +279,7 @@ describe("EthStorageContract Test", function () {
     let nextHash0 = await sc.getNextHash0(hash0,encodedSample);
     let nextMask = "0x2b089b15a828c57b3eb07108a7a36488f3430d1b478b499253d06e3367378342"
 
-    let [nextKvIdx,nextSampleIdxInKv,nextDecodedSample,nextEncodedSample] =  await getSampleIdxByHash(sc,0,nextHash0,nextMask)
+    let [nextKvIdx,nextSampleIdxInKv,nextDecodedSample,nextEncodedSample] =  await getSampleIdxByHashWithMask(sc,0,nextHash0,nextMask)
     await getMerkleProof(nextKvIdx,nextSampleIdxInKv,nextDecodedSample,sc,ml)
     // calculate encoding key 
     const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
@@ -306,7 +307,7 @@ describe("EthStorageContract Test", function () {
       ],
     ];
 
-    let     proof = await getIntegrityProof(decodeProof,mask,encodingKey,kvIdx,sampleIdxInKv,decodedSample,sc,ml);
+    let     proof = await getIntegrityProof(decodeProof,mask,ecodingKeyFromSC,kvIdx,sampleIdxInKv,decodedSample,sc,ml);
     let nextProof = await getIntegrityProof(nextDecodeProof,nextMask,nextEncodingKey,nextKvIdx,nextSampleIdxInKv,nextDecodedSample,sc,ml);
     
     // ================== verify samples ==================   
@@ -345,6 +346,6 @@ describe("EthStorageContract Test", function () {
   });
 
   it("full process for mining",async function(){
-    
+
   })
 });
