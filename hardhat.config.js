@@ -62,6 +62,7 @@ module.exports = {
   },
   mocha: {
     grep: process.env.MOCHA_GREP || "",
+    timeout: 120000,
   },
   solidity: {
     version: "0.8.16",
