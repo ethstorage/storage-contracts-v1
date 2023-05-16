@@ -109,3 +109,7 @@ bin
 #python
 __pycache__/
 build/
+
+#circuit
+*.zkey
+*.wasm
