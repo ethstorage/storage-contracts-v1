@@ -2,14 +2,17 @@ const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const {
-  getSampleIdxByHash,
-  modEncodingKey,
+  getEncodedSampleList,
   getEncodingKey,
   createBlob,
   getMerkleProof,
   getSampleIdxByHashWithMask,
-  getIntegrityProof
+  getIntegrityProof,
+  execAllSamples,
+  getAllIntegrityProofs,
+  getInitHash0
 }  = require("./lib/help")
+const {printlog} = require("./lib/print")
 
 /* declare const key */
 const key1 = "0x0000000000000000000000000000000000000000000000000000000000000001";
@@ -225,14 +228,6 @@ describe("EthStorageContract Test", function () {
     const ml = await MerkleLib.deploy();
     await ml.deployed();
 
-    let elements = new Array(256);
-    let elements1 = new Array(256);
-
-    for (let i = 0; i < 256; i++) {
-      elements[i] = ethers.utils.formatBytes32String(i.toString());
-      elements1[i] = ethers.utils.formatBytes32String(i.toString());
-    }
-
     let blob = createBlob(0,0,256)
     let blob1 = createBlob(1,0,256)
     sc.put(key1, blob);
@@ -283,9 +278,6 @@ describe("EthStorageContract Test", function () {
     await getMerkleProof(nextKvIdx,nextSampleIdxInKv,nextDecodedSample,sc,ml)
     // calculate encoding key 
     const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
-    // 0x663bb8e714f953af09f3b9e17bf792824da0834fcfc4a9ff56e6d3d9a4a1e5ce
-    // 0x05731c015296135b99532e7478f4e1c7fd38b2bedc51c8dccf22e8b1c4a1e5cc [mod]
-    console.log(nextEncodingKey)
     const nextDecodeProof = [
       [
         "0x21eaa5a171f25bf2643a93700c04cf21da572e5b946fb9ca6ca3cf7a41256db2", 
@@ -345,7 +337,57 @@ describe("EthStorageContract Test", function () {
     ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([nextHash0, nextEncodedSample])));
   });
 
-  it("full process for mining",async function(){
+  it("entire process of mining",async function(){
+    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+    const sc = await EthStorageContract.deploy(
+      [
+        13, // maxKvSizeBits
+        14, // shardSizeBits
+        2, // randomChecks
+        1, // minimumDiff
+        60, // targetIntervalSec
+        40, // cutoff
+        1024, // diffAdjDivisor
+        0, // treasuryShare
+      ],
+      0, // startTime
+      0, // storageCost
+      0, // dcfFactor
+      1, // nonceLimit
+      "0x0000000000000000000000000000000000000000", // treasury
+      0 // prepaidAmount
+    );
+    await sc.deployed();
+    const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
+    const ml = await MerkleLib.deploy();
+    await ml.deployed();
 
+    let blob = createBlob(0,0,256)
+    let blob1 = createBlob(1,0,256)
+    sc.put(key1, blob);
+    sc.put(key2, blob1);
+
+    // the lastest block number is 11 at current state 
+    let bn = await ethers.provider.getBlockNumber() 
+    printlog("Mining at block height %d",bn);
+
+    const miner = "0xabcd000000000000000000000000000000000000";
+    let initHash0 = await getInitHash0(sc,bn,miner,0);
+    printlog("calculate the initHash0 %v",initHash0);
+    
+    let finalHash0 = await execAllSamples(sc,2,bn,miner,0,0);
+    let proofs = await getAllIntegrityProofs(sc,ml);
+
+    expect(
+      await sc.verifySamples(
+        0, // shardIdx
+        initHash0, // hash0
+        miner,
+        getEncodedSampleList(),
+        proofs
+      )
+    ).to.equal(finalHash0);
+
+    await sc.mine(bn,0,miner,0,getEncodedSampleList(),proofs)
   })
 });
