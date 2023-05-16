@@ -1,6 +1,18 @@
 const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const {
+  getEncodedSampleList,
+  getEncodingKey,
+  createBlob,
+  getMerkleProof,
+  getSampleIdxByHashWithMask,
+  getIntegrityProof,
+  execAllSamples,
+  getAllIntegrityProofs,
+  getInitHash0
+}  = require("./lib/help")
+const {printlog} = require("./lib/print")
 
 /* declare const key */
 const key1 = "0x0000000000000000000000000000000000000000000000000000000000000001";
@@ -140,7 +152,7 @@ describe("EthStorageContract Test", function () {
     expect(await sc.decodeSample(decodeProof, encodingKey, sampleIdxInKv, mask)).to.equal(true);
 
     // evaluate merkle proof
-    let merkleProof = await ml.getProof(blob, 32, 8, sampleIdxInKv);
+    let merkleProof = await ml.getProof(blob, 32, 8, sampleIdxInKv); 
     let blobArray = ethers.utils.arrayify(blob);
     let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
     expect(await ml.verify(decodedSample, sampleIdxInKv, root, merkleProof)).to.equal(true);
@@ -191,6 +203,191 @@ describe("EthStorageContract Test", function () {
   });
 
   it("verify-sample-8k-blob-2-samples-test", async function () {
-    // TODO
+
+    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+    const sc = await EthStorageContract.deploy(
+      [
+        13, // maxKvSizeBits
+        14, // shardSizeBits
+        2, // randomChecks
+        1, // minimumDiff
+        60, // targetIntervalSec
+        40, // cutoff
+        1024, // diffAdjDivisor
+        0, // treasuryShare
+      ],
+      0, // startTime
+      0, // storageCost
+      0, // dcfFactor
+      1, // nonceLimit
+      "0x0000000000000000000000000000000000000000", // treasury
+      0 // prepaidAmount
+    );
+    await sc.deployed();
+    const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
+    const ml = await MerkleLib.deploy();
+    await ml.deployed();
+
+    let blob = createBlob(0,0,256)
+    let blob1 = createBlob(1,0,256)
+    sc.put(key1, blob);
+    sc.put(key2, blob1);
+
+    const miner = "0xabcd000000000000000000000000000000000000";
+    ecodingKeyFromSC = await getEncodingKey(0,miner,true,sc,null);
+    ecodingKeyFromLocal = await getEncodingKey(0,miner,false, null, ml );
+    expect(ecodingKeyFromSC).to.equal(ecodingKeyFromLocal);
+
+    // ==== decodeSample check ==== 
+    const kvIdx = 0 
+    const sampleIdxInKv = 84;
+    // note that mask is generated using 128KB blob size
+    const mask = "0x1a3526f58594d237ca2cddc84670a3ebb004e745a57b22acbbaf335d2c13fcd2";
+    const decodeProof = [
+      [
+        "0x0832889498a8fe4eef8b0892fa1249ebd7a8aed09d372faaed1c94dff01d7cc9",
+        "0x17bcad2369edb3a5f36cd75ce8ff15260528af8bbb744e79e8d2a28acb7b6153",
+      ],
+      [
+        [
+          "0x1589c78081a735b082a0660ce1ec524c02a7e5b157893ce27698e7eddf56f98a",
+          "0x20681d15437ae4f65a809d7ea04fdbe2584cab2cb20380652863fbaa4d9a677d",
+        ],
+        [
+          "0x28d8955c5fd1041d9242171171f981fde7353dca48c613086af3adfadac3782e",
+          "0x1e3e72972cb918190ac612852b3b50e264502907640a9519a8aedf3297154cf6",
+        ],
+      ],
+      [
+        "0x06803c666e791e3e2031c99a5eb8153f46e9a9b6b73ad5618bc9b59613d1b430",
+        "0x1f1a2e683ab254d22156e964448b53742c4baf04e009ad532728391135f97716",
+      ],
+    ];
+    expect(await sc.decodeSample(decodeProof, ecodingKeyFromSC, sampleIdxInKv, mask)).to.equal(true);
+    
+    let blobArray = ethers.utils.arrayify(blob);
+    let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
+    let encodedSample = ethers.BigNumber.from(mask).xor(decodedSample);
+
+    // =================================== The Second Samples =================================
+    let hash0 = "0x0000000000000000000000000000000000000000000000000000000000000054";
+    let nextHash0 = await sc.getNextHash0(hash0,encodedSample);
+    let nextMask = "0x2b089b15a828c57b3eb07108a7a36488f3430d1b478b499253d06e3367378342"
+
+    let [nextKvIdx,nextSampleIdxInKv,nextDecodedSample,nextEncodedSample] =  await getSampleIdxByHashWithMask(sc,0,nextHash0,nextMask)
+    await getMerkleProof(nextKvIdx,nextSampleIdxInKv,nextDecodedSample,sc,ml)
+    // calculate encoding key 
+    const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
+    const nextDecodeProof = [
+      [
+        "0x21eaa5a171f25bf2643a93700c04cf21da572e5b946fb9ca6ca3cf7a41256db2", 
+        "0x269cddd043e10fd0733bbeb2df6594a9e28008065e1f1b752b38b8621b265a30"
+      ],
+      [
+        [
+          "0x22fcb16796bb4d4c84507269a83c6ee3b78ecfb5329fe09a4a0609f4f2afdfb1", 
+          "0x14a94f013f6afe0af55e7ecad5ed05c28e56a3e9409755329f93895126567406"
+        ],
+        [
+          "0x199c15935f667824d3c8636a3b8173a52b7c932fcc3539c369be1d6b5c601b0a", 
+          "0x0f3cac0df863f017443f1b20214d7ec0d900b5cdfa72e394aa175b08c7c849d8"
+        ]
+      ],
+      [
+        "0x198895d717cabc4065e3b957a854fe880872378605c4ac4f30b10bca1cc2c833", 
+        "0x2cc767691f3559288663f70488d5c610886d0aa8d7e497eb4277f5e0a055c0b5"
+      ],
+    ];
+
+    let     proof = await getIntegrityProof(decodeProof,mask,ecodingKeyFromSC,kvIdx,sampleIdxInKv,decodedSample,sc,ml);
+    let nextProof = await getIntegrityProof(nextDecodeProof,nextMask,nextEncodingKey,nextKvIdx,nextSampleIdxInKv,nextDecodedSample,sc,ml);
+    
+    // ================== verify samples ==================   
+      expect(
+        await sc.decodeAndCheckInclusive(
+          0, // kvIdx
+          sampleIdxInKv,
+          miner,
+          encodedSample,
+          proof
+        )
+      ).to.equal(true);
+
+      // combine all proof into single decode-and-inclusive proof
+  
+      expect(
+        await sc.decodeAndCheckInclusive(
+          nextKvIdx, // kvIdx
+          nextSampleIdxInKv,
+          miner,
+          nextEncodedSample,
+          nextProof
+        )
+      ).to.equal(true);
+
+
+    expect(
+      await sc.verifySamples(
+        0, // shardIdx
+        hash0, // hash0
+        miner,
+        [encodedSample,nextEncodedSample],
+        [proof,nextProof]
+      )
+    ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([nextHash0, nextEncodedSample])));
   });
+
+  it("complete mining process",async function(){
+    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+    const sc = await EthStorageContract.deploy(
+      [
+        13, // maxKvSizeBits
+        14, // shardSizeBits
+        2, // randomChecks
+        1, // minimumDiff
+        60, // targetIntervalSec
+        40, // cutoff
+        1024, // diffAdjDivisor
+        0, // treasuryShare
+      ],
+      0, // startTime
+      0, // storageCost
+      0, // dcfFactor
+      1, // nonceLimit
+      "0x0000000000000000000000000000000000000000", // treasury
+      0 // prepaidAmount
+    );
+    await sc.deployed();
+    const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
+    const ml = await MerkleLib.deploy();
+    await ml.deployed();
+
+    let blob = createBlob(0,0,256)
+    let blob1 = createBlob(1,0,256)
+    sc.put(key1, blob);
+    sc.put(key2, blob1);
+
+    // the lastest block number is 11 at current state 
+    let bn = await ethers.provider.getBlockNumber() 
+    printlog("Mining at block height %d",bn);
+
+    const miner = "0xabcd000000000000000000000000000000000000";
+    let initHash0 = await getInitHash0(sc,bn,miner,0);
+    printlog("calculate the initHash0 %v",initHash0);
+    
+    let finalHash0 = await execAllSamples(sc,2,bn,miner,0,0);
+    let proofs = await getAllIntegrityProofs(sc,ml);
+
+    expect(
+      await sc.verifySamples(
+        0, // shardIdx
+        initHash0, // hash0
+        miner,
+        getEncodedSampleList(),
+        proofs
+      )
+    ).to.equal(finalHash0);
+
+    await sc.mine(bn,0,miner,0,getEncodedSampleList(),proofs)
+  })
 });
