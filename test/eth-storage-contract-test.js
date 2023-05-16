@@ -337,7 +337,7 @@ describe("EthStorageContract Test", function () {
     ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([nextHash0, nextEncodedSample])));
   });
 
-  it("entire process of mining",async function(){
+  it("complete mining process",async function(){
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
     const sc = await EthStorageContract.deploy(
       [
