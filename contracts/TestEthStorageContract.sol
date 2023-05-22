@@ -79,32 +79,29 @@ contract TestEthStorageContract is EthStorageContract {
         return _verifySamples(startShardId, hash0, miner, encodedSamples, inclusiveProofs);
     }
 
-    function getSampleIdx(
-            uint256 startShardId,
-            bytes32 hash0
-        ) public view returns(uint256,uint256,uint256){
+    function getSampleIdx(uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256, uint256) {
         // calculate the number of samples range of the sample check
-        uint256 rows = 1 << (shardEntryBits + sampleLenBits); // kvNumbersPerShard * smapleNumersPerKV 
+        uint256 rows = 1 << (shardEntryBits + sampleLenBits); // kvNumbersPerShard * smapleNumersPerKV
 
         uint256 parent = uint256(hash0) % rows;
         uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
         uint256 kvIdx = sampleIdx >> sampleLenBits;
         uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
 
-        return (sampleIdx,kvIdx,sampleIdxInKv);
+        return (sampleIdx, kvIdx, sampleIdxInKv);
     }
 
-    function getNextHash0(bytes32 hash0, bytes32 encodedSample)public pure returns(bytes32){
+    function getNextHash0(bytes32 hash0, bytes32 encodedSample) public pure returns (bytes32) {
         hash0 = keccak256(abi.encode(hash0, encodedSample));
         return hash0;
     }
 
-    function getBlockHash(uint256 blockNumber) public view returns(bytes32){
+    function getBlockHash(uint256 blockNumber) public view returns (bytes32) {
         bytes32 bh = blockhash(blockNumber);
         return bh;
     }
 
-    function getInitHash0(uint256 blockNumber,address miner,uint256 nonce) public view returns(bytes32){
+    function getInitHash0(uint256 blockNumber, address miner, uint256 nonce) public view returns (bytes32) {
         bytes32 bh = getBlockHash(blockNumber);
         bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
         return hash0;
@@ -131,7 +128,7 @@ contract TestEthStorageContract is EthStorageContract {
         // Check if the data matches the hash in metadata and obtain the solution hash.
         bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
         hash0 = _verifySamples(shardId, hash0, miner, encodedSamples, proofs);
-        
+
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
 
         _rewardMiner(shardId, miner, mineTs, diff);
@@ -144,7 +141,7 @@ contract TestEthStorageContract is EthStorageContract {
         uint256 nonce,
         bytes32[] memory encodedSamples,
         bytes[] calldata proofs
-    ) public virtual override{
+    ) public virtual override {
         return _mineWithoutDiffCompare(blockNumber, shardId, miner, nonce, encodedSamples, proofs);
     }
 }
