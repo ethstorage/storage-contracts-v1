@@ -1,10 +1,13 @@
 const snarkjs = require("snarkjs");
+require("dotenv").config();
 
 async function generateG16Proof(witness) {
   const result = await snarkjs.groth16.fullProve(
     witness,
-    "./test/lib/blob_poseidon.wasm",
-    "./test/lib/blob_poseidon.zkey"
+    process.env.G16_WASM_PATH,
+    process.env.G16_ZKEY_PATH
+    // "./test/lib/blob_poseidon.wasm",
+    // "./test/lib/blob_poseidon.zkey"
   );
   // const result = await snarkjs.groth16.fullProve(witness,"./blob_poseidon.wasm", "./blob_poseidon.zkey");
   const inputs = result.publicSignals;

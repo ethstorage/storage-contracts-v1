@@ -1,6 +1,7 @@
 const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+require("dotenv").config();
 const {
   getEncodedSampleList,
   getEncodingKey,
@@ -359,6 +360,14 @@ describe("EthStorageContract Test", function () {
   });
 
   it("complete-mining-process", async function () {
+    if (process.env.G16_WASM_PATH == null || process.env.G16_ZKEY_PATH == null) {
+      console.log(
+        "[Warning] complete-mining-process not running because of the lack of G16_WASM_PATH or G16_ZKEY_PATH"
+      );
+      return;
+    } else {
+      console.log("[Info] complete-mining-process running");
+    }
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
     const sc = await EthStorageContract.deploy(
       [
