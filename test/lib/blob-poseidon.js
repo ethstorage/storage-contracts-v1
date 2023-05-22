@@ -30,12 +30,22 @@ function callPythonToGenreateMask(encodingKey_hexstr, sampleIdxInKv, handleDataF
   let input_args = [encodingKey_hexstr, sampleIdxInKv];
   const pythonProcess = spawn("python3", [pythonScriptPath, ...input_args]);
   printlog("execing callPythonMask");
-  pythonProcess.stdout.on("data", handleDataFunc);
-  pythonProcess.stderr.on("data", (data) => {
-    console.error(`Pythone Script Err：${data}`);
-  });
-  pythonProcess.on("close", (code) => {
-    printlog(`Python Program End：${code}`);
+
+  return new Promise((resolve, reject) => {
+    pythonProcess.stdout.on("data", function (data) {
+      handleDataFunc(data);
+      resolve();
+    });
+
+    pythonProcess.stderr.on("data", (data) => {
+      console.error(`Pythone Script Err：${data}`);
+      reject();
+    });
+
+    pythonProcess.on("close", (code) => {
+      printlog(`Python Program End：${code}`);
+      resolve();
+    });
   });
 }
 exports.callPythonToGenreateMask = callPythonToGenreateMask;

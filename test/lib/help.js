@@ -1,4 +1,3 @@
-const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { callPythonToGenreateMask, handlePyData } = require("./blob-poseidon");
@@ -20,11 +19,7 @@ function getEncodedSampleList() {
   return encodedSampleList;
 }
 
-const sleep = (time) => {
-  return new Promise((resolve) => setTimeout(resolve, time));
-};
-async function getMask(encodingKey, sampleIdxInKv) {
-  await sleep(3000);
+function getMask(encodingKey, sampleIdxInKv) {
   if (maskIndex == maskList.length) {
     throw new Error("no enough mask");
   }
@@ -94,12 +89,12 @@ async function getSampleIdxByHash(StorageContract, startShardId, nextHash0, mine
   let blobArray = ethers.utils.arrayify(blobData);
 
   let encodingKey = await getEncodingKey(kvIdx, miner, true, StorageContract, null);
-  callPythonToGenreateMask(
+  await callPythonToGenreateMask(
     encodingKey,
     sampleIdxInKvStr,
     handlePyData(maskList, sampleIdxInKv_ru_list, encodingKey_mod_list)
   );
-  let Mask = await getMask(encodingKey, sampleIdxInKv);
+  let Mask = getMask(encodingKey, sampleIdxInKv);
 
   let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
   let encodedSample = ethers.BigNumber.from(Mask).xor(decodedSample);
