@@ -27,6 +27,11 @@ module.exports = {
     hardhat: {
       initialBaseFeePerGas: 0, // workaround from https://github.com/sc-forks/solidity-coverage/issues/652#issuecomment-896330136 . Remove when that issue is closed.
     },
+    devnet: {
+      url: process.env.EIP4844_DEVNET_URL || "",
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
       accounts:
