@@ -93,6 +93,12 @@ contract DecentralizedKV {
         return kvMap[skey].kvSize;
     }
 
+    // Return the dataHash of the keyed value
+    function hash(bytes32 key) public view returns (bytes24) {
+        bytes32 skey = keccak256(abi.encode(msg.sender, key));
+        return kvMap[skey].hash;
+    }
+
     // Exist
     function exist(bytes32 key) public view returns (bool) {
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
