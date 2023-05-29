@@ -144,4 +144,37 @@ contract TestEthStorageContract is EthStorageContract {
     ) public virtual override {
         return _mineWithoutDiffCompare(blockNumber, shardId, miner, nonce, encodedSamples, proofs);
     }
+
+    function _mineWithFixedHash0(
+        bytes32 initHash0,
+        uint256 shardId,
+        address miner,
+        uint256 nonce,
+        bytes32[] memory encodedSamples,
+        bytes[] calldata proofs
+    ) internal {
+        // Obtain the blockhash of the block number of recent blocks
+        uint256 mineTs = block.timestamp;
+
+        // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
+        require(nonce < nonceLimit, "nonce too big");
+
+        // Check if the data matches the hash in metadata and obtain the solution hash.
+        bytes32 hash0 = _verifySamples(shardId, initHash0, miner, encodedSamples, proofs);
+
+        uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
+
+        _rewardMiner(shardId, miner, mineTs, diff);
+    }
+
+    function mineWithFixedHash0(
+        bytes32 initHash0,
+        uint256 shardId,
+        address miner,
+        uint256 nonce,
+        bytes32[] memory encodedSamples,
+        bytes[] calldata proofs
+    ) public virtual {
+        return _mineWithFixedHash0(initHash0, shardId, miner, nonce, encodedSamples, proofs);
+    }
 }

@@ -15,7 +15,7 @@ let sampleIdxInKv_ru_list = [];
 let decodedSampleList = [];
 let encodedSampleList = [];
 
-function clearState(){ 
+function clearState() {
   BlobMap = new Map();
   maskList = [];
   maskIndex = 0;
@@ -55,10 +55,10 @@ function createBlob(kvIdx, begin_i, length) {
   return blob;
 }
 
-function createRandomBlob(kvIdx,length){
+function createRandomBlob(kvIdx, length) {
   let elements = new Array(length);
   for (let i = 0; i < length; i++) {
-    elements[i] = ethers.utils.formatBytes32String( Math.floor(Math.random()*100).toString());
+    elements[i] = ethers.utils.formatBytes32String(Math.floor(Math.random() * 100).toString());
   }
   let blob = ethers.utils.hexConcat(elements);
   BlobMap.set(kvIdx, blob);

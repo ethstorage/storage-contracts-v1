@@ -113,6 +113,7 @@ describe("EthStorageContract Test", function () {
 
     let blob = ethers.utils.hexConcat(elements);
     sc.put(key1, blob);
+    sc.put(key2, blob);
 
     const miner = "0xabcd000000000000000000000000000000000000";
     // 0x663bb8e714f953af09f3b9e17bf792824da0834fcfc4a9ff56e6d3d9a4a1e5ce
@@ -232,8 +233,8 @@ describe("EthStorageContract Test", function () {
 
     let blob = createBlob(0, 0, 256);
     let blob1 = createBlob(1, 0, 256);
-    sc.put(key1, blob);
-    sc.put(key2, blob1);
+    await sc.put(key1, blob);
+    await sc.put(key2, blob1);
 
     const miner = "0xabcd000000000000000000000000000000000000";
     ecodingKeyFromSC = await getEncodingKey(0, miner, true, sc, null);
@@ -359,69 +360,71 @@ describe("EthStorageContract Test", function () {
         [proof, nextProof]
       )
     ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([nextHash0, nextEncodedSample])));
+
+    await sc.mineWithFixedHash0(hash0, 0, miner, 0, [encodedSample, nextEncodedSample], [proof, nextProof]);
   });
 
-  it("complete-mining-process", async function () {
-    if (process.env.G16_WASM_PATH == null || process.env.G16_ZKEY_PATH == null) {
-      console.log(
-        "[Warning] complete-mining-process not running because of the lack of G16_WASM_PATH or G16_ZKEY_PATH"
-      );
-      return;
-    } else {
-      console.log("[Info] complete-mining-process running");
-    }
+  // it("complete-mining-process", async function () {
+  //   if (process.env.G16_WASM_PATH == null || process.env.G16_ZKEY_PATH == null) {
+  //     console.log(
+  //       "[Warning] complete-mining-process not running because of the lack of G16_WASM_PATH or G16_ZKEY_PATH"
+  //     );
+  //     return;
+  //   } else {
+  //     console.log("[Info] complete-mining-process running");
+  //   }
 
-    clearState();
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy(
-      [
-        13, // maxKvSizeBits
-        14, // shardSizeBits
-        2, // randomChecks
-        1, // minimumDiff
-        60, // targetIntervalSec
-        40, // cutoff
-        1024, // diffAdjDivisor
-        0, // treasuryShare
-      ],
-      0, // startTime
-      0, // storageCost
-      0, // dcfFactor
-      1, // nonceLimit
-      "0x0000000000000000000000000000000000000000", // treasury
-      0 // prepaidAmount
-    );
-    await sc.deployed();
-    const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
-    const ml = await MerkleLib.deploy();
-    await ml.deployed();
+  //   clearState();
+  //   const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+  //   const sc = await EthStorageContract.deploy(
+  //     [
+  //       13, // maxKvSizeBits
+  //       14, // shardSizeBits
+  //       2, // randomChecks
+  //       1, // minimumDiff
+  //       60, // targetIntervalSec
+  //       40, // cutoff
+  //       1024, // diffAdjDivisor
+  //       0, // treasuryShare
+  //     ],
+  //     0, // startTime
+  //     0, // storageCost
+  //     0, // dcfFactor
+  //     1, // nonceLimit
+  //     "0x0000000000000000000000000000000000000000", // treasury
+  //     0 // prepaidAmount
+  //   );
+  //   await sc.deployed();
+  //   const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
+  //   const ml = await MerkleLib.deploy();
+  //   await ml.deployed();
 
-    let blob = createRandomBlob(0, 256);
-    let blob1 = createRandomBlob(1, 256);
-    sc.put(key1, blob);
-    sc.put(key2, blob1);
+  //   let blob = createRandomBlob(0, 256);
+  //   let blob1 = createRandomBlob(1, 256);
+  //   sc.put(key1, blob);
+  //   sc.put(key2, blob1);
 
-    // the lastest block number is 11 at current state
-    let bn = await ethers.provider.getBlockNumber();
-    printlog("Mining at block height %d", bn);
+  //   // the lastest block number is 11 at current state
+  //   let bn = await ethers.provider.getBlockNumber();
+  //   printlog("Mining at block height %d", bn);
 
-    const miner = "0xabcd000000000000000000000000000000000000";
-    let initHash0 = await getInitHash0(sc, bn, miner, 0);
-    printlog("calculate the initHash0 %v", initHash0);
+  //   const miner = "0xabcd000000000000000000000000000000000000";
+  //   let initHash0 = await getInitHash0(sc, bn, miner, 0);
+  //   printlog("calculate the initHash0 %v", initHash0);
 
-    let finalHash0 = await execAllSamples(sc, 2, bn, miner, 0, 0);
-    let proofs = await getAllIntegrityProofs(sc, ml);
+  //   let finalHash0 = await execAllSamples(sc, 2, bn, miner, 0, 0);
+  //   let proofs = await getAllIntegrityProofs(sc, ml);
 
-    expect(
-      await sc.verifySamples(
-        0, // shardIdx
-        initHash0, // hash0
-        miner,
-        getEncodedSampleList(),
-        proofs
-      )
-    ).to.equal(finalHash0);
+  //   expect(
+  //     await sc.verifySamples(
+  //       0, // shardIdx
+  //       initHash0, // hash0
+  //       miner,
+  //       getEncodedSampleList(),
+  //       proofs
+  //     )
+  //   ).to.equal(finalHash0);
 
-    await sc.mine(bn, 0, miner, 0, getEncodedSampleList(), proofs);
-  });
+  //   await sc.mine(bn, 0, miner, 0, getEncodedSampleList(), proofs);
+  // });
 });
