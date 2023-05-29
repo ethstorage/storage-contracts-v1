@@ -4,7 +4,7 @@ const { callPythonToGenreateMask, handlePyData } = require("./blob-poseidon");
 const { generateG16Proof } = require("./prover");
 const { printlog } = require("./print");
 
-const BlobMap = new Map();
+let BlobMap = new Map();
 let maskList = [];
 let maskIndex = 0;
 let encodingKeyList = [];
@@ -14,6 +14,19 @@ let sampleIdxInKvList = [];
 let sampleIdxInKv_ru_list = [];
 let decodedSampleList = [];
 let encodedSampleList = [];
+
+function clearState(){ 
+  BlobMap = new Map();
+  maskList = [];
+  maskIndex = 0;
+  encodingKeyList = [];
+  encodingKey_mod_list = [];
+  sampleKvIdxList = [];
+  sampleIdxInKvList = [];
+  sampleIdxInKv_ru_list = [];
+  decodedSampleList = [];
+  encodedSampleList = [];
+}
 
 function getEncodedSampleList() {
   return encodedSampleList;
@@ -37,6 +50,16 @@ function createBlob(kvIdx, begin_i, length) {
     elements[i] = ethers.utils.formatBytes32String(i.toString());
   }
 
+  let blob = ethers.utils.hexConcat(elements);
+  BlobMap.set(kvIdx, blob);
+  return blob;
+}
+
+function createRandomBlob(kvIdx,length){
+  let elements = new Array(length);
+  for (let i = 0; i < length; i++) {
+    elements[i] = ethers.utils.formatBytes32String( Math.floor(Math.random()*100).toString());
+  }
   let blob = ethers.utils.hexConcat(elements);
   BlobMap.set(kvIdx, blob);
   return blob;
@@ -245,6 +268,7 @@ exports.getSampleIdxByHash = getSampleIdxByHash;
 exports.modEncodingKey = modEncodingKey;
 exports.getEncodingKey = getEncodingKey;
 exports.createBlob = createBlob;
+exports.createRandomBlob = createRandomBlob;
 exports.getMerkleProof = getMerkleProof;
 exports.getIntegrityProof = getIntegrityProof;
 exports.getSampleIdxByHashWithMask = getSampleIdxByHashWithMask;
@@ -253,3 +277,4 @@ exports.getAllIntegrityProofs = getAllIntegrityProofs;
 exports.getInitHash0 = getInitHash0;
 exports.getEncodedSampleList = getEncodedSampleList;
 exports.printlog = printlog;
+exports.clearState = clearState;

@@ -6,12 +6,14 @@ const {
   getEncodedSampleList,
   getEncodingKey,
   createBlob,
+  createRandomBlob,
   getMerkleProof,
   getSampleIdxByHashWithMask,
   getIntegrityProof,
   execAllSamples,
   getAllIntegrityProofs,
   getInitHash0,
+  clearState,
 } = require("./lib/help");
 const { printlog } = require("./lib/print");
 
@@ -368,6 +370,8 @@ describe("EthStorageContract Test", function () {
     } else {
       console.log("[Info] complete-mining-process running");
     }
+
+    clearState();
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
     const sc = await EthStorageContract.deploy(
       [
@@ -392,8 +396,8 @@ describe("EthStorageContract Test", function () {
     const ml = await MerkleLib.deploy();
     await ml.deployed();
 
-    let blob = createBlob(0, 0, 256);
-    let blob1 = createBlob(1, 0, 256);
+    let blob = createRandomBlob(0, 256);
+    let blob1 = createRandomBlob(1, 256);
     sc.put(key1, blob);
     sc.put(key2, blob1);
 
