@@ -12,10 +12,10 @@ class TestState {
     this.maskList = [];
     this.maskIndex = 0;
     this.encodingKeyList = [];
-    this.encodingKey_mod_list = [];
+    this.encodingKeyModList = [];
     this.sampleKvIdxList = [];
     this.sampleIdxInKvList = [];
-    this.sampleIdxInKv_ru_list = [];
+    this.sampleIdxInKvRuList = [];
     this.decodedSampleList = [];
     this.encodedSampleList = [];
   }
@@ -108,7 +108,7 @@ class TestState {
     await callPythonToGenreateMask(
       encodingKey,
       sampleIdxInKvStr,
-      handlePyData(this.maskList, this.sampleIdxInKv_ru_list, this.encodingKey_mod_list)
+      handlePyData(this.maskList, this.sampleIdxInKvRuList, this.encodingKeyModList)
     );
     let Mask = this.getMask();
 
@@ -188,9 +188,9 @@ class TestState {
 
   async generateDecodeProofs() {
     let g16proofs = [];
-    for (let i = 0; i < this.encodingKey_mod_list.length; i++) {
-      let encodingKeyIn = this.encodingKey_mod_list[i];
-      let xIn = this.sampleIdxInKv_ru_list[i];
+    for (let i = 0; i < this.encodingKeyModList.length; i++) {
+      let encodingKeyIn = this.encodingKeyModList[i];
+      let xIn = this.sampleIdxInKvRuList[i];
 
       printlog("<<gen the %dth g16proof start>>", i);
       let key = "th generate g16 proof time cost ";
