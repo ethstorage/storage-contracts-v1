@@ -52,15 +52,16 @@ function createBlob(kvIdx, begin_i, length) {
 
   let blob = ethers.utils.hexConcat(elements);
   BlobMap.set(kvIdx, blob);
+  printlog(blob)
   return blob;
 }
 
 function createRandomBlob(kvIdx, length) {
-  let elements = new Array(length);
-  for (let i = 0; i < length; i++) {
-    elements[i] = ethers.utils.formatBytes32String(Math.floor(Math.random() * 100).toString());
-  }
-  let blob = ethers.utils.hexConcat(elements);
+  length = 32 * length; 
+  let array = ethers.utils.randomBytes(length)
+  let blob = ethers.utils.hexlify(array)
+  printlog("kvIdx-%d blob length: %d",kvIdx,blob.length)
+
   BlobMap.set(kvIdx, blob);
   return blob;
 }
