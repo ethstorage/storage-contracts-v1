@@ -3,7 +3,6 @@ require("dotenv").config();
 
 async function generateG16Proof(witness) {
   const result = await snarkjs.groth16.fullProve(witness, process.env.G16_WASM_PATH, process.env.G16_ZKEY_PATH);
-  // const result = await snarkjs.groth16.fullProve(witness,"./blob_poseidon.wasm", "./blob_poseidon.zkey");
   const inputs = result.publicSignals;
   const proof = result.proof;
   const solProof = [
@@ -27,8 +26,3 @@ async function generateG16Proof(witness) {
 }
 
 exports.generateG16Proof = generateG16Proof;
-
-//  ======================== local test ===============================
-// let encodingKeyIn = "0x1234"
-// let xIn = "0x20a35c046bbfefac7a49a93b3f078a4927390c265f05c6e1a014a1f5874b5a93"
-// generateG16Proof({encodingKeyIn,xIn})

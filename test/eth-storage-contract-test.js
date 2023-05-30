@@ -2,19 +2,8 @@ const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 require("dotenv").config();
-const {
-  getEncodedSampleList,
-  getEncodingKey,
-  createBlob,
-  createRandomBlob,
-  getMerkleProof,
-  getSampleIdxByHashWithMask,
-  getIntegrityProof,
-  execAllSamples,
-  getAllIntegrityProofs,
-  getInitHash0,
-  clearState,
-} = require("./lib/help");
+
+const { TestState } = require("./lib/test-helper");
 const { printlog } = require("./lib/print");
 
 /* declare const key */
@@ -231,14 +220,15 @@ describe("EthStorageContract Test", function () {
     const ml = await MerkleLib.deploy();
     await ml.deployed();
 
-    let blob = createBlob(0, 0, 256);
-    let blob1 = createBlob(1, 0, 256);
+    let testState = new TestState(sc, ml);
+    let blob = testState.createBlob(0, 0, 256);
+    let blob1 = testState.createBlob(1, 0, 256);
     await sc.put(key1, blob);
     await sc.put(key2, blob1);
 
     const miner = "0xabcd000000000000000000000000000000000000";
-    ecodingKeyFromSC = await getEncodingKey(0, miner, true, sc, null);
-    ecodingKeyFromLocal = await getEncodingKey(0, miner, false, null, ml);
+    ecodingKeyFromSC = await testState.getEncodingKey(0, miner, true, sc, null);
+    ecodingKeyFromLocal = await testState.getEncodingKey(0, miner, false, null, ml);
     expect(ecodingKeyFromSC).to.equal(ecodingKeyFromLocal);
 
     // ==== decodeSample check ====
@@ -277,13 +267,9 @@ describe("EthStorageContract Test", function () {
     let nextHash0 = await sc.getNextHash0(hash0, encodedSample);
     let nextMask = "0x2b089b15a828c57b3eb07108a7a36488f3430d1b478b499253d06e3367378342";
 
-    let [nextKvIdx, nextSampleIdxInKv, nextDecodedSample, nextEncodedSample] = await getSampleIdxByHashWithMask(
-      sc,
-      0,
-      nextHash0,
-      nextMask
-    );
-    await getMerkleProof(nextKvIdx, nextSampleIdxInKv, nextDecodedSample, sc, ml);
+    let [nextKvIdx, nextSampleIdxInKv, nextDecodedSample, nextEncodedSample] =
+      await testState.getSampleIdxByHashWithMask(0, nextHash0, nextMask);
+    await testState.getMerkleProof(nextKvIdx, nextSampleIdxInKv, nextDecodedSample);
     // calculate encoding key
     const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
     const nextDecodeProof = [
@@ -307,25 +293,21 @@ describe("EthStorageContract Test", function () {
       ],
     ];
 
-    let proof = await getIntegrityProof(
+    let proof = await testState.getIntegrityProof(
       decodeProof,
       mask,
       ecodingKeyFromSC,
       kvIdx,
       sampleIdxInKv,
-      decodedSample,
-      sc,
-      ml
+      decodedSample
     );
-    let nextProof = await getIntegrityProof(
+    let nextProof = await testState.getIntegrityProof(
       nextDecodeProof,
       nextMask,
       nextEncodingKey,
       nextKvIdx,
       nextSampleIdxInKv,
-      nextDecodedSample,
-      sc,
-      ml
+      nextDecodedSample
     );
 
     // ================== verify samples ==================
@@ -374,7 +356,6 @@ describe("EthStorageContract Test", function () {
       console.log("[Info] complete-mining-process running");
     }
 
-    clearState();
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
     const sc = await EthStorageContract.deploy(
       [
@@ -399,8 +380,10 @@ describe("EthStorageContract Test", function () {
     const ml = await MerkleLib.deploy();
     await ml.deployed();
 
-    let blob = createRandomBlob(0, 256);
-    let blob1 = createRandomBlob(1, 256);
+    let testState = new TestState(sc, ml);
+
+    let blob = testState.createRandomBlob(0, 256);
+    let blob1 = testState.createRandomBlob(1, 256);
     sc.put(key1, blob);
     sc.put(key2, blob1);
 
@@ -409,22 +392,22 @@ describe("EthStorageContract Test", function () {
     printlog("Mining at block height %d", bn);
 
     const miner = "0xabcd000000000000000000000000000000000000";
-    let initHash0 = await getInitHash0(sc, bn, miner, 0);
+    let initHash0 = await testState.getInitHash0(bn, miner, 0);
     printlog("calculate the initHash0 %v", initHash0);
 
-    let finalHash0 = await execAllSamples(sc, 2, bn, miner, 0, 0);
-    let proofs = await getAllIntegrityProofs(sc, ml);
+    let finalHash0 = await testState.execAllSamples(2, bn, miner, 0, 0);
+    let proofs = await testState.getAllIntegrityProofs();
 
     expect(
       await sc.verifySamples(
         0, // shardIdx
         initHash0, // hash0
         miner,
-        getEncodedSampleList(),
+        testState.getEncodedSampleList(),
         proofs
       )
     ).to.equal(finalHash0);
 
-    await sc.mine(bn, 0, miner, 0, getEncodedSampleList(), proofs);
+    await sc.mine(bn, 0, miner, 0, testState.getEncodedSampleList(), proofs);
   });
 });

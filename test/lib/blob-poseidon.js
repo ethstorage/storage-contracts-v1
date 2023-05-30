@@ -1,9 +1,7 @@
 const { spawn } = require("child_process");
 const { printlog } = require("./print");
 
-// const pythonScriptPath = './scripts/blob_poseidon.py';
 const pythonScriptPath = "test/lib/scripts/blob_poseidon.py";
-const args = ["0x1234", "11"];
 
 function handlePyData(maskList, sampleIdxInKv_ru_list, encodingKey_mod_list) {
   return function (data) {
@@ -50,26 +48,3 @@ function callPythonToGenreateMask(encodingKey_hexstr, sampleIdxInKv, handleDataF
 }
 exports.callPythonToGenreateMask = callPythonToGenreateMask;
 exports.handlePyData = handlePyData;
-
-// ===================== local test ================================
-// const sleep = time => {
-//     return new Promise(resolve => setTimeout(resolve, time)
-//     )
-// }
-
-// async function test () {
-//     await sleep(2000)
-//     console.log("abc");
-// }
-// let testMaskList = [];
-// let testSampleIdxInKv_ru_list = []
-// let testEncodingKey_mod_list = []
-// callPythonToGenreateMask(args[0],args[1],handlePyData(testMaskList,testSampleIdxInKv_ru_list,testEncodingKey_mod_list))
-// setTimeout(() => {
-//     console.log(testMaskList)
-//     console.log(testSampleIdxInKv_ru_list)
-//     console.log(testEncodingKey_mod_list)
-// },2000)
-
-// test()
-// console.log("bcd")
