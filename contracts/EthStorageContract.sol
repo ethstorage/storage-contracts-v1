@@ -86,6 +86,7 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
         uint256 modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
         uint256 xBls = modExp(ruBls, sampleIdxInKv, modulusBls);
+        // xBls uses big-endian but the format according to the specs is little-endian, so we need to reverse it.
         uint256 xBlsReversed = reverseBytes(xBls);
         (uint256 versionedHash, uint256 evalX, uint256 evalY) = pointEvaluation(peInput);
         if (evalX != xBlsReversed || bytes24(bytes32(versionedHash)) != dataHash) {
@@ -137,7 +138,7 @@ contract EthStorageContract is StorageContract, Decoder {
     }
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
-    function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable {
+    function putBlob(bytes32 key, uint256 blobIdx, uint256 length) virtual public payable {
         bytes32 dataHash = bytes32(0);
         uint256 kvIdx = _putInternal(key, dataHash, length);
 
