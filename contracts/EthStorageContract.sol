@@ -86,12 +86,31 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
         uint256 modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
         uint256 xBls = modExp(ruBls, sampleIdxInKv, modulusBls);
+        // xBls uses big-endian but the format according to the specs is little-endian, so we need to reverse it.
+        uint256 xBlsReversed = reverseBytes(xBls);
         (uint256 versionedHash, uint256 evalX, uint256 evalY) = pointEvaluation(peInput);
-        if (evalX != xBls || bytes24(bytes32(versionedHash)) != dataHash) {
+        if (evalX != xBlsReversed || bytes24(bytes32(versionedHash)) != dataHash) {
             return false;
         }
 
         return evalY == decodedData;
+    }
+
+    function reverseBytes(uint256 input) internal pure returns (uint256 v) {
+        v = input;
+        v =
+            ((v & 0xFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00) >> 8) |
+            ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
+        v =
+            ((v & 0xFFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000) >> 16) |
+            ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
+        v =
+            ((v & 0xFFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000) >> 32) |
+            ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
+        v =
+            ((v & 0xFFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000) >> 64) |
+            ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
+        v = (v >> 128) | (v << 128);
     }
 
     /*
@@ -119,7 +138,7 @@ contract EthStorageContract is StorageContract, Decoder {
     }
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
-    function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable {
+    function putBlob(bytes32 key, uint256 blobIdx, uint256 length) virtual public payable {
         bytes32 dataHash = bytes32(0);
         uint256 kvIdx = _putInternal(key, dataHash, length);
 
