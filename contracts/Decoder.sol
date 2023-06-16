@@ -69,7 +69,7 @@ contract Decoder {
 
     uint16 constant pLastMem = 896;
 
-    function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[3] calldata _pubSignals) public view returns (bool) {
+    function verifyProof(uint[2] memory _pA, uint[2][2] memory _pB, uint[2] memory _pC, uint[3] memory _pubSignals) public view returns (bool) {
         assembly {
             function checkField(v) {
                 if iszero(lt(v, q)) {
@@ -113,22 +113,21 @@ contract Decoder {
 
             // Compute the linear combination vk_x
 
-                g1_mulAccC(_pVk, IC1x, IC1y, calldataload(add(pubSignals, 0)))
+                g1_mulAccC(_pVk, IC1x, IC1y, mload(add(pubSignals, 0)))
 
-                g1_mulAccC(_pVk, IC2x, IC2y, calldataload(add(pubSignals, 32)))
+                g1_mulAccC(_pVk, IC2x, IC2y, mload(add(pubSignals, 32)))
 
-                g1_mulAccC(_pVk, IC3x, IC3y, calldataload(add(pubSignals, 64)))
-
+                g1_mulAccC(_pVk, IC3x, IC3y, mload(add(pubSignals, 64)))
 
             // -A
-                mstore(_pPairing, calldataload(pA))
-                mstore(add(_pPairing, 32), mod(sub(q, calldataload(add(pA, 32))), q))
+                mstore(_pPairing, mload(pA))
+                mstore(add(_pPairing, 32), mod(sub(q, mload(add(pA, 32))), q))
 
             // B
-                mstore(add(_pPairing, 64), calldataload(pB))
-                mstore(add(_pPairing, 96), calldataload(add(pB, 32)))
-                mstore(add(_pPairing, 128), calldataload(add(pB, 64)))
-                mstore(add(_pPairing, 160), calldataload(add(pB, 96)))
+                mstore(add(_pPairing, 64), mload(pB))
+                mstore(add(_pPairing, 96), mload(add(pB, 32)))
+                mstore(add(_pPairing, 128), mload(add(pB, 64)))
+                mstore(add(_pPairing, 160), mload(add(pB, 96)))
 
             // alpha1
                 mstore(add(_pPairing, 192), alphax)
@@ -152,8 +151,8 @@ contract Decoder {
                 mstore(add(_pPairing, 544), gammay2)
 
             // C
-                mstore(add(_pPairing, 576), calldataload(pC))
-                mstore(add(_pPairing, 608), calldataload(add(pC, 32)))
+                mstore(add(_pPairing, 576), mload(pC))
+                mstore(add(_pPairing, 608), mload(add(pC, 32)))
 
             // delta2
                 mstore(add(_pPairing, 640), deltax1)
@@ -172,13 +171,13 @@ contract Decoder {
 
         // Validate that all evaluations ∈ F
 
-            checkField(calldataload(add(_pubSignals, 0)))
+            checkField(mload(add(_pubSignals, 0)))
 
-            checkField(calldataload(add(_pubSignals, 32)))
+            checkField(mload(add(_pubSignals, 32)))
 
-            checkField(calldataload(add(_pubSignals, 64)))
+            checkField(mload(add(_pubSignals, 64)))
 
-            checkField(calldataload(add(_pubSignals, 96)))
+            checkField(mload(add(_pubSignals, 96)))
 
 
         // Validate all evaluations
@@ -192,7 +191,7 @@ contract Decoder {
     function verifyDecoding(uint[] memory input, Proof memory proof) public view returns (uint) {
         require(input.length == 3, "verifier-bad-input");
         uint[3] memory _pubSignals = [input[0], input[1], input[2]];
-        if (this.verifyProof([proof.A.X, proof.A.Y],[[proof.B.X[0], proof.B.X[1]], [proof.B.Y[0], proof.B.Y[1]]], [proof.C.X, proof.C.Y], _pubSignals))
+        if (verifyProof([proof.A.X, proof.A.Y],[[proof.B.X[0], proof.B.X[1]], [proof.B.Y[0], proof.B.Y[1]]], [proof.C.X, proof.C.Y], _pubSignals))
             return 0;
         return 1;
     }
