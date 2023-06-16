@@ -189,10 +189,8 @@ contract Decoder {
         }
     }
 
-    function verifyDecoding(uint[] memory input, Proof memory proof) public view returns (uint) {
-        require(input.length == 3, "verifier-bad-input");
-        uint[3] memory _pubSignals = [input[0], input[1], input[2]];
-        if (this.verifyProof([proof.A.X, proof.A.Y],[[proof.B.X[0], proof.B.X[1]], [proof.B.Y[0], proof.B.Y[1]]], [proof.C.X, proof.C.Y], _pubSignals))
+    function verifyDecoding(uint[3] memory input, Proof memory proof) public view returns (uint) {
+        if (this.verifyProof([proof.A.X, proof.A.Y],[[proof.B.X[0], proof.B.X[1]], [proof.B.Y[0], proof.B.Y[1]]], [proof.C.X, proof.C.Y], input))
             return 0;
         return 1;
     }

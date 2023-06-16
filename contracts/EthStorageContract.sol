@@ -69,7 +69,7 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
         uint256 xBn254 = modExp(ruBn254, sampleIdxInKv, modulusBn254);
 
-        uint256[] memory input = new uint256[](3);
+        uint256[3] memory input;
         // TODO: simple hash to curve mapping
         input[0] = encodingKey % modulusBn254;
         input[1] = xBn254;
