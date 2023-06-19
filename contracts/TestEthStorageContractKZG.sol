@@ -42,15 +42,17 @@ contract TestEthStorageContractKZG is EthStorageContract {
         hashGetter = address(new BlobHashGetterFactory());
     }
 
+    // a test only method to upload multiple blobs in one tx
+    // note that the key is randomly given and the length of the data may not correct
     function putBlobs(uint256 size) public payable {
-        uint256 blobLen = size / maxKvSize; 
-        for (uint256 i = 0; i<blobLen; i++ ) {
+        uint256 blobLen = size / maxKvSize;
+        for (uint256 i = 0; i < blobLen; i++) {
             uint256 length = maxKvSize;
             if (i == blobLen - 1) {
                 length = size % maxKvSize;
             }
-            bytes32 key = keccak256(abi.encode(msg.sender,block.timestamp,  i));
-            putBlob(key, i, length); 
+            bytes32 key = keccak256(abi.encode(msg.sender, block.timestamp, i));
+            putBlob(key, i, length);
         }
     }
 
@@ -73,5 +75,4 @@ contract TestEthStorageContractKZG is EthStorageContract {
     ) public view returns (bytes32) {
         return _verifySamples(startShardId, hash0, miner, encodedSamples, inclusiveProofs);
     }
-
 }
