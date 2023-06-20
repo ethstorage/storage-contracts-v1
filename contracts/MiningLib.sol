@@ -8,6 +8,8 @@ library MiningLib {
         uint256 blockMined;
     }
 
+    event MinedBlock(uint256 lastMineTime, uint256 difficulty, uint256 blockMined);
+
     function expectedDiff(
         MiningInfo storage info,
         uint256 mineTime,
@@ -41,5 +43,6 @@ library MiningLib {
         info.blockMined = info.blockMined + 1;
         info.difficulty = diff;
         info.lastMineTime = mineTime;
+        emit MinedBlock(mineTime, diff, info.blockMined);
     }
 }
