@@ -8,7 +8,7 @@ library MiningLib {
         uint256 blockMined;
     }
 
-    event MinedBlock(uint256 lastMineTime, uint256 difficulty, uint256 blockMined);
+    event MinedBlock(uint256 indexed lastMineTime, uint256 indexed difficulty, uint256 indexed blockMined);
 
     function expectedDiff(
         MiningInfo storage info,
