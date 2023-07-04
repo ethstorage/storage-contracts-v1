@@ -44,8 +44,8 @@ contract TestEthStorageContractKZG is EthStorageContract {
 
     // a test only method to upload multiple blobs in one tx
     // note that the key is randomly given and the length of the data may not correct
-    function putBlobs(uint256 blobLen) public payable { 
-        for (uint256 i = 0; i < blobLen; i++) { 
+    function putBlobs(uint256 blobLen) public payable {
+        for (uint256 i = 0; i < blobLen; i++) {
             bytes32 key = keccak256(abi.encode(msg.sender, block.timestamp, i));
             putBlob(key, i, maxKvSize);
         }
@@ -59,15 +59,5 @@ contract TestEthStorageContractKZG is EthStorageContract {
 
     function getHashByKvIdx(uint256 kvIdx) public view returns (bytes32) {
         return kvMap[idxMap[kvIdx]].hash;
-    }
-
-    function verifySamples(
-        uint256 startShardId,
-        bytes32 hash0,
-        address miner,
-        bytes32[] memory encodedSamples,
-        bytes[] calldata inclusiveProofs
-    ) public view returns (bytes32) {
-        return _verifySamples(startShardId, hash0, miner, encodedSamples, inclusiveProofs);
     }
 }
