@@ -43,11 +43,9 @@ contract TestEthStorageContractKZG is EthStorageContract {
     }
 
     // a test only method to upload multiple blobs in one tx
-    // note that the key is randomly given and the length of the data may not correct
-    function putBlobs(uint256 blobLen) public payable {
-        for (uint256 i = 0; i < blobLen; i++) {
-            bytes32 key = keccak256(abi.encode(msg.sender, block.timestamp, i));
-            putBlob(key, i, maxKvSize);
+    function putBlobs(bytes32[] memory keys) public payable {
+        for (uint256 i = 0; i < keys.length; i++) {
+            putBlob(keys[i], i, maxKvSize);
         }
     }
 
