@@ -68,6 +68,13 @@ abstract contract StorageContract is DecentralizedKV {
         prepaidLastMineTime = _startTime;
     }
 
+    event MinedBlock(
+        uint256 indexed shardId,
+        uint256 indexed difficulty,
+        uint256 indexed blockMined,
+        uint256 lastMineTime
+    );
+
     function sendValue() public payable {}
 
     function _prepareAppendWithTimestamp(uint256 timestamp) internal {
@@ -175,6 +182,7 @@ abstract contract StorageContract is DecentralizedKV {
 
         // Update mining info.
         MiningLib.update(infos[shardId], minedTs, diff);
+        emit MinedBlock(shardId, diff, info.blockMined, minedTs);
 
         uint256 treasuryReward = (reward * treasuryShare) / 10000;
         uint256 minerReward = reward - treasuryReward;

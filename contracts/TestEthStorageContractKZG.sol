@@ -42,10 +42,20 @@ contract TestEthStorageContractKZG is EthStorageContract {
         hashGetter = address(new BlobHashGetterFactory());
     }
 
-    function putBlob(bytes32 key, uint256 blobIdx, uint256 length) override public payable {
+    // a test only method to upload multiple blobs in one tx
+    function putBlobs(bytes32[] memory keys) public payable {
+        for (uint256 i = 0; i < keys.length; i++) {
+            putBlob(keys[i], i, maxKvSize);
+        }
+    }
+
+    function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable override {
         bytes32 dataHash = BlobHashGetter.getBlobHash(hashGetter, blobIdx);
         uint256 kvIdx = _putInternal(key, dataHash, length);
         emit PutBlob(kvIdx, length, dataHash);
     }
 
+    function getHashByKvIdx(uint256 kvIdx) public view returns (bytes32) {
+        return kvMap[idxMap[kvIdx]].hash;
+    }
 }
