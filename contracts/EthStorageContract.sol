@@ -87,7 +87,7 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
         uint256 modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
         // peInput includes an input point that comes from bit reversed sampleIdxInKv
-        uint256 sampleIdxInKvRev = BinaryRelated.reverse12Bits(sampleIdxInKv);
+        uint256 sampleIdxInKvRev = BinaryRelated.reverseBits(12, sampleIdxInKv);
         uint256 xBls = modExp(ruBls, sampleIdxInKvRev, modulusBls);
         (uint256 versionedHash, uint256 evalX, uint256 evalY) = pointEvaluation(peInput);
         if (evalX != xBls || bytes24(bytes32(versionedHash)) != dataHash) {
