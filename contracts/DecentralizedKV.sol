@@ -117,8 +117,6 @@ contract DecentralizedKV {
             if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0x80, 0x0, len)) {
                 revert(0, 0)
             }
-            // Retrieve the size of the result
-            returndatacopy(0, 0, returndatasize())
 
             // Allocate memory for the result
             result := mload(0x40)
