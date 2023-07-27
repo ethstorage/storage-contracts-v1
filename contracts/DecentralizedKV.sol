@@ -115,18 +115,18 @@ contract DecentralizedKV {
         require(paddr.kvSize >= off + len, "beyond the range of kvSize");
         bytes memory input = abi.encode(paddr.kvIdx, off, len, paddr.hash);
 
-        uint256 retDataLen = 0;
+        uint256 retSize = 0;
 
         assembly {
             if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0x80, 0x0, len)) {
                 revert(0, 0)
             }
-            retDataLen := returndatasize()
+            retSize := returndatasize()
         }
 
         // If this function is called in a regular L1 node, there will no code in 0x33301,
         // and it will simply return immediately instead of revert
-        require(retDataLen > 0, "get() must be called on ES node");
+        require(retSize > 0, "get() must be called on ES node");
 
         assembly {
             // Allocate memory for the result
