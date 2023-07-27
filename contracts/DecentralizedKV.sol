@@ -113,11 +113,23 @@ contract DecentralizedKV {
         require(paddr.kvSize >= off + len, "beyond the range of kvSize");
         bytes memory input = abi.encode(paddr.kvIdx, off, len, paddr.hash);
 
+        uint256 gasUsed = 0;
+
         assembly {
+            let gasBefore := gas()
             if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0x80, 0x0, len)) {
                 revert(0, 0)
             }
+            let gasAfter := gas()
+            gasUsed := sub(gasBefore, gasAfter)
+        }
 
+        // The base gas comsumption of the precompile call should be >= 50000.
+        // If this function is called in a regular L1 node, there will no code in 0x33301,
+        // and it will simply return immediately instead of revert
+        require(gasUsed >= 50000, "get() must be called on ES node");
+
+        assembly {
             // Allocate memory for the result
             result := mload(0x40)
             mstore(result, returndatasize())
