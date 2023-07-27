@@ -105,10 +105,40 @@ contract DecentralizedKV {
         return kvMap[skey].hash != 0;
     }
 
-    // Return the keyed data given off and len.  This function can be only called in JSON-RPC context.
-    function get(bytes32 key, uint256 off, uint256 len) public view virtual returns (bytes memory) {
-        // ES node will override this method to return actual data.
-        require(false, "get() must be called on ES node");
+    // Return the keyed data given off and len.  This function can be only called in JSON-RPC context of ES L2 node.
+    function get(bytes32 key, uint256 off, uint256 len) public view virtual returns (bytes memory result) {
+        require(len > 0, "data len should be non zero");
+
+        bytes32 skey = keccak256(abi.encode(msg.sender, key));
+        PhyAddr memory paddr = kvMap[skey];
+        require(paddr.hash != 0, "data not exist");
+        require(paddr.kvSize >= off + len, "beyond the range of kvSize");
+        bytes memory input = abi.encode(paddr.kvIdx, off, len, paddr.hash);
+
+        uint256 retSize = 0;
+
+        assembly {
+            if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0x80, 0x0, len)) {
+                revert(0, 0)
+            }
+            retSize := returndatasize()
+        }
+
+        // If this function is called in a regular L1 node, there will no code in 0x33301,
+        // and it will simply return immediately instead of revert
+        require(retSize > 0, "get() must be called on ES node");
+
+        assembly {
+            // Allocate memory for the result
+            result := mload(0x40)
+            mstore(result, returndatasize())
+
+            // Update free memory pointer
+            mstore(0x40, add(result, add(returndatasize(), 0x20)))
+
+            // Copy the result to the allocated memory
+            returndatacopy(add(result, 0x20), 0, returndatasize())
+        }
     }
 
     // Remove an existing KV pair to a recipient.  Refund the cost accordingly.
