@@ -20,4 +20,15 @@ library BinaryRelated {
         while ((n & (n - 1) != 0)) n = n & (n - 1);
         return n << 1;
     }
+
+    function reverseBits(uint256 bits, uint256 input) internal pure returns (uint256) {
+        assert(input < (1 << bits));
+        uint256 n = input;
+        uint256 r = 0;
+        for (uint256 k = 0; k < bits; k++) {
+            r = (r * 2) | (n % 2);
+            n = n / 2;
+        }
+        return r;
+    }
 }
