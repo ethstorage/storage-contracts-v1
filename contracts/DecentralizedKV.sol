@@ -150,4 +150,18 @@ contract DecentralizedKV {
     function remove(bytes32 key) public {
         removeTo(key, msg.sender);
     }
+
+    function getKvMetas(uint256[] memory kvIndices) public view virtual returns (bytes32[] memory) {
+        bytes32[] memory res = new bytes32[](kvIndices.length);
+
+        for (uint256 i = 0; i < kvIndices.length; i++) {
+            PhyAddr memory paddr = kvMap[idxMap[i]];
+
+            res[i] |= bytes32(uint256(paddr.kvIdx)) << 216;
+            res[i] |= bytes32(uint256(paddr.kvSize)) << 192;
+            res[i] |= bytes32(paddr.hash) >> 64;
+        }
+
+        return res;
+    }
 }

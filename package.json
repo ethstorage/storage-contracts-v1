@@ -30,7 +30,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "prettier:check": "prettier-check contracts/**/*.sol",
-    "prettier:fix": "prettier --write contracts/**/*.sol test/**/*.js scripts/**/*.js"
+    "prettier:fix": "prettier --write contracts/**/*.sol test/**/*.js scripts/**/*.js",
+    "deploy": "npx hardhat run --network devnet scripts/deploy.js"
   },
   "workspaces": {
     "packages": [

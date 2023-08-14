@@ -13,7 +13,6 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 shardSizeBits;
         uint256 randomChecks;
         uint256 minimumDiff;
-        uint256 targetIntervalSec;
         uint256 cutoff;
         uint256 diffAdjDivisor;
         uint256 treasuryShare; // 10000 = 1.0
@@ -27,7 +26,6 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 public immutable sampleLenBits;
     uint256 public immutable randomChecks;
     uint256 public immutable minimumDiff;
-    uint256 public immutable targetIntervalSec;
     uint256 public immutable cutoff;
     uint256 public immutable diffAdjDivisor;
     uint256 public immutable treasuryShare; // 10000 = 1.0
@@ -58,7 +56,6 @@ abstract contract StorageContract is DecentralizedKV {
         sampleLenBits = _config.maxKvSizeBits - sampleSizeBits;
         randomChecks = _config.randomChecks;
         minimumDiff = _config.minimumDiff;
-        targetIntervalSec = _config.targetIntervalSec;
         cutoff = _config.cutoff;
         diffAdjDivisor = _config.diffAdjDivisor;
         treasuryShare = _config.treasuryShare;
@@ -160,7 +157,7 @@ abstract contract StorageContract is DecentralizedKV {
     ) internal view returns (uint256 diff) {
         MiningLib.MiningInfo storage info = infos[shardId];
         require(minedTs >= info.lastMineTime, "minedTs too small");
-        diff = MiningLib.expectedDiff(info, minedTs, targetIntervalSec, cutoff, diffAdjDivisor, minimumDiff);
+        diff = MiningLib.expectedDiff(info, minedTs, cutoff, diffAdjDivisor, minimumDiff);
     }
 
     function _rewardMiner(uint256 shardId, address miner, uint256 minedTs, uint256 diff) internal {
