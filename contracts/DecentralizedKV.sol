@@ -155,9 +155,9 @@ contract DecentralizedKV {
         bytes32[] memory res = new bytes32[](kvIndices.length);
 
         for (uint256 i = 0; i < kvIndices.length; i++) {
-            PhyAddr memory paddr = kvMap[idxMap[i]];
+            PhyAddr memory paddr = kvMap[idxMap[kvIndices[i]]];
 
-            res[i] |= bytes32(uint256(paddr.kvIdx)) << 216;
+            res[i] |= bytes32(uint256(kvIndices[i])) << 216;
             res[i] |= bytes32(uint256(paddr.kvSize)) << 192;
             res[i] |= bytes32(paddr.hash) >> 64;
         }
