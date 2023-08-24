@@ -15,7 +15,7 @@ async function main() {
     0, // startTime
     0, // storageCost
     0, // dcfFactor
-    10000, // nonceLimit
+    1048576, // nonceLimit
     "0x0000000000000000000000000000000000000000", // treasury
     0 // prepaidAmount
   );
