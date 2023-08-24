@@ -20,7 +20,6 @@ describe("EthStorageContract Test", function () {
         14, // shardSizeBits
         1, // randomChecks
         1, // minimumDiff
-        60, // targetIntervalSec
         40, // cutoff
         1024, // diffAdjDivisor
         0, // treasuryShare
@@ -77,7 +76,6 @@ describe("EthStorageContract Test", function () {
         14, // shardSizeBits
         1, // randomChecks
         1, // minimumDiff
-        60, // targetIntervalSec
         40, // cutoff
         1024, // diffAdjDivisor
         0, // treasuryShare
@@ -203,7 +201,6 @@ describe("EthStorageContract Test", function () {
         14, // shardSizeBits
         2, // randomChecks
         1, // minimumDiff
-        60, // targetIntervalSec
         40, // cutoff
         1024, // diffAdjDivisor
         0, // treasuryShare
@@ -363,7 +360,6 @@ describe("EthStorageContract Test", function () {
         14, // shardSizeBits
         2, // randomChecks
         1, // minimumDiff
-        60, // targetIntervalSec
         40, // cutoff
         1024, // diffAdjDivisor
         0, // treasuryShare

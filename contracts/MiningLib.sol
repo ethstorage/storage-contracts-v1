@@ -11,7 +11,6 @@ library MiningLib {
     function expectedDiff(
         MiningInfo storage info,
         uint256 mineTime,
-        uint256 targetIntervalSec,
         uint256 cutoff,
         uint256 diffAdjDivisor,
         uint256 minDiff
@@ -20,7 +19,7 @@ library MiningLib {
         // Use modified ETH diff algorithm
         uint256 interval = mineTime - info.lastMineTime;
         uint256 diff = info.difficulty;
-        if (interval < targetIntervalSec) {
+        if (interval < cutoff) {
             diff = diff + ((1 - interval / cutoff) * diff) / diffAdjDivisor;
             if (diff < minDiff) {
                 diff = minDiff;
