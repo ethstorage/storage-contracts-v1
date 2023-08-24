@@ -7,10 +7,10 @@ async function main() {
       17, // maxKvSizeBits
       30, // shardSizeBits ~ 1G
       2, // randomChecks
-      1, // minimumDiff
+      1000000, // minimumDiff
       60, // cutoff
       1024, // diffAdjDivisor
-      0, // treasuryShare
+      100, // treasuryShare
     ],
     0, // startTime
     0, // storageCost
