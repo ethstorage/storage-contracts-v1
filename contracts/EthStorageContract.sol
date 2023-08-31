@@ -51,8 +51,8 @@ contract EthStorageContract is StorageContract, Decoder {
             x := mload(add(input, 0x40))
             y := mload(add(input, 0x60))
 
-            // Call the precompiled contract 0x14 = point evaluation, reuse scratch to get the results
-            if iszero(staticcall(not(0), 0x14, add(input, 0x20), 0xc0, 0x0, 0x40)) {
+            // Call the precompiled contract 0x0a = point evaluation, reuse scratch to get the results
+            if iszero(staticcall(not(0), 0x0a, add(input, 0x20), 0xc0, 0x0, 0x40)) {
                 revert(0, 0)
             }
 
