@@ -6,6 +6,12 @@ import "./Decoder.sol";
 import "./BinaryRelated.sol";
 
 contract EthStorageContract is StorageContract, Decoder {
+    uint256 constant modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
+    uint256 constant ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
+    uint256 constant ruBn254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
+    uint256 constant modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
+    uint256 constant fieldElementsPerBlob = 0x1000;
+
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
     constructor(
@@ -51,12 +57,17 @@ contract EthStorageContract is StorageContract, Decoder {
             x := mload(add(input, 0x40))
             y := mload(add(input, 0x60))
 
-            // Call the precompiled contract 0x14 = point evaluation, reuse scratch to get the results
-            if iszero(staticcall(not(0), 0x14, add(input, 0x20), 0xc0, 0x0, 0x40)) {
+            // Call the precompiled contract 0x0a = point evaluation, reuse scratch to get the results
+            if iszero(staticcall(not(0), 0x0a, add(input, 0x20), 0xc0, 0x0, 0x40)) {
                 revert(0, 0)
             }
-
-            // TODO: Check the results
+            // Check the results
+            if iszero(eq(mload(0x0), fieldElementsPerBlob)) {
+                revert(0, 0)
+            }
+            if iszero(eq(mload(0x20), modulusBls)) {
+                revert(0, 0)
+            }
         }
     }
 
@@ -66,8 +77,6 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 sampleIdxInKv,
         uint256 mask
     ) public view returns (bool) {
-        uint256 ruBn254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
-        uint256 modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
         uint256 xBn254 = modExp(ruBn254, sampleIdxInKv, modulusBn254);
 
         uint256[] memory input = new uint256[](3);
@@ -84,8 +93,6 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 decodedData,
         bytes memory peInput
     ) public view returns (bool) {
-        uint256 ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
-        uint256 modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
         // peInput includes an input point that comes from bit reversed sampleIdxInKv
         uint256 sampleIdxInKvRev = BinaryRelated.reverseBits(12, sampleIdxInKv);
         uint256 xBls = modExp(ruBls, sampleIdxInKvRev, modulusBls);
