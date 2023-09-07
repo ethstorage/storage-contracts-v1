@@ -17,7 +17,8 @@ async function main() {
     0, // dcfFactor
     1048576, // nonceLimit
     "0x0000000000000000000000000000000000000000", // treasury
-    0 // prepaidAmount
+    0, // prepaidAmount
+    { gasPrice: 30000000000 }
   );
   await storageContract.deployed();
   console.log("storage contract address is ", storageContract.address);
