@@ -5,12 +5,38 @@ import "./StorageContract.sol";
 import "./Decoder.sol";
 import "./BinaryRelated.sol";
 
+contract BlobHashGetterFactory {
+    constructor() payable {
+        bytes memory code = hex"6000354960005260206000F3";
+        uint256 size = code.length;
+        assembly {
+            return(add(code, 0x020), size)
+        }
+    }
+}
+
+library BlobHashGetter {
+    function getBlobHash(address getter, uint256 idx) internal view returns (bytes32) {
+        bool success;
+        bytes32 blobHash;
+        assembly {
+            mstore(0x0, idx)
+            success := staticcall(gas(), getter, 0x0, 0x20, 0x0, 0x20)
+            blobHash := mload(0x0)
+        }
+        require(success, "failed to get blob hash");
+        return blobHash;
+    }
+}
+
 contract EthStorageContract is StorageContract, Decoder {
     uint256 constant modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
     uint256 constant ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
     uint256 constant ruBn254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
     uint256 constant modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
     uint256 constant fieldElementsPerBlob = 0x1000;
+
+    address public hashGetter;
 
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
@@ -22,7 +48,9 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 _nonceLimit,
         address _treasury,
         uint256 _prepaidAmount
-    ) payable StorageContract(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount) {}
+    ) payable StorageContract(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount) {
+        hashGetter = address(new BlobHashGetterFactory());
+    }
 
     function modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {
         assembly {
@@ -130,9 +158,13 @@ contract EthStorageContract is StorageContract, Decoder {
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
     function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable virtual {
-        bytes32 dataHash = bytes32(0);
+        bytes32 dataHash = BlobHashGetter.getBlobHash(hashGetter, blobIdx);
         uint256 kvIdx = _putInternal(key, dataHash, length);
 
         emit PutBlob(kvIdx, length, dataHash);
+    }
+
+    function getHashByKvIdx(uint256 kvIdx) public view returns (bytes32) {
+        return kvMap[idxMap[kvIdx]].hash;
     }
 }
