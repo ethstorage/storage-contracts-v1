@@ -15,6 +15,7 @@ contract BlobHashGetterFactory {
     }
 }
 
+// TODO: remove the library if solidity has direct support the new opcode
 library BlobHashGetter {
     function getBlobHash(address getter, uint256 idx) internal view returns (bytes32) {
         bool success;
