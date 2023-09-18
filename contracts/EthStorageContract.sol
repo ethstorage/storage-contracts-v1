@@ -164,8 +164,4 @@ contract EthStorageContract is StorageContract, Decoder {
 
         emit PutBlob(kvIdx, length, dataHash);
     }
-
-    function getHashByKvIdx(uint256 kvIdx) public view returns (bytes32) {
-        return kvMap[idxMap[kvIdx]].hash;
-    }
 }
