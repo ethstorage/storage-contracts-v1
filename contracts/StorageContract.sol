@@ -63,6 +63,8 @@ abstract contract StorageContract is DecentralizedKV {
         treasury = _treasury;
         prepaidAmount = _prepaidAmount;
         prepaidLastMineTime = _startTime;
+        // make sure shard0 is ready to mine and pay correctly
+        infos[0].lastMineTime = _startTime;
     }
 
     event MinedBlock(
@@ -171,7 +173,7 @@ abstract contract StorageContract is DecentralizedKV {
         } else if (shardId == lastShardIdx) {
             reward = _paymentIn(storageCost * (lastKvIdx % (1 << shardEntryBits)), info.lastMineTime, minedTs);
             // Additional prepaid for the last shard
-            if (prepaidLastMineTime > startTime && prepaidLastMineTime < minedTs) {
+            if (prepaidLastMineTime < minedTs) {
                 reward += _paymentIn(prepaidAmount, prepaidLastMineTime, minedTs);
                 prepaidLastMineTime = minedTs;
             }
