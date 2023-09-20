@@ -164,14 +164,14 @@ abstract contract StorageContract is DecentralizedKV {
         // Mining is successful.
         // Send reward to coinbase and miner.
         MiningLib.MiningInfo storage info = infos[shardId];
-        uint256 lastShardIdx = (lastKvIdx - 1) >> shardEntryBits;
+        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;
         uint256 reward = 0;
         if (shardId < lastShardIdx) {
             reward = _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
         } else if (shardId == lastShardIdx) {
             reward = _paymentIn(storageCost * (lastKvIdx % (1 << shardEntryBits)), info.lastMineTime, minedTs);
             // Additional prepaid for the last shard
-            if (prepaidLastMineTime < minedTs) {
+            if (prepaidLastMineTime > startTime && prepaidLastMineTime < minedTs) {
                 reward += _paymentIn(prepaidAmount, prepaidLastMineTime, minedTs);
                 prepaidLastMineTime = minedTs;
             }
