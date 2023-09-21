@@ -122,8 +122,8 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 decodedData,
         bytes memory peInput
     ) public view returns (bool) {
-        if (decodedData == 0 && dataHash == 0x0) {
-            return true;
+        if (dataHash == 0x0) {
+            return decodedData == 0;
         }
         // peInput includes an input point that comes from bit reversed sampleIdxInKv
         uint256 sampleIdxInKvRev = BinaryRelated.reverseBits(12, sampleIdxInKv);
