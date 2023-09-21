@@ -83,7 +83,10 @@ abstract contract StorageContract is DecentralizedKV {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
-            infos[shardId].lastMineTime = timestamp;
+            if (shardId != 0) {
+                // shard0 is already opened in constructor
+                infos[shardId].lastMineTime = timestamp;
+            }
         }
 
         require(msg.value >= _upfrontPayment(infos[shardId].lastMineTime), "not enough payment");
