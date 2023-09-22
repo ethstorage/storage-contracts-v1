@@ -63,6 +63,8 @@ abstract contract StorageContract is DecentralizedKV {
         treasury = _treasury;
         prepaidAmount = _prepaidAmount;
         prepaidLastMineTime = _startTime;
+        // make sure shard0 is ready to mine and pay correctly
+        infos[0].lastMineTime = _startTime;
     }
 
     event MinedBlock(
@@ -81,7 +83,10 @@ abstract contract StorageContract is DecentralizedKV {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
-            infos[shardId].lastMineTime = timestamp;
+            if (shardId != 0) {
+                // shard0 is already opened in constructor
+                infos[shardId].lastMineTime = timestamp;
+            }
         }
 
         require(msg.value >= _upfrontPayment(infos[shardId].lastMineTime), "not enough payment");
@@ -164,7 +169,7 @@ abstract contract StorageContract is DecentralizedKV {
         // Mining is successful.
         // Send reward to coinbase and miner.
         MiningLib.MiningInfo storage info = infos[shardId];
-        uint256 lastShardIdx = (lastKvIdx - 1) >> shardEntryBits;
+        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;
         uint256 reward = 0;
         if (shardId < lastShardIdx) {
             reward = _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
