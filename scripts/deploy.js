@@ -7,7 +7,7 @@ async function main() {
   let storageContract = await StorageContract.deploy(
     [
       17, // maxKvSizeBits, 131072
-      40, // shardSizeBits ~ 1T
+      30, // shardSizeBits ~ 1G
       2, // randomChecks
       10000000, // minimumDiff 10000000 / 60 = 16,666 sample/s is enable to mine, and one sAX101 can provide 1M/12 = 83,333 sample/s power
       60, // cutoff, means 1 minute for testnet and may need to change longer later
@@ -19,7 +19,7 @@ async function main() {
     340282365167313208607671216367074279424n, // dcfFactor, it mean 0.85 for yearly discount
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s
     "0x0000000000000000000000000000000000000000", // treasury
-    10000000, // prepaidAmount - ~ 1000 blob cost, and for 1T data, it is about 1000 / 8388608 = 0.00012
+    10000000, // prepaidAmount - ~ 1000 blob cost, and for 1G data, it is about 1000 / 8192 = 0.12
     { gasPrice: 30000000000 }
   );
   await storageContract.deployed();
