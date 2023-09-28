@@ -15,11 +15,11 @@ async function main() {
       100, // treasuryShare, means 1%
     ],
     startTime, // startTime
-    10000, // storageCost - 300GWei per year per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
+    2000000000000, // storageCost - 2000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
     340282365167313208607671216367074279424n, // dcfFactor, it mean 0.85 for yearly discount
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s
     "0x0000000000000000000000000000000000000000", // treasury
-    10000000, // prepaidAmount - ~ 1000 blob cost, and for 1G data, it is about 1000 / 8192 = 0.12
+    200000000000000, // prepaidAmount - ~ 100 blob cost, and for 1G data, it is about 100 / 8192 = 0.012
     { gasPrice: 30000000000 }
   );
   await storageContract.deployed();
