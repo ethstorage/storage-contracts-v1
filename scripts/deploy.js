@@ -25,7 +25,7 @@ async function main() {
   await storageContract.deployed();
   console.log("storage contract address is ", storageContract.address);
 
-  // fund 1 eth into the storage contract to give reward for empty mining
+  // fund 10 eth into the storage contract to give reward for empty mining
   const tx = await storageContract.sendValue({ value: ethers.utils.parseEther("10") });
   await tx.wait();
   console.log("balance of " + storageContract.address, await hre.ethers.provider.getBalance(storageContract.address));
