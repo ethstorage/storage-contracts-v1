@@ -30,7 +30,7 @@ contract TestDecentralizedKV is DecentralizedKV {
         dataMap[kvIdx] = data;
     }
 
-    function get(bytes32 key, uint256 off, uint256 len) public view override returns (bytes memory) {
+    function get(bytes32 key, bool needDecode, uint256 off, uint256 len) public view override returns (bytes memory) {
         if (len == 0) {
             return new bytes(0);
         }

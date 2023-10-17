@@ -106,20 +106,20 @@ contract DecentralizedKV {
     }
 
     // Return the keyed data given off and len.  This function can be only called in JSON-RPC context of ES L2 node.
-    function get(bytes32 key, uint256 off, uint256 len) public view virtual returns (bytes memory) {
+    function get(bytes32 key, bool needDecode, uint256 off, uint256 len) public view virtual returns (bytes memory) {
         require(len > 0, "data len should be non zero");
 
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
         PhyAddr memory paddr = kvMap[skey];
         require(paddr.hash != 0, "data not exist");
         require(paddr.kvSize >= off + len, "beyond the range of kvSize");
-        bytes memory input = abi.encode(paddr.kvIdx, off, len, paddr.hash);
+        bytes memory input = abi.encode(paddr.kvIdx, needDecode, off, len, paddr.hash);
         bytes memory output = new bytes(len);
 
         uint256 retSize = 0;
 
         assembly {
-            if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0x80, add(output, 0x20), len)) {
+            if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0xa0, add(output, 0x20), len)) {
                 revert(0, 0)
             }
             retSize := returndatasize()
