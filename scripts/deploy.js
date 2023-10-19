@@ -19,15 +19,20 @@ async function main() {
     340282365167313208607671216367074279424n, // dcfFactor, it mean 0.85 for yearly discount
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
     "0x0000000000000000000000000000000000000000", // treasury
-    8388608000000000000n, // prepaidAmount - ~ 50% discount, 4096 * 1024 = 4194304 blob cost for 1G data
+    16772160000000000000n, // prepaidAmount - 1024^4 / 131072 = 8388608 blob cost for 1T data, 2000Gwei for one blob
     { gasPrice: 30000000000 }
   );
 
   await storageContract.deployed();
   console.log("storage contract address is ", storageContract.address);
 
-  const receipt = await hre.ethers.provider.getTransactionReceipt(storageContract.deployTransaction.hash)
-  console.log("deployed in block number", receipt.blockNumber, "at", new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+  const receipt = await hre.ethers.provider.getTransactionReceipt(storageContract.deployTransaction.hash);
+  console.log(
+    "deployed in block number",
+    receipt.blockNumber,
+    "at",
+    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+  );
   // fund 10 eth into the storage contract to give reward for empty mining
   const tx = await storageContract.sendValue({ value: ethers.utils.parseEther("10") });
   await tx.wait();
