@@ -21,10 +21,11 @@ contract TestEthStorageContractKZG is EthStorageContract {
         }
     }
 
-    function putHashes(bytes32[] memory hashes) public payable virtual {
-        for (uint256 i = 0; i < hashes.length; i++) {
-            uint256 kvIdx = _putInternal(hashes[i], hashes[i], maxKvSize);
-            emit PutBlob(kvIdx, maxKvSize, hashes[i]);
+    function putHashes(bytes32 hash, uint256 count) public payable virtual {
+        for (uint256 i = 0; i < count; i++) {
+            bytes32 key = keccak256(abi.encode(block.number, i));
+            uint256 kvIdx = _putInternal(key, hash, maxKvSize);
+            emit PutBlob(kvIdx, maxKvSize, hash);
         }
     }
 }
