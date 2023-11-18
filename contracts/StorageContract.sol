@@ -71,7 +71,9 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 indexed shardId,
         uint256 indexed difficulty,
         uint256 indexed blockMined,
-        uint256 lastMineTime
+        uint256 lastMineTime,
+        address miner,
+        uint256 minerReward
     );
 
     function sendValue() public payable {}
@@ -184,13 +186,13 @@ abstract contract StorageContract is DecentralizedKV {
 
         // Update mining info.
         MiningLib.update(infos[shardId], minedTs, diff);
-        emit MinedBlock(shardId, diff, info.blockMined, minedTs);
 
         uint256 treasuryReward = (reward * treasuryShare) / 10000;
         uint256 minerReward = reward - treasuryReward;
         // TODO: avoid reentrancy attack
         payable(treasury).transfer(treasuryReward);
         payable(miner).transfer(minerReward);
+        emit MinedBlock(shardId, diff, info.blockMined, minedTs, miner, minerReward);
     }
 
     /*
