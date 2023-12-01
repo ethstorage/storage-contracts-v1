@@ -10,8 +10,8 @@ async function main() {
       17, // maxKvSizeBits, 131072
       41, // shardSizeBits ~ 2T
       2, // randomChecks
-      10000000, // minimumDiff 10000000 / 43200 = 231 sample/s is enable to mine, and one AX101 can provide 1M/12 = 83,333 sample/s power
-      43200, // cutoff, means target internal is 12 hours 
+      10000000, // minimumDiff 10000000 / 10800 = 925 sample/s is enable to mine, and one AX101 can provide 1M/12 = 83,333 sample/s power
+      10800, // cutoff, means target internal is 12 hours 
       1024, // diffAdjDivisor
       100, // treasuryShare, means 1%
     ],
