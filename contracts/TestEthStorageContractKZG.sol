@@ -20,4 +20,11 @@ contract TestEthStorageContractKZG is EthStorageContract {
             putBlob(keys[i], i, maxKvSize);
         }
     }
+
+    function putBlobs(uint256 num) public payable {
+        for (uint256 i = 0; i < num; i++) {
+            bytes32 key = keccak256(abi.encode(block.number, i));
+            putBlob(key, 0, maxKvSize);
+        }
+    }
 }
