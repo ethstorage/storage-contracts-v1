@@ -10,8 +10,8 @@ async function main() {
       17, // maxKvSizeBits, 131072
       41, // shardSizeBits ~ 2T
       2, // randomChecks
-      10000000, // minimumDiff 10000000 / 10800 = 925 sample/s is enable to mine, and one AX101 can provide 1M/12 = 83,333 sample/s power
-      10800, // cutoff, means target internal is 12 hours 
+      943718400, // 3 * 3600 * 1024 * 1024 / 12 = 943718400 for one replica that can have 100w IOs in one epoch
+      10800, // cutoff, means target internal is 3 hours 
       1024, // diffAdjDivisor
       100, // treasuryShare, means 1%
     ],
