@@ -10,7 +10,7 @@ async function main() {
       17, // maxKvSizeBits, 131072
       41, // shardSizeBits ~ 2T
       2, // randomChecks
-      943718400, // 3 * 3600 * 1024 * 1024 / 12 = 943718400 for one replica that can have 100w IOs in one epoch
+      9437184000, // minimumDiff 10 * 3 * 3600 * 1024 * 1024 / 12 = 9437184000 for ten replica that can have 1M IOs in one epoch
       10800, // cutoff, means target internal is 3 hours 
       1024, // diffAdjDivisor
       100, // treasuryShare, means 1%
