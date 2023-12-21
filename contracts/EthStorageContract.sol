@@ -101,22 +101,21 @@ contract EthStorageContract is StorageContract, Decoder {
     }
 
     function decodeSample(
-        Proof memory proof,
-        uint256 encodingKey,
-        uint256 sampleIdxInKv,
-        uint256 mask
-    ) public view returns (bool) {
-        uint256 xBn254 = modExp(ruBn254, sampleIdxInKv, modulusBn254);
+        uint256[] memory masks,
+        bytes calldata decodeProof
+    ) public view virtual override returns (bool) {        
+        require(masks.length == 2, "invalid mask length");
+        uint256[2] memory publicSignals;
+        for (uint i = 0; i < publicSignals.length; i++) {
+            publicSignals[i] = masks[i];
+        }
 
-        uint256[] memory input = new uint256[](3);
-        // TODO: simple hash to curve mapping
-        input[0] = encodingKey % modulusBn254;
-        input[1] = xBn254;
-        input[2] = mask;
-        return (verifyDecoding(input, proof) == 0);
+        (uint[2] memory pA, uint[2][2] memory pB, uint[2] memory pC) = abi.decode(decodeProof, (uint[2], uint[2][2], uint[2]));
+        
+        return verifyProof(pA, pB, pC, publicSignals);
     }
 
-    function checkInclusive(
+    function _checkInclusive(
         bytes32 dataHash,
         uint256 sampleIdxInKv,
         uint256 decodedData,
@@ -139,25 +138,17 @@ contract EthStorageContract is StorageContract, Decoder {
     /*
      * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
      */
-    function decodeAndCheckInclusive(
+    function checkInclusive(
         uint256 kvIdx,
         uint256 sampleIdxInKv,
-        address miner,
         bytes32 encodedData,
         bytes calldata proof
-    ) public view virtual override returns (bool) {
+    ) public view virtual override returns (bool, uint256) {
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
-        (Proof memory decodeProof, uint256 mask, bytes memory peInput) = abi.decode(proof, (Proof, uint256, bytes));
-
-        // BLOB decoding check
-        if (
-            !decodeSample(decodeProof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
-        ) {
-            return false;
-        }
+        (uint256 mask, bytes memory peInput) = abi.decode(proof, (uint256, bytes));
 
         // Inclusive proof of decodedData = mask ^ encodedData
-        return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), peInput);
+        return (_checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), peInput), mask);
     }
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.

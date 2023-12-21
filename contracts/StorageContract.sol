@@ -113,14 +113,21 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /*
-     * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
+     * check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
      */
-    function decodeAndCheckInclusive(
+    function checkInclusive(
         uint256 kvIdx,
         uint256 sampleIdx,
-        address miner,
         bytes32 encodedSamples,
         bytes calldata inclusiveProof
+    ) public view virtual returns (bool, uint256);
+
+    /*
+     * check the decode proof.
+     */    
+    function decodeSample(
+        uint256[] memory masks,
+        bytes calldata decodeProof
     ) public view virtual returns (bool);
 
     /*
@@ -132,28 +139,29 @@ abstract contract StorageContract is DecentralizedKV {
     function _verifySamples(
         uint256 startShardId,
         bytes32 hash0,
-        address miner,
         bytes32[] memory encodedSamples,
-        bytes[] calldata inclusiveProofs
+        bytes[] calldata inclusiveProofs,
+        bytes calldata decodeProof
     ) internal view returns (bytes32) {
         require(encodedSamples.length == randomChecks, "data length mismatch");
         require(inclusiveProofs.length == randomChecks, "proof length mismatch");
         // calculate the number of samples range of the sample check
         uint256 rows = 1 << (shardEntryBits + sampleLenBits);
 
+        uint256[] memory masks = new uint256[](randomChecks);
         for (uint256 i = 0; i < randomChecks; i++) {
-            uint256 parent = uint256(hash0) % rows;
-            uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
-            uint256 kvIdx = sampleIdx >> sampleLenBits;
+            uint256 sampleIdx = uint256(hash0) % rows + (startShardId << (shardEntryBits + sampleLenBits));
             uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
 
-            require(
-                decodeAndCheckInclusive(kvIdx, sampleIdxInKv, miner, encodedSamples[i], inclusiveProofs[i]),
-                "invalid samples"
-            );
+            (bool success, uint256 mask) = checkInclusive(sampleIdx >> sampleLenBits, sampleIdxInKv, encodedSamples[i], inclusiveProofs[i]);
+            require(success, "invalid samples");
+            masks[i] = mask;
 
             hash0 = keccak256(abi.encode(hash0, encodedSamples[i]));
         }
+
+        require(decodeSample(masks, decodeProof), "decode failed");
+
         return hash0;
     }
 
@@ -208,7 +216,8 @@ abstract contract StorageContract is DecentralizedKV {
         address miner,
         uint256 nonce,
         bytes32[] memory encodedSamples,
-        bytes[] calldata proofs
+        bytes[] calldata inclusiveProofs,
+        bytes calldata decodeProof
     ) internal {
         // Obtain the blockhash of the block number of recent blocks
         require(block.number - blockNumber <= 64, "block number too old");
@@ -222,7 +231,7 @@ abstract contract StorageContract is DecentralizedKV {
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
-        hash0 = _verifySamples(shardId, hash0, miner, encodedSamples, proofs);
+        hash0 = _verifySamples(shardId, hash0, encodedSamples, inclusiveProofs, decodeProof);
 
         // Check difficulty
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
@@ -238,8 +247,9 @@ abstract contract StorageContract is DecentralizedKV {
         address miner,
         uint256 nonce,
         bytes32[] memory encodedSamples,
-        bytes[] calldata proofs
+        bytes[] calldata inclusiveProofs,
+        bytes calldata decodeProof
     ) public virtual {
-        return _mine(blockNumber, shardId, miner, nonce, encodedSamples, proofs);
+        return _mine(blockNumber, shardId, miner, nonce, encodedSamples, inclusiveProofs, decodeProof);
     }
 }
