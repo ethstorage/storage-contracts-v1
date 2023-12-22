@@ -147,6 +147,7 @@ abstract contract StorageContract is DecentralizedKV {
     ) internal view returns (bytes32) {
         require(encodedSamples.length == randomChecks, "data length mismatch");
         require(inclusiveProofs.length == randomChecks, "proof length mismatch");
+        require(masks.length == randomChecks, "masks length mismatch");
         // calculate the number of samples range of the sample check
         uint256 rows = 1 << (shardEntryBits + sampleLenBits);
 

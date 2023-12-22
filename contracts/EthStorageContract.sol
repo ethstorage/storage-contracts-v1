@@ -104,15 +104,9 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256[] memory masks,
         bytes calldata decodeProof
     ) public view virtual override returns (bool) {        
-        require(masks.length == 2, "invalid mask length");
-        uint256[2] memory publicSignals;
-        for (uint i = 0; i < publicSignals.length; i++) {
-            publicSignals[i] = masks[i];
-        }
-
-        (uint[2] memory pA, uint[2][2] memory pB, uint[2] memory pC) = abi.decode(decodeProof, (uint[2], uint[2][2], uint[2]));
+        Proof memory proof = abi.decode(decodeProof, (Proof));
         
-        return verifyProof(pA, pB, pC, publicSignals);
+        return (verifyDecoding(masks, proof) == 0);
     }
 
     function _checkInclusive(
