@@ -24,7 +24,7 @@ async function main() {
     { gasPrice: 30000000000 }
   );
 
-  await storageContract.deployed();
+  await storageContract.waitForDeployment();
   console.log("storage contract address is ", storageContract.address);
 
   const receipt = await hre.ethers.provider.getTransactionReceipt(storageContract.deployTransaction.hash);
@@ -35,7 +35,7 @@ async function main() {
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
   // fund 20 eth into the storage contract to give reward for empty mining
-  const tx = await storageContract.sendValue({ value: ethers.utils.parseEther("20") });
+  const tx = await storageContract.sendValue({ value: ethers.parseEther("20") });
   await tx.wait();
   console.log("balance of " + storageContract.address, await hre.ethers.provider.getBalance(storageContract.address));
 }
