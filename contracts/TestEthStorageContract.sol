@@ -44,30 +44,29 @@ contract TestEthStorageContract is EthStorageContract {
         uint256 kvIdx,
         uint256 sampleIdxInKv,
         bytes32 encodedData,
+        uint256 mask,
         bytes calldata proof
-    ) public view virtual override returns (bool, uint256) {
-        (uint256 mask, MerkleProof memory mProof) = abi.decode(
-            proof,
-            (uint256, MerkleProof)
-        );
+    ) public view virtual override returns (bool) {
+        MerkleProof memory mProof = abi.decode(proof, (MerkleProof));
 
         // Inclusive proof of decodedData = mask ^ encodedData
         if (!MerkleLib.verify(keccak256(abi.encode(mProof.data)), sampleIdxInKv, mProof.rootHash, mProof.proofs)) {
-            return (false, mask);
+            return false;
         }
 
         uint256 expectedEncodedData = uint256(mProof.data) ^ mask;
-        return (bytes32(expectedEncodedData) == encodedData, mask);
+        return bytes32(expectedEncodedData) == encodedData;
     }
 
     function verifySamples(
         uint256 startShardId,
         bytes32 hash0,
         bytes32[] memory encodedSamples,
+        uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
         bytes calldata decodeProof
     ) public view returns (bytes32) {
-        return _verifySamples(startShardId, hash0, encodedSamples, inclusiveProofs, decodeProof);
+        return _verifySamples(startShardId, hash0, encodedSamples, masks, inclusiveProofs, decodeProof);
     }
 
     function getSampleIdx(uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256, uint256) {
@@ -104,6 +103,7 @@ contract TestEthStorageContract is EthStorageContract {
         address miner,
         uint256 nonce,
         bytes32[] memory encodedSamples,
+        uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
         bytes calldata decodeProof
     ) internal {
@@ -119,7 +119,7 @@ contract TestEthStorageContract is EthStorageContract {
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
-        hash0 = _verifySamples(shardId, hash0, encodedSamples, inclusiveProofs, decodeProof);
+        hash0 = _verifySamples(shardId, hash0, encodedSamples, masks, inclusiveProofs, decodeProof);
 
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
 
@@ -132,10 +132,11 @@ contract TestEthStorageContract is EthStorageContract {
         address miner,
         uint256 nonce,
         bytes32[] memory encodedSamples,
+        uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
         bytes calldata decodeProof
     ) public virtual override {
-        return _mineWithoutDiffCompare(blockNumber, shardId, miner, nonce, encodedSamples, inclusiveProofs, decodeProof);
+        return _mineWithoutDiffCompare(blockNumber, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
     }
 
     function _mineWithFixedHash0(
@@ -144,6 +145,7 @@ contract TestEthStorageContract is EthStorageContract {
         address miner,
         uint256 nonce,
         bytes32[] memory encodedSamples,
+        uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
         bytes calldata decodeProof
     ) internal {
@@ -154,7 +156,7 @@ contract TestEthStorageContract is EthStorageContract {
         require(nonce < nonceLimit, "nonce too big");
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
-        bytes32 hash0 = _verifySamples(shardId, initHash0, encodedSamples, inclusiveProofs, decodeProof);
+        bytes32 hash0 = _verifySamples(shardId, initHash0, encodedSamples, masks, inclusiveProofs, decodeProof);
 
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
 
@@ -167,9 +169,10 @@ contract TestEthStorageContract is EthStorageContract {
         address miner,
         uint256 nonce,
         bytes32[] memory encodedSamples,
+        uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
         bytes calldata decodeProof
     ) public virtual {
-        return _mineWithFixedHash0(initHash0, shardId, miner, nonce, encodedSamples, inclusiveProofs, decodeProof);
+        return _mineWithFixedHash0(initHash0, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
     }
 }

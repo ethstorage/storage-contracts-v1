@@ -142,13 +142,13 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 kvIdx,
         uint256 sampleIdxInKv,
         bytes32 encodedData,
+        uint256 mask,
         bytes calldata proof
-    ) public view virtual override returns (bool, uint256) {
+    ) public view virtual override returns (bool) {
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
-        (uint256 mask, bytes memory peInput) = abi.decode(proof, (uint256, bytes));
 
         // Inclusive proof of decodedData = mask ^ encodedData
-        return (_checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), peInput), mask);
+        return _checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), proof);
     }
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
