@@ -104,9 +104,10 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256[] memory masks,
         bytes calldata decodeProof
     ) public view virtual override returns (bool) {        
-        Proof memory proof = abi.decode(decodeProof, (Proof));
-        
-        return (verifyDecoding(masks, proof) == 0);
+        (uint[2] memory pA, uint[2][2] memory pB, uint[2] memory pC) = abi.decode(decodeProof, (uint[2], uint[2][2], uint[2]));
+        // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code' 
+        // and causes the caller function return directly
+        return this.verifyProof(pA, pB, pC, [masks[0], masks[1]]);
     }
 
     function _checkInclusive(
