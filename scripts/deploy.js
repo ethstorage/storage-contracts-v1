@@ -1,3 +1,9 @@
+// We require the Hardhat Runtime Environment explicitly here. This is optional
+// but useful for running the script in a standalone fashion through `node <script>`.
+//
+// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
+// will compile your contracts, add the Hardhat Runtime Environment's members to the
+// global scope, and execute the script.
 const hre = require("hardhat");
 
 async function main() {
@@ -24,20 +30,21 @@ async function main() {
     { gasPrice: 30000000000 }
   );
 
-  await storageContract.waitForDeployment();
-  console.log("storage contract address is ", storageContract.address);
+  storageContract = await storageContract.waitForDeployment();
+  const addr = await storageContract.getAddress();
+  console.log("storage contract address is ", addr);
 
-  const receipt = await hre.ethers.provider.getTransactionReceipt(storageContract.deployTransaction.hash);
+  const blockNumber = (await storageContract.deploymentTransaction()).blockNumber;
   console.log(
     "deployed in block number",
-    receipt.blockNumber,
+    blockNumber,
     "at",
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
   // fund 20 eth into the storage contract to give reward for empty mining
-  const tx = await storageContract.sendValue({ value: ethers.parseEther("20") });
+  const tx = await storageContract.sendValue({ value: hre.ethers.parseEther("20") });
   await tx.wait();
-  console.log("balance of " + storageContract.address, await hre.ethers.provider.getBalance(storageContract.address));
+  console.log("balance of " + addr, await hre.ethers.provider.getBalance(addr));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
