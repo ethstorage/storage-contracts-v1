@@ -39,7 +39,7 @@ describe("EthStorageContract Test", function () {
     }
 
     let blob = ethers.concat(elements);
-    sc.put(key1, blob);
+    await sc.put(key1, blob);
 
     const encodingKey = "0x1122000000000000000000000000000000000000000000000000000000000000";
     const sampleIdxInKv = 123;
@@ -98,8 +98,8 @@ describe("EthStorageContract Test", function () {
     }
 
     let blob = ethers.concat(elements);
-    sc.put(key1, blob);
-    sc.put(key2, blob);
+    await sc.put(key1, blob);
+    await sc.put(key2, blob);
 
     const miner = "0xabcd000000000000000000000000000000000000";
     // 0x663bb8e714f953af09f3b9e17bf792824da0834fcfc4a9ff56e6d3d9a4a1e5ce
@@ -144,8 +144,8 @@ describe("EthStorageContract Test", function () {
     // evaluate merkle proof
     let merkleProof = await ml.getProof(blob, 32, 8, sampleIdxInKv);
     let blobArray = ethers.getBytes(blob);
-    let decodedSample = BigInt(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
-    expect(await ml.verify(decodedSample, sampleIdxInKv, root, merkleProof)).to.equal(true);
+    let decodedSample = BigInt(uint8ArrayToHex(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32)));
+    expect(await ml.verify(bigintToBytes32(decodedSample), sampleIdxInKv, root, [...merkleProof])).to.equal(true);
 
     // combine all proof into single decode-and-inclusive proof
     const proof = abiCoder.encode(
@@ -154,11 +154,11 @@ describe("EthStorageContract Test", function () {
         "uint256",
         "tuple(bytes32, bytes32, bytes32[])",
       ],
-      [decodeProof, mask, [decodedSample, root, merkleProof]]
+      [decodeProof, mask, [bigintToBytes32(decodedSample), root, merkleProof]]
     );
 
     let encodedSample = BigInt(mask) ^ (decodedSample);
-
+    encodedSample = bigintToBytes32(encodedSample)
     expect(
       await sc.decodeAndCheckInclusive(
         0, // kvIdx
@@ -381,8 +381,8 @@ describe("EthStorageContract Test", function () {
 
     let blob = testState.createRandomBlob(0, 256);
     let blob1 = testState.createRandomBlob(1, 256);
-    sc.put(key1, blob);
-    sc.put(key2, blob1);
+    await sc.put(key1, blob);
+    await sc.put(key2, blob1);
 
     // the lastest block number is 11 at current state
     let bn = await ethers.provider.getBlockNumber();
