@@ -1,9 +1,8 @@
-const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 require("dotenv").config();
 
-const { TestState } = require("./lib/test-helper");
+const { TestState, uint8ArrayToHex, bigintToBytes32 } = require("./lib/test-helper");
 const { printlog } = require("./lib/print");
 
 /* declare const key */
@@ -31,15 +30,15 @@ describe("EthStorageContract Test", function () {
       "0x0000000000000000000000000000000000000000", // treasury
       0 // prepaidAmount
     );
-    await sc.deployed();
+    await sc.waitForDeployment();
 
     let elements = new Array(256);
 
     for (let i = 0; i < 256; i++) {
-      elements[i] = ethers.utils.formatBytes32String(i.toString());
+      elements[i] = ethers.encodeBytes32String(i.toString());
     }
 
-    let blob = ethers.utils.hexConcat(elements);
+    let blob = ethers.concat(elements);
     sc.put(key1, blob);
 
     const encodingKey = "0x1122000000000000000000000000000000000000000000000000000000000000";
@@ -87,33 +86,33 @@ describe("EthStorageContract Test", function () {
       "0x0000000000000000000000000000000000000000", // treasury
       0 // prepaidAmount
     );
-    await sc.deployed();
+    await sc.waitForDeployment();
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let elements = new Array(256);
 
     for (let i = 0; i < 256; i++) {
-      elements[i] = ethers.utils.formatBytes32String(i.toString());
+      elements[i] = ethers.encodeBytes32String(i.toString());
     }
 
-    let blob = ethers.utils.hexConcat(elements);
+    let blob = ethers.concat(elements);
     sc.put(key1, blob);
     sc.put(key2, blob);
 
     const miner = "0xabcd000000000000000000000000000000000000";
     // 0x663bb8e714f953af09f3b9e17bf792824da0834fcfc4a9ff56e6d3d9a4a1e5ce
     const encodingKey1 = await sc.getEncodingKey(0, miner);
-    const abiCoder = new ethers.utils.AbiCoder();
+    const abiCoder = new ethers.AbiCoder();
     const root = await ml.merkleRootMinTree(blob, 32);
-    let rootArray = ethers.utils.arrayify(root);
+    let rootArray = ethers.getBytes(root);
     // convert bytes32 to bytes 24
     for (let i = 24; i < 32; i++) {
       rootArray[i] = 0;
     }
-    const encodingKey = ethers.utils.keccak256(
-      abiCoder.encode(["bytes32", "address", "uint256"], [ethers.utils.hexlify(rootArray), miner, 0])
+    const encodingKey = ethers.keccak256(
+      abiCoder.encode(["bytes32", "address", "uint256"], [ethers.hexlify(rootArray), miner, 0])
     );
     expect(encodingKey1).to.equal(encodingKey);
 
@@ -144,8 +143,8 @@ describe("EthStorageContract Test", function () {
 
     // evaluate merkle proof
     let merkleProof = await ml.getProof(blob, 32, 8, sampleIdxInKv);
-    let blobArray = ethers.utils.arrayify(blob);
-    let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
+    let blobArray = ethers.getBytes(blob);
+    let decodedSample = BigInt(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
     expect(await ml.verify(decodedSample, sampleIdxInKv, root, merkleProof)).to.equal(true);
 
     // combine all proof into single decode-and-inclusive proof
@@ -158,7 +157,7 @@ describe("EthStorageContract Test", function () {
       [decodeProof, mask, [decodedSample, root, merkleProof]]
     );
 
-    let encodedSample = ethers.BigNumber.from(mask).xor(decodedSample);
+    let encodedSample = BigInt(mask) ^ (decodedSample);
 
     expect(
       await sc.decodeAndCheckInclusive(
@@ -190,7 +189,7 @@ describe("EthStorageContract Test", function () {
         [encodedSample],
         [proof]
       )
-    ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([initHash, encodedSample])));
+    ).to.equal(ethers.keccak256(ethers.concat([initHash, encodedSample])));
   });
 
   it("verify-sample-8k-blob-2-samples-test", async function () {
@@ -212,10 +211,10 @@ describe("EthStorageContract Test", function () {
       "0x0000000000000000000000000000000000000000", // treasury
       0 // prepaidAmount
     );
-    await sc.deployed();
+    await sc.waitForDeployment();
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let testState = new TestState(sc, ml);
     let blob = testState.createBlob(0, 0, 256);
@@ -255,9 +254,11 @@ describe("EthStorageContract Test", function () {
     ];
     expect(await sc.decodeSample(decodeProof, ecodingKeyFromSC, sampleIdxInKv, mask)).to.equal(true);
 
-    let blobArray = ethers.utils.arrayify(blob);
-    let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
-    let encodedSample = ethers.BigNumber.from(mask).xor(decodedSample);
+    let blobArray = ethers.getBytes(blob);
+    let decodedSample = BigInt(uint8ArrayToHex(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32)))
+    let encodedSample = BigInt(mask) ^ (decodedSample);
+    encodedSample = bigintToBytes32(encodedSample);
+    decodedSample = "0x" + decodedSample.toString(16);
 
     // =================================== The Second Samples =================================
     let hash0 = "0x0000000000000000000000000000000000000000000000000000000000000054";
@@ -268,7 +269,7 @@ describe("EthStorageContract Test", function () {
       await testState.getSampleIdxByHashWithMask(0, nextHash0, nextMask);
     await testState.getMerkleProof(nextKvIdx, nextSampleIdxInKv, nextDecodedSample);
     // calculate encoding key
-    const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
+    const nextEncodingKey = await sc.getEncodingKey(BigInt(nextKvIdx), miner);
     const nextDecodeProof = [
       [
         "0x21eaa5a171f25bf2643a93700c04cf21da572e5b946fb9ca6ca3cf7a41256db2",
@@ -338,7 +339,7 @@ describe("EthStorageContract Test", function () {
         [encodedSample, nextEncodedSample],
         [proof, nextProof]
       )
-    ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([nextHash0, nextEncodedSample])));
+    ).to.equal(ethers.keccak256(ethers.concat([nextHash0, nextEncodedSample])));
 
     await sc.mineWithFixedHash0(hash0, 0, miner, 0, [encodedSample, nextEncodedSample], [proof, nextProof]);
   });
@@ -371,10 +372,10 @@ describe("EthStorageContract Test", function () {
       "0x0000000000000000000000000000000000000000", // treasury
       0 // prepaidAmount
     );
-    await sc.deployed();
+    await sc.waitForDeployment();
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let testState = new TestState(sc, ml);
 

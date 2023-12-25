@@ -39,10 +39,10 @@ class TestState {
   createBlob(kvIdx, beginIdx, length) {
     let elements = new Array(length);
     for (let i = beginIdx; i < beginIdx + length; i++) {
-      elements[i] = ethers.utils.formatBytes32String(i.toString());
+      elements[i] = ethers.encodeBytes32String(i.toString());
     }
 
-    let blob = ethers.utils.hexConcat(elements);
+    let blob = ethers.concat(elements);
     this.BlobMap.set(kvIdx, blob);
     printlog("kvIdx-%d blob length: %d", kvIdx, blob.length);
     return blob;
@@ -50,8 +50,8 @@ class TestState {
 
   createRandomBlob(kvIdx, length) {
     length = 32 * length;
-    let array = ethers.utils.randomBytes(length);
-    let blob = ethers.utils.hexlify(array);
+    let array = ethers.randomBytes(length);
+    let blob = ethers.hexlify(array);
     printlog("kvIdx-%d blob length: %d", kvIdx, blob.length);
 
     this.BlobMap.set(kvIdx, blob);
@@ -63,46 +63,45 @@ class TestState {
       const encodingKey1 = await this.StorageContract.getEncodingKey(kvIdx, miner);
       return encodingKey1;
     }
-    const abiCoder = new ethers.utils.AbiCoder();
+    const abiCoder = new ethers.AbiCoder();
     let blob = this.BlobMap.get(kvIdx);
     const root = await this.MerkleLibContract.merkleRootMinTree(blob, 32);
-    let rootArray = ethers.utils.arrayify(root);
+    let rootArray = ethers.getBytes(root);
     // convert bytes32 to bytes 24
     for (let i = 24; i < 32; i++) {
       rootArray[i] = 0;
     }
-    const encodingKey = ethers.utils.keccak256(
-      abiCoder.encode(["bytes32", "address", "uint256"], [ethers.utils.hexlify(rootArray), miner, kvIdx])
+    const encodingKey = ethers.keccak256(
+      abiCoder.encode(["bytes32", "address", "uint256"], [ethers.hexlify(rootArray), miner, kvIdx])
     );
     return encodingKey;
   }
 
   modEncodingKey(encodingKey) {
     let modulusBn254 = "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001";
-    let modulusBn254Big = ethers.BigNumber.from(modulusBn254);
-    let encodingKeyBig = ethers.BigNumber.from(encodingKey);
-    return encodingKeyBig.mod(modulusBn254Big);
+    let modulusBn254Big = BigInt(modulusBn254);
+    let encodingKeyBig = BigInt(encodingKey);
+    return encodingKeyBig % (modulusBn254Big);
   }
 
   async getSampleIdxByHashWithMask(startShardId, nextHash0, Mask) {
     let [nextSampleIdx, kvIdx, sampleIdxInKv] = await this.StorageContract.getSampleIdx(startShardId, nextHash0);
-    sampleIdxInKv = sampleIdxInKv.toNumber();
-    let sampleKvIdx = kvIdx.toNumber();
+    sampleIdxInKv = Number(sampleIdxInKv);
+    let sampleKvIdx = Number(kvIdx);
     let blobData = this.BlobMap.get(sampleKvIdx);
-    let blobArray = ethers.utils.arrayify(blobData);
+    let blobArray = ethers.getBytes(blobData);
 
-    let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
-    let encodedSample = ethers.BigNumber.from(Mask).xor(decodedSample);
-    return [sampleKvIdx, sampleIdxInKv, decodedSample, encodedSample];
+    let decodedSample = BigInt(uint8ArrayToHex(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32)));
+    let encodedSample = BigInt(Mask) ^ (decodedSample);
+    return [sampleKvIdx, sampleIdxInKv, "0x" + decodedSample.toString(16), "0x" + encodedSample.toString(16)];
   }
 
   async getSampleIdxByHash(startShardId, nextHash0, miner) {
     let [nextSampleIdx, kvIdx, sampleIdxInKv] = await this.StorageContract.getSampleIdx(startShardId, nextHash0);
-    sampleIdxInKv = sampleIdxInKv.toNumber();
     let sampleIdxInKvStr = sampleIdxInKv.toString();
-    let sampleKvIdx = kvIdx.toNumber();
+    let sampleKvIdx = Number(kvIdx);
     let blobData = this.BlobMap.get(sampleKvIdx);
-    let blobArray = ethers.utils.arrayify(blobData);
+    let blobArray = ethers.getBytes(blobData);
 
     let encodingKey = await this.getEncodingKey(kvIdx, miner, true);
     await callPythonToGenreateMask(
@@ -112,8 +111,8 @@ class TestState {
     );
     let Mask = this.getMask();
 
-    let decodedSample = ethers.BigNumber.from(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32));
-    let encodedSample = ethers.BigNumber.from(Mask).xor(decodedSample);
+    let decodedSample = BigInt(uint8ArrayToHex(blobArray.slice(sampleIdxInKv * 32, (sampleIdxInKv + 1) * 32)));
+    let encodedSample = BigInt(Mask) ^ (decodedSample);
     return [encodingKey, sampleKvIdx, sampleIdxInKv, decodedSample, encodedSample];
   }
 
@@ -152,14 +151,14 @@ class TestState {
     let nChunkBits = 8; // 2^8 = 256  ==> 256 * 32 = 8096
     let merkleProof = await this.MerkleLibContract.getProof(blob, chunkSize, nChunkBits, sampleIdxInKv);
     const root = await this.MerkleLibContract.merkleRootMinTree(blob, 32);
-    expect(await this.MerkleLibContract.verify(decodedSampleData, sampleIdxInKv, root, merkleProof)).to.equal(true);
+    expect(await this.MerkleLibContract.verify(decodedSampleData, sampleIdxInKv, root, [...merkleProof])).to.equal(true);
     return [root, merkleProof];
   }
 
   async getSampleProof(root, merkleProof, decodeProof, encodingKey, sampleIdxInKv, decodedSampleData, Mask) {
     expect(await this.StorageContract.decodeSample(decodeProof, encodingKey, sampleIdxInKv, Mask)).to.equal(true);
 
-    const abiCoder = new ethers.utils.AbiCoder();
+    const abiCoder = new ethers.AbiCoder();
     const integrityProof = abiCoder.encode(
       [
         "tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))",
@@ -202,7 +201,7 @@ class TestState {
       if (this.maskList[i].length < 66) {
         this.maskList[i] = this.maskList[i].slice(0, 2).concat("0").concat(this.maskList[i].slice(2, 66));
       }
-      expect(ethers.BigNumber.from(inputs.signals[2]).toHexString()).to.eq(this.maskList[i]);
+      expect(BigInt(inputs.signals[2]).toString(16)).to.eq(this.maskList[i]);
       printlog("<<gen the %dth g16proof end>>", i);
       g16proofs.push(g16proof);
     }
@@ -230,4 +229,23 @@ class TestState {
   }
 }
 
+const HexCharacters = "0123456789abcdef";
+function uint8ArrayToHex(value) {
+  let result = "0x";
+  for (let i = 0; i < value.length; i++) {
+    let v = value[i];
+    result += HexCharacters[(v & 0xf0) >> 4] + HexCharacters[v & 0x0f];
+  }
+  return result;
+}
+
+function bigintToBytes32(num) {
+  num = num.toString(16);
+  num = num.padStart(64, '0');
+  num = "0x" + num;
+  return num;
+}
+
+exports.bigintToBytes32 = bigintToBytes32;
+exports.uint8ArrayToHex = uint8ArrayToHex;
 exports.TestState = TestState;
