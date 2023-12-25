@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "./EthStorageContract.sol";
 import "./MerkleLib.sol";
@@ -12,16 +12,6 @@ contract TestEthStorageContract is EthStorageContract {
         bytes32 rootHash;
         bytes32[] proofs;
     }
-
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _nonceLimit,
-        address _treasury,
-        uint256 _prepaidAmount
-    ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount) {}
 
     function setTimestamp(uint256 ts) public {
         require(ts > currentTimestamp, "ts");

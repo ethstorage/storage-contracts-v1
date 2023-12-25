@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 library BinaryRelated {
     function pow(uint256 fp, uint256 n) internal pure returns (uint256) {

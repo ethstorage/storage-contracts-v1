@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./MerkleLib.sol";
 import "./BinaryRelated.sol";
 
-contract DecentralizedKV {
+contract DecentralizedKV is Initializable {
     event Remove(uint256 indexed kvIdx, uint256 indexed lastKvIdx);
 
     enum DecodeType {
@@ -12,13 +13,13 @@ contract DecentralizedKV {
         PaddingPer31Bytes
     }
 
-    uint256 public immutable storageCost; // Upfront storage cost (pre-dcf)
+    uint256 public storageCost; // Upfront storage cost (pre-dcf)
     // Discounted cash flow factor in seconds
     // E.g., 0.85 yearly discount in second = 0.9999999948465585 = 340282365167313208607671216367074279424 in Q128.128
-    uint256 public immutable dcfFactor;
-    uint256 public immutable startTime;
-    uint256 public immutable maxKvSize;
-    uint40 public lastKvIdx = 0; // number of entries in the store
+    uint256 public dcfFactor;
+    uint256 public startTime;
+    uint256 public maxKvSize;
+    uint40 public lastKvIdx; // number of entries in the store
 
     struct PhyAddr {
         /* Internal address seeking */
@@ -34,7 +35,8 @@ contract DecentralizedKV {
     /* index - skey, reverse lookup */
     mapping(uint256 => bytes32) internal idxMap;
 
-    constructor(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor) payable {
+    function __init_KV(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor) public onlyInitializing {
+        lastKvIdx = 0;
         startTime = _startTime;
         maxKvSize = _maxKvSize;
         storageCost = _storageCost;

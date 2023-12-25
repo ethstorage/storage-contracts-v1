@@ -1,6 +1,8 @@
 require("dotenv").config();
 
 require("@nomicfoundation/hardhat-toolbox");
+require('@nomicfoundation/hardhat-ethers');
+require('@openzeppelin/hardhat-upgrades');
 require("hardhat-gas-reporter");
 require("solidity-coverage");
 
@@ -68,7 +70,7 @@ module.exports = {
     timeout: 120000,
   },
   solidity: {
-    version: "0.8.16",
+    version: "0.8.20",
     settings: {
       optimizer: {
         enabled: true,

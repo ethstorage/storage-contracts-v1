@@ -4,8 +4,11 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "^5.0.1",
+    "@openzeppelin/contracts-upgradeable": "^5.0.1",
+    "@openzeppelin/hardhat-upgrades": "^3.0.1",
     "arb-ts": "^1.0.2",
     "chai": "^4.3.4",
     "dotenv": "^10.0.0",
