@@ -17,6 +17,8 @@ def mine(diff_adj):
     difficulty = init_diff
     time_elapsed = 0
     total_time = 0
+    increase_times = 0
+    decrease_times = 0
 
     while difficulty < target_diff:
         mining_probability = total_mining_power / difficulty
@@ -26,11 +28,13 @@ def mine(diff_adj):
             block_time = time_elapsed
 
             if block_time < target_block_time:
-                difficulty += (1 - (block_time / target_block_time)
-                               ) * diff_adj * difficulty
+                difficulty += diff_adj * difficulty
+                increase_times += 1
             else:
-                difficulty -= ((block_time / target_block_time) -
-                               1) * diff_adj * difficulty
+                multiple = ((block_time // target_block_time) - 1)
+                difficulty -= multiple * diff_adj * difficulty
+                if multiple > 0:
+                    decrease_times += 1
 
             new_time = times[-1] + block_time / 3600
             times.append(new_time)
@@ -40,11 +44,13 @@ def mine(diff_adj):
             time_elapsed = 0
         else:
             time_elapsed += interval
-    return total_time, times, difficulties
+    return total_time, times, difficulties, increase_times, decrease_times
 
 
 def main():
-    _, times, difficulties = mine(1/1024)
+    _, times, difficulties, itimes, dtimes = mine(1/1024)
+    print("adjustment times is %d, increase times is %d, decrease times is %d" % (
+        len(times), itimes, dtimes))
     plt.plot(times, difficulties, marker='o')
     plt.xlabel('Time (hours)')
     plt.ylabel('Difficulty')

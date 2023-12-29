@@ -14,7 +14,7 @@ final_times = []
 num_simulations = 1000
 
 for i in range(num_simulations):
-    total_time, _, _ = es_mining.mine(diff_adj)
+    total_time, _, _, _, _ = es_mining.mine(diff_adj)
 
     final_times.append(total_time / 3600)
     print("Finish %d simulation" % i)
