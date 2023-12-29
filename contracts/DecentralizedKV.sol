@@ -122,7 +122,13 @@ contract DecentralizedKV {
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
         PhyAddr memory paddr = kvMap[skey];
         require(paddr.hash != 0, "data not exist");
-        require(paddr.kvSize >= off + len, "beyond the range of kvSize");
+        if (decodeType == DecodeType.PaddingPer31Bytes) {
+            // ksSize is file size
+            require((paddr.kvSize >= off + len) && (off + len <= maxKvSize - 4096), "beyond the range of kvSize");
+        } else {
+            // maxKvSize is blob size
+            require(maxKvSize >= off + len, "beyond the range of maxKvSize");
+        }
         bytes memory input = abi.encode(paddr.kvIdx, decodeType, off, len, paddr.hash);
         bytes memory output = new bytes(len);
 
