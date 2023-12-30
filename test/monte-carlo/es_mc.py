@@ -21,9 +21,14 @@ for i in range(num_simulations):
 
 mean_value = statistics.mean(final_times)
 variance_value = statistics.variance(final_times)
+std_dev = statistics.stdev(final_times)
 
 print("Mean value:", mean_value)
 print("Variance value:", variance_value)
+print("Standard variance value:", std_dev)
+
+coefficient_of_variation = std_dev / mean_value if mean_value != 0 else None
+print("Coefficient of Variation:", coefficient_of_variation)
 
 
 plt.figure(figsize=(12.8, 9.6))
