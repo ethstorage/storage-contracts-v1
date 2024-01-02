@@ -3,15 +3,14 @@ import matplotlib.pyplot as plt
 
 target_block_time = 3 * 3600
 one_replica_diff = target_block_time / 12 * 1024 * 1024
-init_diff = one_replica_diff * 10
-target_diff = one_replica_diff * 20
+
 
 interval = 12
 one_replica_mining_power = 1024 * 1024
 total_mining_power = one_replica_mining_power * 20
 
 
-def mine(diff_adj):
+def mine(diff_adj, init_diff, target_diff_or_iterations, alg='grow_to_diff'):
     times = [0]
     difficulties = [init_diff]
     difficulty = init_diff
@@ -19,8 +18,21 @@ def mine(diff_adj):
     total_time = 0
     increase_times = 0
     decrease_times = 0
+    target_diff = None
+    iterations = None
+    if alg == 'grow_to_diff':
+        target_diff = target_diff_or_iterations
+    elif alg == 'iterations':
+        iterations = target_diff_or_iterations
+    else:
+        raise RuntimeError("unsupported alg")
 
-    while difficulty < target_diff:
+    while True:
+        if target_diff is not None and difficulty >= target_diff:
+            break
+        if iterations is not None and len(difficulties) > iterations:
+            break
+
         mining_probability = total_mining_power / difficulty
         mining_success = random.random() < mining_probability
 
@@ -48,7 +60,9 @@ def mine(diff_adj):
 
 
 def main():
-    _, times, difficulties, itimes, dtimes = mine(1/1024)
+    init_diff = one_replica_diff * 10
+    target_diff = one_replica_diff * 20
+    _, times, difficulties, itimes, dtimes = mine(1/1024, init_diff, target_diff)
     print("adjustment times is %d, increase times is %d, decrease times is %d" % (
         len(times), itimes, dtimes))
     plt.plot(times, difficulties, marker='o')
