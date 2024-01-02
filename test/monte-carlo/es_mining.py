@@ -23,6 +23,8 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
         iterations = target_diff_or_iterations
     else:
         raise RuntimeError("unsupported alg")
+    
+    target_block_time_cutoff = target_block_time * 2 // 3
 
     while True:
         if target_diff is not None and difficulty >= target_diff:
@@ -37,14 +39,20 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
             block_time = time_elapsed
             block_times.append(time_elapsed)
 
-            if block_time < target_block_time:
-                difficulty += diff_adj * difficulty
+            # if block_time < target_block_time:
+            #     difficulty += diff_adj * difficulty
+            #     increase_times += 1
+            # else:
+            #     multiple = ((block_time // target_block_time) - 1)
+            #     difficulty -= multiple * diff_adj * difficulty
+            #     if multiple > 0:
+            #         decrease_times += 1
+            adjfac = max(1 - block_time // target_block_time_cutoff, -99) / diff_adj
+            difficulty += (1 + adjfac)
+            if difficulty > difficulties[-1]:
                 increase_times += 1
-            else:
-                multiple = ((block_time // target_block_time) - 1)
-                difficulty -= multiple * diff_adj * difficulty
-                if multiple > 0:
-                    decrease_times += 1
+            elif difficulty < difficulties[-1]:
+                decrease_times += 1
 
             new_time = times[-1] + block_time / 3600
             times.append(new_time)
