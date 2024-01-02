@@ -16,8 +16,9 @@ num_simulations = 1000
 target_block_time = 3 * 3600
 one_replica_diff = target_block_time / 12 * 1024 * 1024
 
+alg = sys.argv[2]
 # alg = 'grow_to_diff'
-alg = 'iterations'
+# alg = 'iterations'
 if alg == 'grow_to_diff':
     init_diff = one_replica_diff * 10
     target_diff_or_iterations = one_replica_diff * 20

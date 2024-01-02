@@ -49,8 +49,8 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
         #     difficulty -= multiple * diff_adj * difficulty
         #     if multiple > 0:
         #         decrease_times += 1
-        adjfac = max(1 - block_time // target_block_time_cutoff, -99) / diff_adj
-        difficulty += (1 + adjfac)
+        adjfac = max(1 - block_time // target_block_time_cutoff, -99) * diff_adj
+        difficulty = difficulty * (1 + adjfac)
         if difficulty > difficulties[-1]:
             increase_times += 1
         elif difficulty < difficulties[-1]:
