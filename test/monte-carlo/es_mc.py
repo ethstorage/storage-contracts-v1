@@ -11,7 +11,7 @@ if len(sys.argv) > 1:
     diff_adj = 1 / int(sys.argv[1])
 
 final_times = []
-num_simulations = 100
+num_simulations = 1000
 
 target_block_time = 3 * 3600
 one_replica_diff = target_block_time / 12 * 1024 * 1024

@@ -32,36 +32,38 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
         if iterations is not None and len(difficulties) > iterations:
             break
 
-        mining_probability = total_mining_power / difficulty
-        mining_success = random.random() < mining_probability
+        # mining_probability = total_mining_power / difficulty
+        # mining_success = random.random() < mining_probability
 
-        if mining_success:
-            block_time = time_elapsed
-            block_times.append(time_elapsed)
+        time_elapsed = int(random.expovariate(total_mining_power / difficulty)) * 12
 
-            # if block_time < target_block_time:
-            #     difficulty += diff_adj * difficulty
-            #     increase_times += 1
-            # else:
-            #     multiple = ((block_time // target_block_time) - 1)
-            #     difficulty -= multiple * diff_adj * difficulty
-            #     if multiple > 0:
-            #         decrease_times += 1
-            adjfac = max(1 - block_time // target_block_time_cutoff, -99) / diff_adj
-            difficulty += (1 + adjfac)
-            if difficulty > difficulties[-1]:
-                increase_times += 1
-            elif difficulty < difficulties[-1]:
-                decrease_times += 1
+        # if mining_success:
+        block_time = time_elapsed
+        block_times.append(time_elapsed)
 
-            new_time = times[-1] + block_time / 3600
-            times.append(new_time)
-            difficulties.append(difficulty)
+        # if block_time < target_block_time:
+        #     difficulty += diff_adj * difficulty
+        #     increase_times += 1
+        # else:
+        #     multiple = ((block_time // target_block_time) - 1)
+        #     difficulty -= multiple * diff_adj * difficulty
+        #     if multiple > 0:
+        #         decrease_times += 1
+        adjfac = max(1 - block_time // target_block_time_cutoff, -99) / diff_adj
+        difficulty += (1 + adjfac)
+        if difficulty > difficulties[-1]:
+            increase_times += 1
+        elif difficulty < difficulties[-1]:
+            decrease_times += 1
 
-            total_time += block_time
-            time_elapsed = 0
-        else:
-            time_elapsed += interval
+        new_time = times[-1] + block_time / 3600
+        times.append(new_time)
+        difficulties.append(difficulty)
+
+        total_time += block_time
+        time_elapsed = 0
+        # else:
+        #     time_elapsed += interval
     return total_time, times, difficulties, increase_times, decrease_times, block_times
 
 
