@@ -6,11 +6,26 @@ one_replica_mining_power = 1024 * 1024
 total_mining_power = one_replica_mining_power * 20
 
 
-def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg='grow_to_diff'):
+def next_block_time_exp(mining_power, diff, target_block_time_cutoff, diff_adj):
+    return int(random.expovariate(mining_power / diff)) * 12
+
+
+def next_block_time_iter(mining_power, diff, target_block_time_cutoff, diff_adj):
+    time_elapsed = interval
+    while True:
+        adjfac = max(1 - time_elapsed // target_block_time_cutoff, -99) * diff_adj
+        expected_diff = diff * (1 + adjfac)
+        mining_probability = mining_power / expected_diff
+        if random.random() < mining_probability:
+            return time_elapsed
+        else:
+            time_elapsed += interval
+
+
+def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg='grow_to_diff', next_block_time_getter=next_block_time_iter):
     times = [0]
     difficulties = [init_diff]
     difficulty = init_diff
-    time_elapsed = 0
     total_time = 0
     increase_times = 0
     decrease_times = 0
@@ -23,7 +38,7 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
         iterations = target_diff_or_iterations
     else:
         raise RuntimeError("unsupported alg")
-    
+
     target_block_time_cutoff = target_block_time * 2 // 3
 
     while True:
@@ -35,23 +50,9 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
         if iterations is not None and len(difficulties) > iterations:
             break
 
-        # mining_probability = total_mining_power / difficulty
-        # mining_success = random.random() < mining_probability
+        block_time = next_block_time_getter(total_mining_power, difficulty, target_block_time_cutoff, diff_adj)
+        block_times.append(block_time)
 
-        time_elapsed = int(random.expovariate(total_mining_power / difficulty)) * 12
-
-        # if mining_success:
-        block_time = time_elapsed
-        block_times.append(time_elapsed)
-
-        # if block_time < target_block_time:
-        #     difficulty += diff_adj * difficulty
-        #     increase_times += 1
-        # else:
-        #     multiple = ((block_time // target_block_time) - 1)
-        #     difficulty -= multiple * diff_adj * difficulty
-        #     if multiple > 0:
-        #         decrease_times += 1
         adjfac = max(1 - block_time // target_block_time_cutoff, -99) * diff_adj
         difficulty = difficulty * (1 + adjfac)
         if difficulty > difficulties[-1]:
@@ -64,9 +65,6 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
         difficulties.append(difficulty)
 
         total_time += block_time
-        time_elapsed = 0
-        # else:
-        #     time_elapsed += interval
     return total_time, times, difficulties, increase_times, decrease_times, block_times
 
 
