@@ -1,16 +1,12 @@
 import random
 import matplotlib.pyplot as plt
 
-target_block_time = 3 * 3600
-one_replica_diff = target_block_time / 12 * 1024 * 1024
-
-
 interval = 12
 one_replica_mining_power = 1024 * 1024
 total_mining_power = one_replica_mining_power * 20
 
 
-def mine(diff_adj, init_diff, target_diff_or_iterations, alg='grow_to_diff'):
+def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg='grow_to_diff'):
     times = [0]
     difficulties = [init_diff]
     difficulty = init_diff
@@ -20,6 +16,7 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, alg='grow_to_diff'):
     decrease_times = 0
     target_diff = None
     iterations = None
+    block_times = []
     if alg == 'grow_to_diff':
         target_diff = target_diff_or_iterations
     elif alg == 'iterations':
@@ -38,6 +35,7 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, alg='grow_to_diff'):
 
         if mining_success:
             block_time = time_elapsed
+            block_times.append(time_elapsed)
 
             if block_time < target_block_time:
                 difficulty += diff_adj * difficulty
@@ -56,13 +54,15 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, alg='grow_to_diff'):
             time_elapsed = 0
         else:
             time_elapsed += interval
-    return total_time, times, difficulties, increase_times, decrease_times
+    return total_time, times, difficulties, increase_times, decrease_times, block_times
 
 
 def main():
+    target_block_time = 3 * 3600
+    one_replica_diff = target_block_time / 12 * 1024 * 1024
     init_diff = one_replica_diff * 10
     target_diff = one_replica_diff * 20
-    _, times, difficulties, itimes, dtimes = mine(1/1024, init_diff, target_diff)
+    _, times, difficulties, itimes, dtimes, _ = mine(1/1024, init_diff, target_diff, target_block_time)
     print("adjustment times is %d, increase times is %d, decrease times is %d" % (
         len(times), itimes, dtimes))
     plt.plot(times, difficulties, marker='o')
