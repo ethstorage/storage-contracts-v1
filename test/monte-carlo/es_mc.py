@@ -22,6 +22,9 @@ alg = sys.argv[2]
 if alg == 'grow_to_diff':
     init_diff = one_replica_diff * 10
     target_diff_or_iterations = one_replica_diff * 20
+elif alg == 'drop_to_diff':
+    init_diff = one_replica_diff * 40
+    target_diff_or_iterations = one_replica_diff * 20
 else:
     init_diff = one_replica_diff * 20
     target_diff_or_iterations = 1000
@@ -34,7 +37,7 @@ for i in range(num_simulations):
     all_block_times.extend(block_times)
     print("Finish %d simulation" % i)
 
-if alg == 'grow_to_diff':
+if alg == 'grow_to_diff' or alg == 'drop_to_diff':
     print("Grow stats")
     mean_value = statistics.mean(final_times)
     variance_value = statistics.variance(final_times)

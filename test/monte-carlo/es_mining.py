@@ -17,7 +17,7 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
     target_diff = None
     iterations = None
     block_times = []
-    if alg == 'grow_to_diff':
+    if alg == 'grow_to_diff' or alg == 'drop_to_diff':
         target_diff = target_diff_or_iterations
     elif alg == 'iterations':
         iterations = target_diff_or_iterations
@@ -27,8 +27,11 @@ def mine(diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=
     target_block_time_cutoff = target_block_time * 2 // 3
 
     while True:
-        if target_diff is not None and difficulty >= target_diff:
-            break
+        if target_diff is not None:
+            if alg == 'grow_to_diff' and difficulty >= target_diff:
+                break
+            elif alg == 'drop_to_diff' and difficulty <= target_diff:
+                break
         if iterations is not None and len(difficulties) > iterations:
             break
 
