@@ -40,33 +40,33 @@ contract TestEthStorageContract is EthStorageContract {
     /*
      * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
      */
-    function checkInclusive(
+    function decodeAndCheckInclusive(
         uint256 kvIdx,
         uint256 sampleIdxInKv,
+        address miner,
         bytes32 encodedData,
         uint256 mask,
-        bytes calldata proof
+        bytes calldata inclusiveProof,
+        bytes calldata decodeProof
     ) public view virtual override returns (bool) {
-        MerkleProof memory mProof = abi.decode(proof, (MerkleProof));
+        PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
+        Proof memory proof = abi.decode(decodeProof, (Proof));
+
+        // BLOB decoding check
+        if (
+            !decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
+        ) {
+            return false;
+        }
+
+        MerkleProof memory mProof = abi.decode(inclusiveProof, (MerkleProof));
 
         // Inclusive proof of decodedData = mask ^ encodedData
         if (!MerkleLib.verify(keccak256(abi.encode(mProof.data)), sampleIdxInKv, mProof.rootHash, mProof.proofs)) {
             return false;
         }
-
         uint256 expectedEncodedData = uint256(mProof.data) ^ mask;
         return bytes32(expectedEncodedData) == encodedData;
-    }
-
-    function verifySamples(
-        uint256 startShardId,
-        bytes32 hash0,
-        bytes32[] memory encodedSamples,
-        uint256[] memory masks,
-        bytes[] calldata inclusiveProofs,
-        bytes calldata decodeProof
-    ) public view returns (bytes32) {
-        return _verifySamples(startShardId, hash0, encodedSamples, masks, inclusiveProofs, decodeProof);
     }
 
     function getSampleIdx(uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256, uint256) {
@@ -105,7 +105,7 @@ contract TestEthStorageContract is EthStorageContract {
         bytes32[] memory encodedSamples,
         uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
-        bytes calldata decodeProof
+        bytes[] calldata decodeProof
     ) internal {
         // Obtain the blockhash of the block number of recent blocks
         require(block.number - blockNumber <= 64, "block number too old");
@@ -119,7 +119,7 @@ contract TestEthStorageContract is EthStorageContract {
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
-        hash0 = _verifySamples(shardId, hash0, encodedSamples, masks, inclusiveProofs, decodeProof);
+        hash0 = verifySamples(shardId, hash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
 
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
 
@@ -134,7 +134,7 @@ contract TestEthStorageContract is EthStorageContract {
         bytes32[] memory encodedSamples,
         uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
-        bytes calldata decodeProof
+        bytes[] calldata decodeProof
     ) public virtual override {
         return _mineWithoutDiffCompare(blockNumber, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
     }
@@ -147,7 +147,7 @@ contract TestEthStorageContract is EthStorageContract {
         bytes32[] memory encodedSamples,
         uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
-        bytes calldata decodeProof
+        bytes[] calldata decodeProof
     ) internal {
         // Obtain the blockhash of the block number of recent blocks
         uint256 mineTs = block.timestamp;
@@ -156,7 +156,7 @@ contract TestEthStorageContract is EthStorageContract {
         require(nonce < nonceLimit, "nonce too big");
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
-        bytes32 hash0 = _verifySamples(shardId, initHash0, encodedSamples, masks, inclusiveProofs, decodeProof);
+        bytes32 hash0 = verifySamples(shardId, initHash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
 
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
 
@@ -171,7 +171,7 @@ contract TestEthStorageContract is EthStorageContract {
         bytes32[] memory encodedSamples,
         uint256[] memory masks,
         bytes[] calldata inclusiveProofs,
-        bytes calldata decodeProof
+        bytes[] calldata decodeProof
     ) public virtual {
         return _mineWithFixedHash0(initHash0, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
     }

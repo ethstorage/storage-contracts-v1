@@ -101,16 +101,22 @@ contract EthStorageContract is StorageContract, Decoder {
     }
 
     function decodeSample(
-        uint256[] memory masks,
-        bytes calldata decodeProof
-    ) public view virtual override returns (bool) {        
-        (uint[2] memory pA, uint[2][2] memory pB, uint[2] memory pC) = abi.decode(decodeProof, (uint[2], uint[2][2], uint[2]));
-        // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code' 
-        // and causes the caller function return directly
-        return this.verifyProof(pA, pB, pC, [masks[0], masks[1]]);
+        Proof memory proof,
+        uint256 encodingKey,
+        uint256 sampleIdxInKv,
+        uint256 mask
+    ) public view returns (bool) {
+        uint256 xBn254 = modExp(ruBn254, sampleIdxInKv, modulusBn254);
+
+        uint256[] memory input = new uint256[](3);
+        // TODO: simple hash to curve mapping
+        input[0] = encodingKey % modulusBn254;
+        input[1] = xBn254;
+        input[2] = mask;
+        return (verifyDecoding(input, proof) == 0);
     }
 
-    function _checkInclusive(
+    function checkInclusive(
         bytes32 dataHash,
         uint256 sampleIdxInKv,
         uint256 decodedData,
@@ -126,25 +132,65 @@ contract EthStorageContract is StorageContract, Decoder {
         if (evalX != xBls || bytes24(bytes32(versionedHash)) != dataHash) {
             return false;
         }
-
         return evalY == decodedData;
     }
 
-    /*
-     * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
-     */
-    function checkInclusive(
+    function decodeAndCheckInclusive(
         uint256 kvIdx,
         uint256 sampleIdxInKv,
+        address miner,
         bytes32 encodedData,
         uint256 mask,
-        bytes calldata proof
-    ) public view virtual override returns (bool) {
+        bytes calldata inclusiveProof,
+        bytes calldata decodeProof
+    ) public view virtual returns (bool) {
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
+        Proof memory proof = abi.decode(decodeProof, (Proof));
+        // BLOB decoding check
+        if (
+            !decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
+        ) {
+            return false;
+        }
 
         // Inclusive proof of decodedData = mask ^ encodedData
-        return _checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), proof);
+        return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), inclusiveProof);
     }
+
+    function verifySamples(
+        uint256 startShardId,
+        bytes32 hash0,
+        address miner,
+        bytes32[] memory encodedSamples,
+        uint256[] memory masks,
+        bytes[] calldata inclusiveProofs,
+        bytes[] calldata decodeProof
+    ) public view virtual override returns (bytes32) {
+        require(encodedSamples.length == randomChecks, "data length mismatch");
+        require(masks.length == randomChecks, "masks length mismatch");
+        require(inclusiveProofs.length == randomChecks, "proof length mismatch");
+        require(decodeProof.length == randomChecks, "decodeProof length mismatch");
+
+        // calculate the number of samples range of the sample check
+        uint256 rows = 1 << (shardEntryBits + sampleLenBits);
+
+        for (uint256 i = 0; i < randomChecks; i++) {
+            uint256 kvIdx; 
+            uint256 sampleIdxInKv;
+            {
+                uint256 sampleIdx = uint256(hash0) % rows + (startShardId << (shardEntryBits + sampleLenBits));
+                kvIdx = sampleIdx >> sampleLenBits;
+                sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
+            }
+
+            require(
+                decodeAndCheckInclusive(kvIdx, sampleIdxInKv, miner, encodedSamples[i], masks[i], inclusiveProofs[i], decodeProof[i]),
+                "invalid samples"
+            );
+            hash0 = keccak256(abi.encode(hash0, encodedSamples[i]));
+        }
+        return hash0;
+    }    
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
     function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable virtual {
