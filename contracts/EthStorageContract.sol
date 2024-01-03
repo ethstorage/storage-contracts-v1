@@ -132,9 +132,13 @@ contract EthStorageContract is StorageContract, Decoder {
         if (evalX != xBls || bytes24(bytes32(versionedHash)) != dataHash) {
             return false;
         }
+
         return evalY == decodedData;
     }
 
+    /*
+     * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
+     */
     function decodeAndCheckInclusive(
         uint256 kvIdx,
         uint256 sampleIdxInKv,
