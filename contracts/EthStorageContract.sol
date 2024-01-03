@@ -161,6 +161,18 @@ contract EthStorageContract is StorageContract, Decoder {
         return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), inclusiveProof);
     }
 
+    function getSampleIdx(
+        uint256 rows,
+        uint256 startShardId,
+        bytes32 hash0
+    ) public view returns (uint256, uint256) {
+        uint256 parent = uint256(hash0) % rows;
+        uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
+        uint256 kvIdx = sampleIdx >> sampleLenBits;
+        uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
+        return (kvIdx, sampleIdxInKv);
+    }
+
     function verifySamples(
         uint256 startShardId,
         bytes32 hash0,
@@ -179,13 +191,7 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 rows = 1 << (shardEntryBits + sampleLenBits);
 
         for (uint256 i = 0; i < randomChecks; i++) {
-            uint256 kvIdx; 
-            uint256 sampleIdxInKv;
-            {
-                uint256 sampleIdx = uint256(hash0) % rows + (startShardId << (shardEntryBits + sampleLenBits));
-                kvIdx = sampleIdx >> sampleLenBits;
-                sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
-            }
+            (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
 
             require(
                 decodeAndCheckInclusive(kvIdx, sampleIdxInKv, miner, encodedSamples[i], masks[i], inclusiveProofs[i], decodeProof[i]),

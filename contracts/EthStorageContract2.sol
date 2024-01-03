@@ -44,14 +44,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         uint256 rows = 1 << (shardEntryBits + sampleLenBits);
 
         for (uint256 i = 0; i < randomChecks; i++) {
-            uint256 kvIdx; 
-            uint256 sampleIdxInKv;
-            {
-                uint256 sampleIdx = uint256(hash0) % rows + (startShardId << (shardEntryBits + sampleLenBits));
-                kvIdx = sampleIdx >> sampleLenBits;
-                sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
-            }
-            
+            (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
             PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
             require(
