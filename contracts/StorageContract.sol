@@ -20,23 +20,23 @@ abstract contract StorageContract is DecentralizedKV {
 
     uint256 public constant sampleSizeBits = 5; // 32 bytes per sample
 
-    uint256 public immutable maxKvSizeBits;
-    uint256 public immutable shardSizeBits;
-    uint256 public immutable shardEntryBits;
-    uint256 public immutable sampleLenBits;
-    uint256 public immutable randomChecks;
-    uint256 public immutable minimumDiff;
-    uint256 public immutable cutoff;
-    uint256 public immutable diffAdjDivisor;
-    uint256 public immutable treasuryShare; // 10000 = 1.0
-    uint256 public immutable prepaidAmount;
+    uint256 public maxKvSizeBits;
+    uint256 public shardSizeBits;
+    uint256 public shardEntryBits;
+    uint256 public sampleLenBits;
+    uint256 public randomChecks;
+    uint256 public minimumDiff;
+    uint256 public cutoff;
+    uint256 public diffAdjDivisor;
+    uint256 public treasuryShare; // 10000 = 1.0
+    uint256 public prepaidAmount;
 
     mapping(uint256 => MiningLib.MiningInfo) public infos;
     uint256 public nonceLimit; // maximum nonce per block
     address public treasury;
     uint256 public prepaidLastMineTime;
 
-    constructor(
+    function __init_Storage(
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
@@ -44,11 +44,13 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 _nonceLimit,
         address _treasury,
         uint256 _prepaidAmount
-    ) payable DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor) {
+    ) public onlyInitializing {
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
         require(_config.maxKvSizeBits >= sampleSizeBits, "maxKvSize too small");
         require(_config.randomChecks > 0, "At least one checkpoint needed");
+
+        __init_KV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor);
 
         shardSizeBits = _config.shardSizeBits;
         maxKvSizeBits = _config.maxKvSizeBits;
