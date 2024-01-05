@@ -123,7 +123,7 @@ contract DecentralizedKV {
         PhyAddr memory paddr = kvMap[skey];
         require(paddr.hash != 0, "data not exist");
         if (decodeType == DecodeType.PaddingPer31Bytes) {
-            // ksSize is file size
+            // kvSize is the actual data size that dApp contract stores
             require((paddr.kvSize >= off + len) && (off + len <= maxKvSize - 4096), "beyond the range of kvSize");
         } else {
             // maxKvSize is blob size
