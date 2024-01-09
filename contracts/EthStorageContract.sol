@@ -145,21 +145,63 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 sampleIdxInKv,
         address miner,
         bytes32 encodedData,
-        bytes calldata proof
-    ) public view virtual override returns (bool) {
+        uint256 mask,
+        bytes calldata inclusiveProof,
+        bytes calldata decodeProof
+    ) public view virtual returns (bool) {
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
-        (Proof memory decodeProof, uint256 mask, bytes memory peInput) = abi.decode(proof, (Proof, uint256, bytes));
-
+        Proof memory proof = abi.decode(decodeProof, (Proof));
         // BLOB decoding check
         if (
-            !decodeSample(decodeProof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
+            !decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
         ) {
             return false;
         }
 
         // Inclusive proof of decodedData = mask ^ encodedData
-        return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), peInput);
+        return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), inclusiveProof);
     }
+
+    function getSampleIdx(
+        uint256 rows,
+        uint256 startShardId,
+        bytes32 hash0
+    ) public view returns (uint256, uint256) {
+        uint256 parent = uint256(hash0) % rows;
+        uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
+        uint256 kvIdx = sampleIdx >> sampleLenBits;
+        uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
+        return (kvIdx, sampleIdxInKv);
+    }
+
+    function verifySamples(
+        uint256 startShardId,
+        bytes32 hash0,
+        address miner,
+        bytes32[] memory encodedSamples,
+        uint256[] memory masks,
+        bytes[] calldata inclusiveProofs,
+        bytes[] calldata decodeProof
+    ) public view virtual override returns (bytes32) {
+        require(encodedSamples.length == randomChecks, "data length mismatch");
+        require(masks.length == randomChecks, "masks length mismatch");
+        require(inclusiveProofs.length == randomChecks, "proof length mismatch");
+        require(decodeProof.length == randomChecks, "decodeProof length mismatch");
+
+        // calculate the number of samples range of the sample check
+        uint256 rows = 1 << (shardEntryBits + sampleLenBits);
+
+        for (uint256 i = 0; i < randomChecks; i++) {
+            (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
+
+            require(
+                decodeAndCheckInclusive(kvIdx, sampleIdxInKv, miner, encodedSamples[i], masks[i], inclusiveProofs[i], decodeProof[i]),
+                "invalid samples"
+            );
+            hash0 = keccak256(abi.encode(hash0, encodedSamples[i]));
+        }
+        return hash0;
+    }    
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
     function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable virtual {
