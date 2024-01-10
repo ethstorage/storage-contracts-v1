@@ -13,6 +13,18 @@ contract TestEthStorageContract is EthStorageContract {
         bytes32[] proofs;
     }
 
+    function initialize(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _nonceLimit,
+        address _treasury,
+        uint256 _prepaidAmount
+    ) public payable initializer {
+        __init_eth_storage(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount);
+    }
+
     function setTimestamp(uint256 ts) public {
         require(ts > currentTimestamp, "ts");
         currentTimestamp = ts;

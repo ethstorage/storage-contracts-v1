@@ -36,7 +36,7 @@ abstract contract StorageContract is DecentralizedKV {
     address public treasury;
     uint256 public prepaidLastMineTime;
 
-    function __init_Storage(
+    function __init_storage(
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./EthStorageContract.sol";
+import "./EthStorageContract2.sol";
 
-contract TestEthStorageContractKZG is EthStorageContract {
+contract TestEthStorageContractKZG is EthStorageContract2 {
     // a test only method to upload multiple blobs in one tx
     function putBlobs(bytes32[] memory keys) public payable {
         for (uint256 i = 0; i < keys.length; i++) {

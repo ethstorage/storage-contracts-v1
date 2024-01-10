@@ -1,10 +1,14 @@
 const hre = require("hardhat");
 
+let ownerAddress = null;
 const adminContractAddr = null;
 const storageContractProxy = null;
 
 async function deployContract() {
   const startTime = Math.floor(new Date().getTime() / 1000);
+
+  const [deployer] = await hre.ethers.getSigners();
+  ownerAddress = deployer.address;
 
   const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
@@ -12,11 +16,6 @@ async function deployContract() {
   await implContract.deployed();
   const impl = implContract.address;
   console.log("storage impl address is ", impl);
-
-  const EthStorageAdmin = await hre.ethers.getContractFactory("EthStorageAdmin");
-  const adminContract = await EthStorageAdmin.deploy();
-  await adminContract.deployed();
-  console.log("storage admin address is ", adminContract.address);
 
   const transaction = await implContract.populateTransaction.initialize(
     [
@@ -37,9 +36,11 @@ async function deployContract() {
   );
   const data = transaction.data;
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
-  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, adminContract.address, data);
+  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data);
   await ethStorageProxy.deployed();
+  const admin = await ethStorageProxy.admin();
 
+  console.log("storage admin address is ", admin);
   console.log("storage contract address is ", ethStorageProxy.address);
   const receipt = await hre.ethers.provider.getTransactionReceipt(ethStorageProxy.deployTransaction.hash);
   console.log(
@@ -51,7 +52,7 @@ async function deployContract() {
 
   // fund 20 eth into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.020") });
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("20") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 }
@@ -65,7 +66,7 @@ async function updateContract() {
 
     const EthStorageAdmin = await hre.ethers.getContractFactory("EthStorageAdmin");
     const adminContract = await EthStorageAdmin.attach(adminContractAddr);
-    const tx = await adminContract.upgrade(storageContractProxy, impl);
+    const tx = await adminContract.upgradeAndCall(storageContractProxy, impl, "0x");
     await tx.wait();
     console.log("update contract success!")
 }
