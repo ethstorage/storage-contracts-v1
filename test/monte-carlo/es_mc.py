@@ -22,6 +22,7 @@ if len(sys.argv) > 3:
 final_times = []
 target_block_time = 3 * 3600
 one_replica_diff = target_block_time / 12 * 1024 * 1024
+min_diff = one_replica_diff * 10
 
 if alg == 'grow_to_diff':
     init_diff = one_replica_diff * 10
@@ -36,7 +37,7 @@ else:
 all_block_times = []
 for i in range(num_simulations):
     total_time, times, _, _, _, block_times = es_mining.mine(
-        diff_adj, init_diff, target_diff_or_iterations, target_block_time, alg=alg)
+        diff_adj, init_diff, min_diff, target_diff_or_iterations, target_block_time, alg=alg)
 
     final_times.append(total_time / 3600)
     all_block_times.extend(block_times)
