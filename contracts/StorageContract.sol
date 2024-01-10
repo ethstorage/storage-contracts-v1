@@ -98,7 +98,8 @@ abstract contract StorageContract is DecentralizedKV {
     function upfrontPayment() public view virtual override returns (uint256) {
         uint256 totalEntries = lastKvIdx + 1; // include the one to be put
         uint256 shardId = lastKvIdx >> shardEntryBits; // shard id of the new KV
-        if ((totalEntries % (1 << shardEntryBits)) == 1) {
+        // shard0 is already opened in constructor       
+        if ((totalEntries % (1 << shardEntryBits)) == 1 && shardId != 0) {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
