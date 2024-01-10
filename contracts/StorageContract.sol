@@ -166,6 +166,27 @@ abstract contract StorageContract is DecentralizedKV {
         emit MinedBlock(shardId, diff, info.blockMined, minedTs, miner, minerReward);
     }
 
+    function miningReward(uint256 shardId, uint256 blockNumber) public view returns (uint256) {
+        uint256 minedTs = block.timestamp - (block.number - blockNumber) * 12;
+
+        MiningLib.MiningInfo storage info = infos[shardId];
+        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;        
+        uint256 reward = 0;
+        if (shardId < lastShardIdx) {
+            reward = _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
+        } else if (shardId == lastShardIdx) {
+            reward = _paymentIn(storageCost * (lastKvIdx % (1 << shardEntryBits)), info.lastMineTime, minedTs);
+            // Additional prepaid for the last shard
+            if (prepaidLastMineTime < minedTs) {
+                reward += _paymentIn(prepaidAmount, prepaidLastMineTime, minedTs);
+            }
+        }
+
+        uint256 treasuryReward = (reward * treasuryShare) / 10000;
+        uint256 minerReward = reward - treasuryReward;
+        return minerReward;
+    }
+
     /*
      * On-chain verification of storage proof of sufficient sampling.
      * On-chain verifier will go same routine as off-chain data host, will check the encoded samples by decoding
