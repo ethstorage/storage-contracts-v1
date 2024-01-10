@@ -52,7 +52,7 @@ async function deployContract() {
 
   // fund 20 eth into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("20") });
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.00020") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 }
@@ -64,9 +64,8 @@ async function updateContract() {
     const impl = implContract.address;
     console.log("storage impl address is ", impl);
 
-    const EthStorageAdmin = await hre.ethers.getContractFactory("EthStorageAdmin");
-    const adminContract = await EthStorageAdmin.attach(adminContractAddr);
-    const tx = await adminContract.upgradeAndCall(storageContractProxy, impl, "0x");
+    const EthStorageAdmin = await hre.ethers.getContractAt("EthStorageAdminInterface", adminContractAddr);
+    const tx = await EthStorageAdmin.upgradeAndCall(storageContractProxy, impl, "0x");
     await tx.wait();
     console.log("update contract success!")
 }

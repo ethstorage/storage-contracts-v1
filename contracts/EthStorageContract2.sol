@@ -7,18 +7,6 @@ import "./Decoder2.sol";
 
 contract EthStorageContract2 is EthStorageContract, Decoder2 {
 
-    function initialize(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _nonceLimit,
-        address _treasury,
-        uint256 _prepaidAmount
-    ) public payable initializer {
-        __init_eth_storage(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount);
-    }
-
     function decodeSample(
         uint256[] memory masks,
         bytes calldata decodeProof
