@@ -59,7 +59,7 @@ contract TestEthStorageContract is EthStorageContract {
         return bytes32(expectedEncodedData) == encodedData;
     }
 
-    function getSampleIdx0(uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256, uint256) {
+    function getSampleIdx(uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256, uint256) {
         // calculate the number of samples range of the sample check
         uint256 rows = 1 << (shardEntryBits + sampleLenBits); // kvNumbersPerShard * smapleNumersPerKV
 

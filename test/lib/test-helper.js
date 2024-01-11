@@ -89,7 +89,7 @@ class TestState {
   }
 
   async getSampleIdxByHashWithMask(startShardId, nextHash0, Mask) {
-    let [nextSampleIdx, kvIdx, sampleIdxInKv] = await this.StorageContract.getSampleIdx0(startShardId, nextHash0);
+    let [, kvIdx, sampleIdxInKv] = await this.StorageContract["getSampleIdx(uint256,bytes32)"](startShardId, nextHash0);
     sampleIdxInKv = sampleIdxInKv.toNumber();
     let sampleKvIdx = kvIdx.toNumber();
     let blobData = this.BlobMap.get(sampleKvIdx);
@@ -101,7 +101,7 @@ class TestState {
   }
 
   async getSampleIdxByHash(startShardId, nextHash0, miner) {
-    let [nextSampleIdx, kvIdx, sampleIdxInKv] = await this.StorageContract.getSampleIdx0(startShardId, nextHash0);
+    let [, kvIdx, sampleIdxInKv] = await this.StorageContract["getSampleIdx(uint256,bytes32)"](startShardId, nextHash0);
     sampleIdxInKv = sampleIdxInKv.toNumber();
     let sampleIdxInKvStr = sampleIdxInKv.toString();
     let sampleKvIdx = kvIdx.toNumber();
