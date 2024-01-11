@@ -64,7 +64,7 @@ async function updateContract() {
     const impl = implContract.address;
     console.log("storage impl address is ", impl);
 
-    const EthStorageAdmin = await hre.ethers.getContractAt("EthStorageAdminInterface", adminContractAddr);
+    const EthStorageAdmin = await hre.ethers.getContractAt("IProxyAdmin", adminContractAddr);
     const tx = await EthStorageAdmin.upgradeAndCall(storageContractProxy, impl, "0x");
     await tx.wait();
     console.log("update contract success!")
