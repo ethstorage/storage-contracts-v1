@@ -24,6 +24,10 @@ class TestState {
     return this.encodedSampleList;
   }
 
+  getMaskList() {
+    return this.maskList;
+  }
+
   getMask() {
     if (this.maskIndex == this.maskList.length) {
       throw new Error("no enough mask");
@@ -156,37 +160,7 @@ class TestState {
     return [root, merkleProof];
   }
 
-  async getSampleProof(root, merkleProof, decodeProof, encodingKey, sampleIdxInKv, decodedSampleData, Mask) {
-    expect(await this.StorageContract.decodeSample(decodeProof, encodingKey, sampleIdxInKv, Mask)).to.equal(true);
-
-    const abiCoder = new ethers.utils.AbiCoder();
-    const integrityProof = abiCoder.encode(
-      [
-        "tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))",
-        "uint256",
-        "tuple(bytes32, bytes32, bytes32[])",
-      ],
-      [decodeProof, Mask, [decodedSampleData, root, merkleProof]]
-    );
-
-    return integrityProof;
-  }
-
   async getIntegrityProof(decodeProof, Mask, encodingKey, sampleKvIdx, sampleIdxInKv, decodedSampleData) {
-    let [root, merkleProof] = await this.getMerkleProof(sampleKvIdx, sampleIdxInKv, decodedSampleData);
-    let integrityProof = await this.getSampleProof(
-      root,
-      merkleProof,
-      decodeProof,
-      encodingKey,
-      sampleIdxInKv,
-      decodedSampleData,
-      Mask
-    );
-    return integrityProof;
-  }
-
-  async getIntegrityProof2(decodeProof, Mask, encodingKey, sampleKvIdx, sampleIdxInKv, decodedSampleData) {
     let [root, merkleProof] = await this.getMerkleProof(sampleKvIdx, sampleIdxInKv, decodedSampleData);
     expect(await this.StorageContract.decodeSample(decodeProof, encodingKey, sampleIdxInKv, Mask)).to.equal(true);
 

@@ -1,4 +1,3 @@
-const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 require("dotenv").config();
@@ -299,7 +298,7 @@ describe("EthStorageContract Test", function () {
       ],
     ];
 
-    let proof = await testState.getIntegrityProof2(
+    let proof = await testState.getIntegrityProof(
       decodeProof,
       mask,
       ecodingKeyFromSC,
@@ -307,7 +306,7 @@ describe("EthStorageContract Test", function () {
       sampleIdxInKv,
       decodedSample
     );
-    let nextProof = await testState.getIntegrityProof2(
+    let nextProof = await testState.getIntegrityProof(
       nextDecodeProof,
       nextMask,
       nextEncodingKey,
@@ -405,8 +404,8 @@ describe("EthStorageContract Test", function () {
 
     let blob = testState.createRandomBlob(0, 256);
     let blob1 = testState.createRandomBlob(1, 256);
-    await sc.put(key1, blob);
-    await sc.put(key2, blob1);
+    sc.put(key1, blob);
+    sc.put(key2, blob1);
 
     // the lastest block number is 11 at current state
     let bn = await ethers.provider.getBlockNumber();
@@ -418,6 +417,13 @@ describe("EthStorageContract Test", function () {
 
     let finalHash0 = await testState.execAllSamples(2, bn, miner, 0, 0);
     let proofs = await testState.getAllIntegrityProofs();
+    let inclusiveProofs = [];
+    let decodeProof = [];
+    for(let proof of proofs) {
+      inclusiveProofs.push(proof.inclusiveProof);
+      decodeProof.push(proof.decodeProof);
+    }
+    let masks = testState.getMaskList();
 
     expect(
       await sc.verifySamples(
@@ -425,10 +431,21 @@ describe("EthStorageContract Test", function () {
         initHash0, // hash0
         miner,
         testState.getEncodedSampleList(),
-        proofs
+        masks,
+        inclusiveProofs,
+        decodeProof
       )
     ).to.equal(finalHash0);
 
-    await sc.mine(bn, 0, miner, 0, testState.getEncodedSampleList(), proofs);
+    await sc.mine(
+      bn,
+      0,
+      miner,
+      0,
+      testState.getEncodedSampleList(),
+      masks,
+      inclusiveProofs,
+      decodeProof
+    );
   });
 });
