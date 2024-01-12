@@ -3,6 +3,7 @@ const hre = require("hardhat");
 let ownerAddress = null;
 const adminContractAddr = null;
 const storageContractProxy = null;
+const gasPrice = 30000000000;
 
 async function deployContract() {
   const startTime = Math.floor(new Date().getTime() / 1000);
@@ -12,7 +13,7 @@ async function deployContract() {
 
   const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
-  const implContract = await StorageContract.deploy({ gasPrice: 30000000000 });
+  const implContract = await StorageContract.deploy({ gasPrice: gasPrice });
   await implContract.deployed();
   const impl = implContract.address;
   console.log("storage impl address is ", impl);
@@ -36,7 +37,7 @@ async function deployContract() {
   );
   const data = transaction.data;
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
-  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: 30000000000 });
+  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
   await ethStorageProxy.deployed();
   const admin = await ethStorageProxy.admin();
 
@@ -59,7 +60,7 @@ async function deployContract() {
 
 async function updateContract() {
     const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
-    const implContract = await StorageContract.deploy({ gasPrice: 30000000000 });
+    const implContract = await StorageContract.deploy({ gasPrice: gasPrice });
     await implContract.deployed();
     const impl = implContract.address;
     console.log("storage impl address is ", impl);
