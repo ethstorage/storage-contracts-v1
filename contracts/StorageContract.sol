@@ -157,7 +157,7 @@ abstract contract StorageContract is DecentralizedKV {
 
     function _miningReward(uint256 shardId, uint256 minedTs) internal view returns (bool, uint256, uint256) {
         MiningLib.MiningInfo storage info = infos[shardId];
-        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;        
+        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;
         uint256 reward = 0;
         bool updatePrepaidTime = false;
         if (shardId < lastShardIdx) {
