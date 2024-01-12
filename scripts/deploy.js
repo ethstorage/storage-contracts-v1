@@ -32,11 +32,11 @@ async function deployContract() {
     340282366367469178095360967382638002176n, // dcfFactor, it mean 0.95 for yearly discount
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
     "0x0000000000000000000000000000000000000000", // treasury
-    4194304000000000000000n
+    4194304000000000000000n // prepaidAmount - 50% * 2 * 1024^4 / 131072 * 500000Gwei, it also means 4194 ETH for half of the shard
   );
   const data = transaction.data;
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
-  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data);
+  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: 30000000000 });
   await ethStorageProxy.deployed();
   const admin = await ethStorageProxy.admin();
 
