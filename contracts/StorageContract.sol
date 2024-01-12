@@ -141,37 +141,25 @@ abstract contract StorageContract is DecentralizedKV {
     function _rewardMiner(uint256 shardId, address miner, uint256 minedTs, uint256 diff) internal {
         // Mining is successful.
         // Send reward to coinbase and miner.
-        MiningLib.MiningInfo storage info = infos[shardId];
-        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;
-        uint256 reward = 0;
-        if (shardId < lastShardIdx) {
-            reward = _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
-        } else if (shardId == lastShardIdx) {
-            reward = _paymentIn(storageCost * (lastKvIdx % (1 << shardEntryBits)), info.lastMineTime, minedTs);
-            // Additional prepaid for the last shard
-            if (prepaidLastMineTime < minedTs) {
-                reward += _paymentIn(prepaidAmount, prepaidLastMineTime, minedTs);
-                prepaidLastMineTime = minedTs;
-            }
+        (bool updatePrepaidTime, uint256 treasuryReward, uint256 minerReward) = _miningReward(shardId, minedTs);
+        if (updatePrepaidTime) {
+            prepaidLastMineTime = minedTs;
         }
 
         // Update mining info.
         MiningLib.update(infos[shardId], minedTs, diff);
 
-        uint256 treasuryReward = (reward * treasuryShare) / 10000;
-        uint256 minerReward = reward - treasuryReward;
         // TODO: avoid reentrancy attack
         payable(treasury).transfer(treasuryReward);
         payable(miner).transfer(minerReward);
-        emit MinedBlock(shardId, diff, info.blockMined, minedTs, miner, minerReward);
+        emit MinedBlock(shardId, diff, infos[shardId].blockMined, minedTs, miner, minerReward);
     }
 
-    function miningReward(uint256 shardId, uint256 blockNumber) public view returns (uint256) {
-        uint256 minedTs = block.timestamp - (block.number - blockNumber) * 12;
-
+    function _miningReward(uint256 shardId, uint256 minedTs) internal view returns (bool, uint256, uint256) {
         MiningLib.MiningInfo storage info = infos[shardId];
         uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;        
         uint256 reward = 0;
+        bool updatePrepaidTime = false;
         if (shardId < lastShardIdx) {
             reward = _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
         } else if (shardId == lastShardIdx) {
@@ -179,11 +167,18 @@ abstract contract StorageContract is DecentralizedKV {
             // Additional prepaid for the last shard
             if (prepaidLastMineTime < minedTs) {
                 reward += _paymentIn(prepaidAmount, prepaidLastMineTime, minedTs);
+                updatePrepaidTime = true;
             }
         }
 
         uint256 treasuryReward = (reward * treasuryShare) / 10000;
         uint256 minerReward = reward - treasuryReward;
+        return (updatePrepaidTime, treasuryReward, minerReward);
+    }
+
+    function miningReward(uint256 shardId, uint256 blockNumber) public view returns (uint256) {
+        uint256 minedTs = block.timestamp - (block.number - blockNumber) * 12;
+        (,, uint256 minerReward) = _miningReward(shardId, minedTs);
         return minerReward;
     }
 
