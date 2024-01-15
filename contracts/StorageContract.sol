@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./DecentralizedKV.sol";
 import "./MiningLib.sol";
+import "./RandaoLib.sol";
 
 /*
  * EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification.
@@ -199,21 +200,22 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 nonce,
         bytes32[] memory encodedSamples,
         uint256[] memory masks,
+        bytes calldata randaoProof,
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) internal {
         // Obtain the blockhash of the block number of recent blocks
         require(block.number - blockNumber <= 64, "block number too old");
-        bytes32 bh = blockhash(blockNumber);
-        require(bh != bytes32(0), "failed to obtain blockhash");
+        // To avoid stack too deep, we resue the hash0 instead of using randao
+        bytes32 hash0 = RandaoLib.verifyHeaderAndGetRandao(block.number, randaoProof);
         // Estimate block timestamp
         uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
-
+        
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
         require(nonce < nonceLimit, "nonce too big");
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
-        bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
+        hash0 = keccak256(abi.encode(miner, hash0, nonce));
         hash0 = verifySamples(shardId, hash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
 
         // Check difficulty
@@ -231,9 +233,10 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 nonce,
         bytes32[] memory encodedSamples,
         uint256[] memory masks,
+        bytes calldata randaoProof,
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) public virtual {
-        return _mine(blockNumber, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
+        return _mine(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
     }
 }
