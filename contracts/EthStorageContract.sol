@@ -41,7 +41,7 @@ contract EthStorageContract is StorageContract, Decoder {
 
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
-    constructor(
+    function initialize(
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
@@ -49,7 +49,8 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 _nonceLimit,
         address _treasury,
         uint256 _prepaidAmount
-    ) payable StorageContract(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount) {
+    ) public payable initializer {
+        __init_storage(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount);
         hashGetter = address(new BlobHashGetterFactory());
     }
 

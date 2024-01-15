@@ -6,21 +6,11 @@ import "./Decoder2.sol";
 
 
 contract EthStorageContract2 is EthStorageContract, Decoder2 {
-    
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _nonceLimit,
-        address _treasury,
-        uint256 _prepaidAmount
-    ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount) {}
 
     function decodeSample(
         uint256[] memory masks,
         bytes calldata decodeProof
-    ) public view returns (bool) {        
+    ) public view returns (bool) {
         (uint[2] memory pA, uint[2][2] memory pB, uint[2] memory pC) = abi.decode(decodeProof, (uint[2], uint[2][2], uint[2]));
         // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code' 
         // and causes the caller function return directly
@@ -56,5 +46,5 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
 
         require(decodeSample(masks, decodeProof[0]), "decode failed");
         return hash0;
-    }    
+    }
 }
