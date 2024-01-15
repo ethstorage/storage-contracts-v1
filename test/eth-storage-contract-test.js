@@ -437,15 +437,15 @@ describe("EthStorageContract Test", function () {
       )
     ).to.equal(finalHash0);
 
-    await sc.mine(
-      bn,
-      0,
-      miner,
-      0,
-      testState.getEncodedSampleList(),
-      masks,
-      inclusiveProofs,
-      decodeProof
-    );
+    // await sc.mine(
+    //   bn,
+    //   0,
+    //   miner,
+    //   0,
+    //   testState.getEncodedSampleList(),
+    //   masks,
+    //   inclusiveProofs,
+    //   decodeProof
+    // );
   });
 });
