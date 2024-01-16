@@ -4,6 +4,8 @@ require("dotenv").config();
 
 const { TestState } = require("./lib/test-helper");
 const { printlog } = require("./lib/print");
+const { generateRandaoProof } = require("./lib/prover");
+const { keccak256 } = ethers.utils;
 
 /* declare const key */
 const key1 = "0x0000000000000000000000000000000000000000000000000000000000000001";
@@ -411,11 +413,15 @@ describe("EthStorageContract Test", function () {
     let bn = await ethers.provider.getBlockNumber();
     printlog("Mining at block height %d", bn);
 
+    const blockNumber = ethers.utils.hexValue(bn);
+    const block = await ethers.provider.send('eth_getBlockByNumber', [blockNumber, false]);
+    const randao = block.mixHash;
+
     const miner = "0xabcd000000000000000000000000000000000000";
-    let initHash0 = await testState.getInitHash0(bn, miner, 0);
+    let initHash0 = await testState.getInitHash0(randao, miner, 0);
     printlog("calculate the initHash0 %v", initHash0);
 
-    let finalHash0 = await testState.execAllSamples(2, bn, miner, 0, 0);
+    let finalHash0 = await testState.execAllSamples(2, randao, miner, 0, 0);
     let proofs = await testState.getAllIntegrityProofs();
     let inclusiveProofs = [];
     let decodeProof = [];
@@ -437,15 +443,20 @@ describe("EthStorageContract Test", function () {
       )
     ).to.equal(finalHash0);
 
-    // await sc.mine(
-    //   bn,
-    //   0,
-    //   miner,
-    //   0,
-    //   testState.getEncodedSampleList(),
-    //   masks,
-    //   inclusiveProofs,
-    //   decodeProof
-    // );
+    const encodedHeader = await generateRandaoProof(block);
+    const hash = keccak256(encodedHeader);
+    expect(hash).to.equal(block.hash);
+
+    await sc.mine(
+      bn,
+      0,
+      miner,
+      0,
+      testState.getEncodedSampleList(),
+      masks,
+      encodedHeader,
+      inclusiveProofs,
+      decodeProof
+    );
   });
 });

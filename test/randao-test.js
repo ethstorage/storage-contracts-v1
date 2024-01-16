@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { keccak256 } = ethers.utils;
-const RLP = require('rlp');
+const { generateRandaoProof } = require("./lib/prover");
 
 
 describe("Randao Test", function () {
@@ -45,28 +45,7 @@ describe("Randao Test", function () {
       let bn = await ethers.provider.getBlockNumber();
       const blockNumber = ethers.utils.hexValue(bn);
       const block = await ethers.provider.send('eth_getBlockByNumber', [blockNumber, false]);
-
-      const header = [
-        block.parentHash,
-        block.sha3Uncles,
-        block.miner,
-        block.stateRoot,
-        block.transactionsRoot,
-        block.receiptsRoot,
-        block.logsBloom,
-        "0x",
-        block.number,
-        block.gasLimit,
-        block.gasUsed,
-        block.timestamp,
-        block.extraData,
-        block.mixHash,
-        block.nonce,
-        "0x",
-        block.withdrawalsRoot
-      ];
-
-      const encodedHeader = RLP.encode(header);
+      const encodedHeader = await generateRandaoProof(block);
       const hash = keccak256(encodedHeader);
       expect(hash).to.equal(block.hash);
 

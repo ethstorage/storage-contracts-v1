@@ -81,9 +81,8 @@ contract TestEthStorageContract is EthStorageContract {
         return bh;
     }
 
-    function getInitHash0(uint256 blockNumber, address miner, uint256 nonce) public view returns (bytes32) {
-        bytes32 bh = getBlockHash(blockNumber);
-        bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
+    function getInitHash0(bytes32 randao, address miner, uint256 nonce) public pure returns (bytes32) {
+        bytes32 hash0 = keccak256(abi.encode(miner, randao, nonce));
         return hash0;
     }
 
@@ -101,7 +100,7 @@ contract TestEthStorageContract is EthStorageContract {
         // Obtain the blockhash of the block number of recent blocks
         require(block.number - blockNumber <= 64, "block number too old");
         // To avoid stack too deep, we resue the hash0 instead of using randao
-        bytes32 hash0 = RandaoLib.verifyHeaderAndGetRandao(block.number, randaoProof);
+        bytes32 hash0 = RandaoLib.verifyHeaderAndGetRandao(blockNumber, randaoProof);
         // Estimate block timestamp
         uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
 
