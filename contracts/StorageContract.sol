@@ -210,7 +210,7 @@ abstract contract StorageContract is DecentralizedKV {
         bytes32 hash0 = RandaoLib.verifyHeaderAndGetRandao(blockNumber, randaoProof);
         // Estimate block timestamp
         uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
-        
+
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
         require(nonce < nonceLimit, "nonce too big");
 
