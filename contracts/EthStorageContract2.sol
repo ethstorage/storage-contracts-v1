@@ -91,4 +91,4 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         require(decodeSample(masks, kvIdxs, sampleIdxs, miner, decodeProof[0]), "decode failed");
         return hash0;
     }
-} 
+}
