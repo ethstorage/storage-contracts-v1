@@ -43,19 +43,19 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         uint256 startShardId, 
         uint256 rows, 
         bytes32 hash0,
-        bytes32 encodedSamples,
-        uint256 masks,
-        bytes calldata inclusiveProofs
+        bytes32 encodedSample,
+        uint256 mask,
+        bytes calldata inclusiveProof
     ) internal view returns (bytes32, uint256, uint256) {
         (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
                 
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
         require(
-            checkInclusive(kvInfo.hash, sampleIdxInKv, masks ^ uint256(encodedSamples), inclusiveProofs),
+            checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedSample), inclusiveProof),
             "invalid samples"
         );
-        hash0 = keccak256(abi.encode(hash0, encodedSamples));
+        hash0 = keccak256(abi.encode(hash0, encodedSample));
         return (hash0, kvIdx, sampleIdxInKv);
     }
 
