@@ -126,13 +126,13 @@ class TestState {
     return nextHash0;
   }
 
-  async getInitHash0(blockNumber, miner, nonce) {
-    let initHash0 = await this.StorageContract.getInitHash0(blockNumber, miner, nonce);
+  async getInitHash0(randao, miner, nonce) {
+    let initHash0 = await this.StorageContract.getInitHash0(randao, miner, nonce);
     return initHash0;
   }
 
-  async execAllSamples(randomChecks, blockNumber, miner, nonce, startShardId) {
-    let initHash0 = await this.getInitHash0(blockNumber, miner, nonce);
+  async execAllSamples(randomChecks, randao, miner, nonce, startShardId) {
+    let initHash0 = await this.getInitHash0(randao, miner, nonce);
     let hash0 = initHash0;
     for (let i = 0; i < randomChecks; i++) {
       let [encodingkey, sampleKvIdx, sampleIdxInKv, decodedSample, encodedSample] = await this.getSampleIdxByHash(
