@@ -9,6 +9,6 @@ contract TestRandao {
     }
 
     function verifyHistoricalRandao(uint256 blockNumber, bytes memory proof) public view returns (bytes32) {
-        return RandaoLib.verifyHeaderAndGetRandao(blockNumber, proof);
+        return RandaoLib.verifyHistoricalRandao(blockNumber, proof);
     }
 }

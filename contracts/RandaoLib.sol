@@ -24,7 +24,7 @@ library RandaoLib {
         return getRandaoFromHeader(item);
     }
 
-    function verifyHeaderAndGetRandao(uint256 blockNumber, bytes memory headerRlpBytes) view internal returns (bytes32) {
+    function verifyHistoricalRandao(uint256 blockNumber, bytes memory headerRlpBytes) view internal returns (bytes32) {
         bytes32 bh = blockhash(blockNumber);
         require(bh != bytes32(0), "failed to obtain blockhash");
         return verifyHeaderAndGetRandao(bh, headerRlpBytes);

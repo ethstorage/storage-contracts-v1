@@ -100,7 +100,7 @@ contract TestEthStorageContract is EthStorageContract {
         // Obtain the blockhash of the block number of recent blocks
         require(block.number - blockNumber <= 64, "block number too old");
         // To avoid stack too deep, we resue the hash0 instead of using randao
-        bytes32 hash0 = RandaoLib.verifyHeaderAndGetRandao(blockNumber, randaoProof);
+        bytes32 hash0 = RandaoLib.verifyHistoricalRandao(blockNumber, randaoProof);
         // Estimate block timestamp
         uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
 
