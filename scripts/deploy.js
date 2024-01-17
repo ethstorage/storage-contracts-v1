@@ -3,7 +3,7 @@ const hre = require("hardhat");
 let ownerAddress = null;
 const adminContractAddr = null;
 const storageContractProxy = null;
-const gasPrice = 30000000000;
+const gasPrice = null;
 
 async function deployContract() {
   const startTime = Math.floor(new Date().getTime() / 1000);
@@ -51,9 +51,9 @@ async function deployContract() {
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
 
-  // fund 0.2 eth into the storage contract to give reward for empty mining
+  // fund 0.0002 eth into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.2") });
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.0002") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 }
