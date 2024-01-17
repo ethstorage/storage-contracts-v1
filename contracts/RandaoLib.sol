@@ -23,4 +23,10 @@ library RandaoLib {
         require(headerHash == item.rlpBytesKeccak256(), "header hash mismatch");
         return getRandaoFromHeader(item);
     }
+
+    function verifyHistoricalRandao(uint256 blockNumber, bytes memory headerRlpBytes) view internal returns (bytes32) {
+        bytes32 bh = blockhash(blockNumber);
+        require(bh != bytes32(0), "failed to obtain blockhash");
+        return verifyHeaderAndGetRandao(bh, headerRlpBytes);
+    }    
 }

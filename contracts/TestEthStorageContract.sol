@@ -81,9 +81,8 @@ contract TestEthStorageContract is EthStorageContract {
         return bh;
     }
 
-    function getInitHash0(uint256 blockNumber, address miner, uint256 nonce) public view returns (bytes32) {
-        bytes32 bh = getBlockHash(blockNumber);
-        bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
+    function getInitHash0(bytes32 randao, address miner, uint256 nonce) public pure returns (bytes32) {
+        bytes32 hash0 = keccak256(abi.encode(miner, randao, nonce));
         return hash0;
     }
 
@@ -94,13 +93,14 @@ contract TestEthStorageContract is EthStorageContract {
         uint256 nonce,
         bytes32[] memory encodedSamples,
         uint256[] memory masks,
+        bytes calldata randaoProof,
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) internal {
         // Obtain the blockhash of the block number of recent blocks
         require(block.number - blockNumber <= 64, "block number too old");
-        bytes32 bh = blockhash(blockNumber);
-        require(bh != bytes32(0), "failed to obtain blockhash");
+        // To avoid stack too deep, we resue the hash0 instead of using randao
+        bytes32 hash0 = RandaoLib.verifyHistoricalRandao(blockNumber, randaoProof);
         // Estimate block timestamp
         uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
 
@@ -108,7 +108,7 @@ contract TestEthStorageContract is EthStorageContract {
         require(nonce < nonceLimit, "nonce too big");
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
-        bytes32 hash0 = keccak256(abi.encode(miner, bh, nonce));
+        hash0 = keccak256(abi.encode(miner, hash0, nonce));
         hash0 = verifySamples(shardId, hash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
 
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
@@ -123,10 +123,11 @@ contract TestEthStorageContract is EthStorageContract {
         uint256 nonce,
         bytes32[] memory encodedSamples,
         uint256[] memory masks,
+        bytes calldata randaoProof,
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) public virtual override {
-        return _mineWithoutDiffCompare(blockNumber, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
+        return _mineWithoutDiffCompare(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
     }
 
     function _mineWithFixedHash0(

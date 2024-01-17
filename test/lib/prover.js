@@ -1,4 +1,6 @@
 const snarkjs = require("snarkjs");
+const RLP = require('rlp');
+
 require("dotenv").config();
 
 async function generateG16Proof(witness) {
@@ -25,4 +27,29 @@ async function generateG16Proof(witness) {
   return [solProof, signals];
 }
 
+async function generateRandaoProof(block) {
+  const header = [
+    block.parentHash,
+    block.sha3Uncles,
+    block.miner,
+    block.stateRoot,
+    block.transactionsRoot,
+    block.receiptsRoot,
+    block.logsBloom,
+    "0x",
+    block.number,
+    block.gasLimit,
+    block.gasUsed,
+    block.timestamp,
+    block.extraData,
+    block.mixHash,
+    block.nonce,
+    "0x",
+    block.withdrawalsRoot
+  ];
+
+  return RLP.encode(header);
+}
+
 exports.generateG16Proof = generateG16Proof;
+exports.generateRandaoProof = generateRandaoProof;
