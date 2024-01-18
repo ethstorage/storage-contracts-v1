@@ -119,7 +119,7 @@ describe("MerkleLib Test", function () {
     let data = crypto.randomBytes(64 * 6 + 48);
     let root = await ml.merkleRoot(data, 64, 3);
 
-    // trys to get a out-of-bound index proof
+    // try to get a out-of-bound index proof
     await expect(ml.getProof(data, 64, 3, 10)).to.be.revertedWith("index out of scope");
 
     let proof = await ml.getProof(data, 64, 3, 0);
