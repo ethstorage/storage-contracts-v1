@@ -3,7 +3,7 @@ const hre = require("hardhat");
 let ownerAddress = null;
 const adminContractAddr = null;
 const storageContractProxy = null;
-const gasPrice = 30000000000;
+const gasPrice = null;
 
 async function deployContract() {
   const startTime = Math.floor(new Date().getTime() / 1000);
@@ -21,19 +21,19 @@ async function deployContract() {
   const transaction = await implContract.populateTransaction.initialize(
     [
       17, // maxKvSizeBits, 131072
-      41, // shardSizeBits ~ 2T
+      39, // shardSizeBits ~ 512G
       2, // randomChecks
-      9437184000, // minimumDiff 10 * 3 * 3600 * 1024 * 1024 / 12 = 9437184000 for ten replica that can have 1M IOs in one epoch
+      4718592000, // minimumDiff 5 * 3 * 3600 * 1024 * 1024 / 12 = 4718592000 for 5 replicas that can have 1M IOs in one epoch
       7200, // cutoff = 2/3 * target internal (3 hours), 3 * 3600 * 2/3
       32, // diffAdjDivisor
       100, // treasuryShare, means 1%
     ],
     startTime, // startTime
-    500000000000000, // storageCost - 500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
+    1500000000000000, // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
     340282366367469178095360967382638002176n, // dcfFactor, it mean 0.95 for yearly discount
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
-    "0x0000000000000000000000000000000000000000", // treasury
-    4194304000000000000000n // prepaidAmount - 50% * 2 * 1024^4 / 131072 * 500000Gwei, it also means 4194 ETH for half of the shard
+    ownerAddress, // treasury
+    3145728000000000000000n // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
   );
   const data = transaction.data;
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
@@ -51,9 +51,9 @@ async function deployContract() {
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
 
-  // fund 20 eth into the storage contract to give reward for empty mining
+  // fund 0.0002 eth into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.00020") });
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.0002") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 }
