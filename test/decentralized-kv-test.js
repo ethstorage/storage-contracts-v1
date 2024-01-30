@@ -23,6 +23,19 @@ describe("DecentralizedKV Test", function () {
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x");
   });
 
+  it("put only", async function () {
+    const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
+    const kv = await DecentralizedKV.deploy();
+    await kv.deployed();
+    await kv.initialize(1024, 0, 0, 0);
+
+    await kv.putHash(key1, key1);
+    await kv.putHash(key2, key2);
+    await kv.putHash(key2, key2);
+
+    await kv.putHashBatch(2, key3);
+  });
+
   it("put/get with replacement", async function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     const kv = await DecentralizedKV.deploy();

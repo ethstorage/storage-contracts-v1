@@ -6,6 +6,8 @@ import "./DecentralizedKV.sol";
 contract TestDecentralizedKV is DecentralizedKV {
     uint256 public currentTimestamp;
 
+    event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
+
     mapping(uint256 => bytes) internal dataMap;
 
     function initialize(
@@ -30,6 +32,21 @@ contract TestDecentralizedKV is DecentralizedKV {
         bytes32 dataHash = keccak256(data);
         uint256 kvIdx = _putInternal(key, dataHash, data.length);
         dataMap[kvIdx] = data;
+    }
+
+    // Put hash directly.  This tries to emulate EIP-4844 gas cost.
+    function putHash(bytes32 key, bytes32 dataHash) public payable {
+        uint256 kvIdx = _putInternal(key, dataHash, 128);
+
+        emit PutBlob(kvIdx, 123, dataHash);
+    }
+
+    // Put hash directly.  This tries to emulate EIP-4844 gas cost.
+    function putHashBatch(uint256 num, bytes32 dataHash) public payable {
+         for (uint256 i = 0; i < num; i++) {
+            bytes32 key = keccak256(abi.encode(block.number, i));
+            _putInternal(key, dataHash, 128);
+        }
     }
 
     function get(
