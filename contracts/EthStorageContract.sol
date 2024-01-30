@@ -48,9 +48,10 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 _dcfFactor,
         uint256 _nonceLimit,
         address _treasury,
-        uint256 _prepaidAmount
+        uint256 _prepaidAmount,
+        address _owner
     ) public payable initializer {
-        __init_storage(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount);
+        __init_storage(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount, _owner);
         hashGetter = address(new BlobHashGetterFactory());
     }
 

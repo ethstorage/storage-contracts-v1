@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./MerkleLib.sol";
 import "./BinaryRelated.sol";
 
-contract DecentralizedKV is Initializable {
+contract DecentralizedKV is OwnableUpgradeable {
     event Remove(uint256 indexed kvIdx, uint256 indexed lastKvIdx);
 
     enum DecodeType {
@@ -35,7 +35,9 @@ contract DecentralizedKV is Initializable {
     /* index - skey, reverse lookup */
     mapping(uint256 => bytes32) internal idxMap;
 
-    function __init_KV(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor) public onlyInitializing {
+    function __init_KV(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor, address _owner) public onlyInitializing {
+        __Context_init();
+        __Ownable_init(_owner);
         lastKvIdx = 0;
         startTime = _startTime;
         maxKvSize = _maxKvSize;
