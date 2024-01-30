@@ -244,4 +244,8 @@ abstract contract StorageContract is DecentralizedKV {
     function setPrepaidAmount(uint256 _prepaidAmount) public onlyOwner {
         prepaidAmount = _prepaidAmount;
     }
+
+    function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
+        minimumDiff = _minimumDiff;
+    }
 }
