@@ -2,8 +2,8 @@ const hre = require("hardhat");
 
 let ownerAddress = null;
 let treasuryAddress = null;
-const adminContractAddr = null;
-const storageContractProxy = null;
+const adminContractAddr = 0x11aceF404143514dbe0C1477250605646754F9e6;
+const storageContractProxy = 0x804C520d3c084C805E37A35E90057Ac32831F96f;
 const gasPrice = null;
 
 async function deployContract() {
@@ -39,6 +39,7 @@ async function deployContract() {
     ownerAddress
   );
   const data = transaction.data;
+  console.log(impl, ownerAddress, data);
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
   const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
   await ethStorageProxy.deployed();
@@ -54,9 +55,9 @@ async function deployContract() {
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
 
-  // fund 0.0002 eth into the storage contract to give reward for empty mining
+  // fund 0.5 eth into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.0002") });
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 }
