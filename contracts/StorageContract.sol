@@ -44,14 +44,15 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 _dcfFactor,
         uint256 _nonceLimit,
         address _treasury,
-        uint256 _prepaidAmount
+        uint256 _prepaidAmount,
+        address _owner
     ) public onlyInitializing {
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
         require(_config.maxKvSizeBits >= sampleSizeBits, "maxKvSize too small");
         require(_config.randomChecks > 0, "At least one checkpoint needed");
 
-        __init_KV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor);
+        __init_KV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor, _owner);
 
         shardSizeBits = _config.shardSizeBits;
         maxKvSizeBits = _config.maxKvSizeBits;
@@ -238,5 +239,13 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata decodeProof
     ) public virtual {
         return _mine(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
+    }
+
+    function setPrepaidAmount(uint256 _prepaidAmount) public onlyOwner {
+        prepaidAmount = _prepaidAmount;
+    }
+
+    function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
+        minimumDiff = _minimumDiff;
     }
 }

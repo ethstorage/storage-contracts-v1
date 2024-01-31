@@ -11,6 +11,7 @@ const { keccak256 } = ethers.utils;
 const key1 = "0x0000000000000000000000000000000000000000000000000000000000000001";
 const key2 = "0x0000000000000000000000000000000000000000000000000000000000000002";
 const key3 = "0x0000000000000000000000000000000000000000000000000000000000000003";
+const ownerAddr = "0x0000000000000000000000000000000000000001";
 
 describe("EthStorageContract Test", function () {
   it("decode-8k-blob-test", async function () {
@@ -32,7 +33,8 @@ describe("EthStorageContract Test", function () {
       0, // dcfFactor
       1, // nonceLimit
       "0x0000000000000000000000000000000000000000", // treasury
-      0 // prepaidAmount
+      0, // prepaidAmount
+      ownerAddr
     );
 
     let elements = new Array(256);
@@ -89,7 +91,8 @@ describe("EthStorageContract Test", function () {
       0, // dcfFactor
       1, // nonceLimit
       "0x0000000000000000000000000000000000000000", // treasury
-      0 // prepaidAmount
+      0, // prepaidAmount
+      ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
@@ -221,7 +224,8 @@ describe("EthStorageContract Test", function () {
         0, // dcfFactor
         1, // nonceLimit
         "0x0000000000000000000000000000000000000000", // treasury
-        0 // prepaidAmount
+        0, // prepaidAmount
+        ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
@@ -396,7 +400,8 @@ describe("EthStorageContract Test", function () {
         0, // dcfFactor
         1, // nonceLimit
         "0x0000000000000000000000000000000000000000", // treasury
-        0 // prepaidAmount
+        0, // prepaidAmount
+        ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();

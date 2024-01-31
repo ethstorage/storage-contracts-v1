@@ -9,6 +9,7 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/contracts": "^5.0.1",
+    "@openzeppelin/contracts-upgradeable": "^5.0.1",
     "arb-ts": "^1.0.2",
     "chai": "^4.3.4",
     "dotenv": "^10.0.0",
