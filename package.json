@@ -5,7 +5,7 @@
   "license": "MIT",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^2.1.8",
+    "@nomiclabs/hardhat-etherscan": "^3.1.8",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/contracts": "^5.0.1",
@@ -33,7 +33,7 @@
     "test": "hardhat test",
     "prettier:check": "prettier-check contracts/**/*.sol",
     "prettier:fix": "prettier --write contracts/**/*.sol test/**/*.js scripts/**/*.js",
-    "deploy": "npx hardhat run --network goerli scripts/deploy.js"
+    "deploy": "npx hardhat run --network sepolia scripts/deploy.js"
   },
   "workspaces": {
     "packages": [
