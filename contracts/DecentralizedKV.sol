@@ -10,7 +10,8 @@ contract DecentralizedKV is OwnableUpgradeable {
 
     enum DecodeType {
         RawData,
-        PaddingPer31Bytes
+        PaddingPer31Bytes,
+        OptimismCompactBlob
     }
 
     uint256 public storageCost; // Upfront storage cost (pre-dcf)
@@ -122,22 +123,27 @@ contract DecentralizedKV is OwnableUpgradeable {
         uint256 len
     ) public view virtual returns (bytes memory) {
         require(len > 0, "data len should be non zero");
+        if (decodeType == DecodeType.OptimismCompactBlob) {
+            // kvSize is the actual data size that dApp contract stores
+            require(off + len <= (4 * 31 + 3) * 1024 - 4, "the size exceeds the storage capacity of the OP blob");
+        } else if (decodeType == DecodeType.PaddingPer31Bytes) {
+            // kvSize is the actual data size that dApp contract stores
+            require(off + len <= maxKvSize - 4096, "the size exceeds the storage capacity of the blob");
+        } else if (decodeType == DecodeType.RawData) {
+            // maxKvSize is blob size
+            require(maxKvSize >= off + len, "beyond the range of maxKvSize");
+        } else {
+            require(false, "invalid decode mode");
+        }
 
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
         PhyAddr memory paddr = kvMap[skey];
         require(paddr.hash != 0, "data not exist");
-        if (decodeType == DecodeType.PaddingPer31Bytes) {
-            // kvSize is the actual data size that dApp contract stores
-            require((paddr.kvSize >= off + len) && (off + len <= maxKvSize - 4096), "beyond the range of kvSize");
-        } else {
-            // maxKvSize is blob size
-            require(maxKvSize >= off + len, "beyond the range of maxKvSize");
-        }
+
         bytes memory input = abi.encode(paddr.kvIdx, decodeType, off, len, paddr.hash);
         bytes memory output = new bytes(len);
 
         uint256 retSize = 0;
-
         assembly {
             if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0xa0, add(output, 0x20), len)) {
                 revert(0, 0)
