@@ -121,17 +121,22 @@ contract EthStorageContract is StorageContract, Decoder {
         bytes calldata inclusiveProof,
         bytes calldata decodeProof
     ) public view virtual returns (bool) {
-        PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
+        bytes32 kvIdxOrHash = idxMap[kvIdx];
+        bytes32 kvHash = kvMap[kvIdxOrHash].hash;
+        // If the KV has no owner, then the owner itself is the hash
+        if (kvHash == 0x0) {
+            kvHash = bytes32(kvIdxOrHash >> 64);
+        }
         Proof memory proof = abi.decode(decodeProof, (Proof));
         // BLOB decoding check
         if (
-            !decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
+            !decodeSample(proof, uint256(keccak256(abi.encode(kvHash, miner, kvIdx))), sampleIdxInKv, mask)
         ) {
             return false;
         }
 
         // Inclusive proof of decodedData = mask ^ encodedData
-        return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), inclusiveProof);
+        return checkInclusive(kvHash, sampleIdxInKv, mask ^ uint256(encodedData), inclusiveProof);
     }
 
     function getSampleIdx(

@@ -94,6 +94,13 @@ contract DecentralizedKV is Initializable {
         return paddr.kvIdx;
     }
 
+    function _appendInternal(bytes32 dataHash, uint256 length) internal returns (uint256) {
+        _prepareAppend();
+        idxMap[lastKvIdx] = bytes32(uint256(dataHash << 64) + length);
+        lastKvIdx = lastKvIdx + 1;
+        return lastKvIdx - 1;
+    }
+
     // Return the size of the keyed value
     function size(bytes32 key) public view returns (uint256) {
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
