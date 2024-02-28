@@ -2,10 +2,11 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "clones-with-immutable-args/Clone.sol";
 import "./MerkleLib.sol";
 import "./BinaryRelated.sol";
 
-contract DecentralizedKV is OwnableUpgradeable {
+contract DecentralizedKV is OwnableUpgradeable, Clone {
     event Remove(uint256 indexed kvIdx, uint256 indexed lastKvIdx);
 
     enum DecodeType {
@@ -13,12 +14,28 @@ contract DecentralizedKV is OwnableUpgradeable {
         PaddingPer31Bytes
     }
 
-    uint256 public storageCost; // Upfront storage cost (pre-dcf)
+    // *********** immutable args ***************
+    // Upfront storage cost (pre-dcf)
+    function storageCost() public pure returns (uint256) {
+        return _getArgUint256(0);
+    }
+
     // Discounted cash flow factor in seconds
     // E.g., 0.85 yearly discount in second = 0.9999999948465585 = 340282365167313208607671216367074279424 in Q128.128
-    uint256 public dcfFactor;
-    uint256 public startTime;
-    uint256 public maxKvSize;
+    function dcfFactor() public pure returns (uint256) {
+        return _getArgUint256(32);
+    }
+
+    function startTime() public pure returns (uint256) {
+        return _getArgUint256(64);
+    }
+
+    // Upfront storage cost (pre-dcf)
+    function maxKvSize() public pure returns (uint256) {
+        return _getArgUint256(96);
+    }
+    // *********** immutable args ***************
+
     uint40 public lastKvIdx; // number of entries in the store
 
     struct PhyAddr {
@@ -35,14 +52,10 @@ contract DecentralizedKV is OwnableUpgradeable {
     /* index - skey, reverse lookup */
     mapping(uint256 => bytes32) internal idxMap;
 
-    function __init_KV(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor, address _owner) public onlyInitializing {
+    function __init_KV(address _owner) public onlyInitializing {
         __Context_init();
         __Ownable_init(_owner);
         lastKvIdx = 0;
-        startTime = _startTime;
-        maxKvSize = _maxKvSize;
-        storageCost = _storageCost;
-        dcfFactor = _dcfFactor;
     }
 
     function pow(uint256 fp, uint256 n) internal pure returns (uint256) {
@@ -50,22 +63,22 @@ contract DecentralizedKV is OwnableUpgradeable {
     }
 
     // Evaluate payment from [t0, t1) seconds
-    function _paymentInInterval(uint256 x, uint256 t0, uint256 t1) internal view returns (uint256) {
-        return (x * (pow(dcfFactor, t0) - pow(dcfFactor, t1))) >> 128;
+    function _paymentInInterval(uint256 x, uint256 t0, uint256 t1) internal pure returns (uint256) {
+        return (x * (pow(dcfFactor(), t0) - pow(dcfFactor(), t1))) >> 128;
     }
 
     // Evaluate payment from [t0, \inf).
-    function _paymentInf(uint256 x, uint256 t0) internal view returns (uint256) {
-        return (x * pow(dcfFactor, t0)) >> 128;
+    function _paymentInf(uint256 x, uint256 t0) internal pure returns (uint256) {
+        return (x * pow(dcfFactor(), t0)) >> 128;
     }
 
     // Evaluate payment from timestamp [fromTs, toTs)
-    function _paymentIn(uint256 x, uint256 fromTs, uint256 toTs) internal view returns (uint256) {
-        return _paymentInInterval(x, fromTs - startTime, toTs - startTime);
+    function _paymentIn(uint256 x, uint256 fromTs, uint256 toTs) internal pure returns (uint256) {
+        return _paymentInInterval(x, fromTs - startTime(), toTs - startTime());
     }
 
-    function _upfrontPayment(uint256 ts) internal view returns (uint256) {
-        return _paymentInf(storageCost, ts - startTime);
+    function _upfrontPayment(uint256 ts) internal pure returns (uint256) {
+        return _paymentInf(storageCost(), ts - startTime());
     }
 
     // Evaluate the storage cost of a single put().
@@ -78,7 +91,7 @@ contract DecentralizedKV is OwnableUpgradeable {
     }
 
     function _putInternal(bytes32 key, bytes32 dataHash, uint256 length) internal returns (uint256) {
-        require(length <= maxKvSize, "data too large");
+        require(length <= maxKvSize(), "data too large");
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
         PhyAddr memory paddr = kvMap[skey];
 
@@ -128,10 +141,10 @@ contract DecentralizedKV is OwnableUpgradeable {
         require(paddr.hash != 0, "data not exist");
         if (decodeType == DecodeType.PaddingPer31Bytes) {
             // kvSize is the actual data size that dApp contract stores
-            require((paddr.kvSize >= off + len) && (off + len <= maxKvSize - 4096), "beyond the range of kvSize");
+            require((paddr.kvSize >= off + len) && (off + len <= maxKvSize() - 4096), "beyond the range of kvSize");
         } else {
             // maxKvSize is blob size
-            require(maxKvSize >= off + len, "beyond the range of maxKvSize");
+            require(maxKvSize() >= off + len, "beyond the range of maxKvSize");
         }
         bytes memory input = abi.encode(paddr.kvIdx, decodeType, off, len, paddr.hash);
         bytes memory output = new bytes(len);

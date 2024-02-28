@@ -12,6 +12,7 @@
     "@openzeppelin/contracts-upgradeable": "^5.0.1",
     "arb-ts": "^1.0.2",
     "chai": "^4.3.4",
+    "clones-with-immutable-args": "^1.1.2",
     "dotenv": "^10.0.0",
     "eslint-config-prettier": "^8.3.0",
     "ethereum-waffle": "^4.0.10",

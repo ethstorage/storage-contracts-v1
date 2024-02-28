@@ -15,16 +15,14 @@ contract EthStorageContract is StorageContract, Decoder {
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
     function initialize(
-        Config memory _config,
+        uint256 _minimumDiff,
         uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
         uint256 _nonceLimit,
-        address _treasury,
         uint256 _prepaidAmount,
+        address _treasury,
         address _owner
     ) public payable initializer {
-        __init_storage(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount, _owner);
+        __init_storage(_minimumDiff, _startTime, _nonceLimit, _prepaidAmount, _treasury, _owner);
     }
 
     function modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {
@@ -139,11 +137,11 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 rows,
         uint256 startShardId,
         bytes32 hash0
-    ) public view returns (uint256, uint256) {
+    ) public pure returns (uint256, uint256) {
         uint256 parent = uint256(hash0) % rows;
-        uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
-        uint256 kvIdx = sampleIdx >> sampleLenBits;
-        uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
+        uint256 sampleIdx = parent + (startShardId << (shardEntryBits() + sampleLenBits()));
+        uint256 kvIdx = sampleIdx >> sampleLenBits();
+        uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits());
         return (kvIdx, sampleIdxInKv);
     }
 
@@ -156,15 +154,15 @@ contract EthStorageContract is StorageContract, Decoder {
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) public view virtual override returns (bytes32) {
-        require(encodedSamples.length == randomChecks, "data length mismatch");
-        require(masks.length == randomChecks, "masks length mismatch");
-        require(inclusiveProofs.length == randomChecks, "proof length mismatch");
-        require(decodeProof.length == randomChecks, "decodeProof length mismatch");
+        require(encodedSamples.length == randomChecks(), "data length mismatch");
+        require(masks.length == randomChecks(), "masks length mismatch");
+        require(inclusiveProofs.length == randomChecks(), "proof length mismatch");
+        require(decodeProof.length == randomChecks(), "decodeProof length mismatch");
 
         // calculate the number of samples range of the sample check
-        uint256 rows = 1 << (shardEntryBits + sampleLenBits);
+        uint256 rows = 1 << (shardEntryBits() + sampleLenBits());
 
-        for (uint256 i = 0; i < randomChecks; i++) {
+        for (uint256 i = 0; i < randomChecks(); i++) {
             (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
 
             require(
@@ -174,7 +172,7 @@ contract EthStorageContract is StorageContract, Decoder {
             hash0 = keccak256(abi.encode(hash0, encodedSamples[i]));
         }
         return hash0;
-    }    
+    }
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
     function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable virtual {

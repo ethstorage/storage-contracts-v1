@@ -9,63 +9,65 @@ import "./RandaoLib.sol";
  * EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification.
  */
 abstract contract StorageContract is DecentralizedKV {
-    struct Config {
-        uint256 maxKvSizeBits;
-        uint256 shardSizeBits;
-        uint256 randomChecks;
-        uint256 minimumDiff;
-        uint256 cutoff;
-        uint256 diffAdjDivisor;
-        uint256 treasuryShare; // 10000 = 1.0
-    }
 
     uint256 public constant sampleSizeBits = 5; // 32 bytes per sample
 
-    uint256 public maxKvSizeBits;
-    uint256 public shardSizeBits;
-    uint256 public shardEntryBits;
-    uint256 public sampleLenBits;
-    uint256 public randomChecks;
-    uint256 public minimumDiff;
-    uint256 public cutoff;
-    uint256 public diffAdjDivisor;
-    uint256 public treasuryShare; // 10000 = 1.0
-    uint256 public prepaidAmount;
+    // *********** immutable args ***************
+    function maxKvSizeBits() public pure returns (uint256) {
+        return _getArgUint256(4 * 32);
+    }
+
+    function shardSizeBits() public pure returns (uint256) {
+        return _getArgUint256(5 * 32);
+    }
+
+    function shardEntryBits() public pure returns (uint256) {
+        return _getArgUint256(6 * 32);
+    }
+
+    function sampleLenBits() public pure returns (uint256) {
+        return _getArgUint256(7 * 32);
+    }
+
+    function randomChecks() public pure returns (uint256) {
+        return _getArgUint256(8 * 32);
+    }
+
+    function cutoff() public pure returns (uint256) {
+        return _getArgUint256(9 * 32);
+    }
+
+    function diffAdjDivisor() public pure returns (uint256) {
+        return _getArgUint256(10 * 32);
+    }
+
+    function treasuryShare() public pure returns (uint256) {// 10000 = 1.0
+        return _getArgUint256(11 * 32);
+    }
+    // *********** immutable args ***************
 
     mapping(uint256 => MiningLib.MiningInfo) public infos;
     uint256 public nonceLimit; // maximum nonce per block
     address public treasury;
     uint256 public prepaidLastMineTime;
+    uint256 public minimumDiff;
+    uint256 public prepaidAmount;
 
     function __init_storage(
-        Config memory _config,
+        uint256 _minimumDiff,
         uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
         uint256 _nonceLimit,
-        address _treasury,
         uint256 _prepaidAmount,
+        address _treasury,
         address _owner
     ) public onlyInitializing {
         /* Assumptions */
-        require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
-        require(_config.maxKvSizeBits >= sampleSizeBits, "maxKvSize too small");
-        require(_config.randomChecks > 0, "At least one checkpoint needed");
+        __init_KV(_owner);
 
-        __init_KV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor, _owner);
-
-        shardSizeBits = _config.shardSizeBits;
-        maxKvSizeBits = _config.maxKvSizeBits;
-        shardEntryBits = _config.shardSizeBits - _config.maxKvSizeBits;
-        sampleLenBits = _config.maxKvSizeBits - sampleSizeBits;
-        randomChecks = _config.randomChecks;
-        minimumDiff = _config.minimumDiff;
-        cutoff = _config.cutoff;
-        diffAdjDivisor = _config.diffAdjDivisor;
-        treasuryShare = _config.treasuryShare;
+        minimumDiff = _minimumDiff;
         nonceLimit = _nonceLimit;
-        treasury = _treasury;
         prepaidAmount = _prepaidAmount;
+        treasury = _treasury;
         prepaidLastMineTime = _startTime;
         // make sure shard0 is ready to mine and pay correctly
         infos[0].lastMineTime = _startTime;
@@ -84,8 +86,8 @@ abstract contract StorageContract is DecentralizedKV {
 
     function _prepareAppendWithTimestamp(uint256 timestamp) internal {
         uint256 totalEntries = lastKvIdx + 1; // include the one to be put
-        uint256 shardId = lastKvIdx >> shardEntryBits; // shard id of the new KV
-        if ((totalEntries % (1 << shardEntryBits)) == 1) {
+        uint256 shardId = lastKvIdx >> shardEntryBits (); // shard id of the new KV
+        if ((totalEntries % (1 << shardEntryBits())) == 1) {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
@@ -101,9 +103,9 @@ abstract contract StorageContract is DecentralizedKV {
     // Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
         uint256 totalEntries = lastKvIdx + 1; // include the one to be put
-        uint256 shardId = lastKvIdx >> shardEntryBits; // shard id of the new KV
-        // shard0 is already opened in constructor       
-        if ((totalEntries % (1 << shardEntryBits)) == 1 && shardId != 0) {
+        uint256 shardId = lastKvIdx >> shardEntryBits(); // shard id of the new KV
+        // shard0 is already opened in constructor
+        if ((totalEntries % (1 << shardEntryBits())) == 1 && shardId != 0) {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
@@ -140,7 +142,7 @@ abstract contract StorageContract is DecentralizedKV {
     ) internal view returns (uint256 diff) {
         MiningLib.MiningInfo storage info = infos[shardId];
         require(minedTs >= info.lastMineTime, "minedTs too small");
-        diff = MiningLib.expectedDiff(info, minedTs, cutoff, diffAdjDivisor, minimumDiff);
+        diff = MiningLib.expectedDiff(info, minedTs, cutoff(), diffAdjDivisor(), minimumDiff);
     }
 
     function _rewardMiner(uint256 shardId, address miner, uint256 minedTs, uint256 diff) internal {
@@ -162,13 +164,13 @@ abstract contract StorageContract is DecentralizedKV {
 
     function _miningReward(uint256 shardId, uint256 minedTs) internal view returns (bool, uint256, uint256) {
         MiningLib.MiningInfo storage info = infos[shardId];
-        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;
+        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits() : 0;
         uint256 reward = 0;
         bool updatePrepaidTime = false;
         if (shardId < lastShardIdx) {
-            reward = _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
+            reward = _paymentIn(storageCost() << shardEntryBits(), info.lastMineTime, minedTs);
         } else if (shardId == lastShardIdx) {
-            reward = _paymentIn(storageCost * (lastKvIdx % (1 << shardEntryBits)), info.lastMineTime, minedTs);
+            reward = _paymentIn(storageCost() * (lastKvIdx % (1 << shardEntryBits())), info.lastMineTime, minedTs);
             // Additional prepaid for the last shard
             if (prepaidLastMineTime < minedTs) {
                 reward += _paymentIn(prepaidAmount, prepaidLastMineTime, minedTs);
@@ -176,7 +178,7 @@ abstract contract StorageContract is DecentralizedKV {
             }
         }
 
-        uint256 treasuryReward = (reward * treasuryShare) / 10000;
+        uint256 treasuryReward = (reward * treasuryShare()) / 10000;
         uint256 minerReward = reward - treasuryReward;
         return (updatePrepaidTime, treasuryReward, minerReward);
     }
