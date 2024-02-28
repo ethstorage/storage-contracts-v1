@@ -6,7 +6,7 @@ import "./MerkleLib.sol";
 import "./BinaryRelated.sol";
 
 contract DecentralizedKV is OwnableUpgradeable {
-    event Remove(uint256 indexed kvIdx, uint256 indexed lastKvIdx);
+    event Remove(uint256 indexed kvIdx, uint256 indexed kvEntryCount);
 
     enum DecodeType {
         RawData,
@@ -19,7 +19,7 @@ contract DecentralizedKV is OwnableUpgradeable {
     uint256 public dcfFactor;
     uint256 public startTime;
     uint256 public maxKvSize;
-    uint40 public lastKvIdx; // number of entries in the store
+    uint40 public kvEntryCount; // number of entries in the store
 
     struct PhyAddr {
         /* Internal address seeking */
@@ -38,7 +38,7 @@ contract DecentralizedKV is OwnableUpgradeable {
     function __init_KV(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor, address _owner) public onlyInitializing {
         __Context_init();
         __Ownable_init(_owner);
-        lastKvIdx = 0;
+        kvEntryCount = 0;
         startTime = _startTime;
         maxKvSize = _maxKvSize;
         storageCost = _storageCost;
@@ -85,9 +85,9 @@ contract DecentralizedKV is OwnableUpgradeable {
         if (paddr.hash == 0) {
             // append (require payment from sender)
             _prepareAppend();
-            paddr.kvIdx = lastKvIdx;
+            paddr.kvIdx = kvEntryCount;
             idxMap[paddr.kvIdx] = skey;
-            lastKvIdx = lastKvIdx + 1;
+            kvEntryCount = kvEntryCount + 1;
         }
         paddr.kvSize = uint24(length);
         paddr.hash = bytes24(dataHash);
