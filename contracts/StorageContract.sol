@@ -55,7 +55,6 @@ abstract contract StorageContract is DecentralizedKV {
 
     function __init_storage(
         uint256 _minimumDiff,
-        uint256 _startTime,
         uint256 _nonceLimit,
         uint256 _prepaidAmount,
         address _treasury,
@@ -68,9 +67,9 @@ abstract contract StorageContract is DecentralizedKV {
         nonceLimit = _nonceLimit;
         prepaidAmount = _prepaidAmount;
         treasury = _treasury;
-        prepaidLastMineTime = _startTime;
+        prepaidLastMineTime = startTime();
         // make sure shard0 is ready to mine and pay correctly
-        infos[0].lastMineTime = _startTime;
+        infos[0].lastMineTime = startTime();
     }
 
     event MinedBlock(
