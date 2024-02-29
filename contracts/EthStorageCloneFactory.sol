@@ -2,10 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "clones-with-immutable-args/ClonesWithImmutableArgs.sol";
-import "./EthStorageContract2.sol";
+import "./TestEthStorageContractKZG.sol";
 
 contract EthStorageCloneFactory {
     using ClonesWithImmutableArgs for address;
+
+    event Created(address cloneImpl);
 
     struct Config {
         uint256 storageCost; // position 0
@@ -23,25 +25,31 @@ contract EthStorageCloneFactory {
         uint256 treasuryShare;  // 11
     }
 
-    address public cloneAddress;
-
-    constructor(EthStorageContract2 _storageImpl, Config memory _cfg) {
+    function createCloneImpl(Config memory _cfg) external {
         require(_cfg.shardSizeBits >= _cfg.maxKvSizeBits, "shardSize too small");
-        require(_cfg.maxKvSizeBits >= _storageImpl.sampleSizeBits(), "maxKvSize too small");
         require(_cfg.randomChecks > 0, "At least one checkpoint needed");
 
-        bytes memory _data = abi.encodePacked(
+        TestEthStorageContractKZG impl = new TestEthStorageContractKZG();
+        require(_cfg.maxKvSizeBits >= impl.sampleSizeBits(), "maxKvSize too small");
+
+        bytes memory data = abi.encodePacked(
             _cfg.storageCost, _cfg.dcfFactor, _cfg.startTime, 1 << _cfg.maxKvSizeBits,
 
             _cfg.maxKvSizeBits,
             _cfg.shardSizeBits,
             _cfg.shardSizeBits - _cfg.maxKvSizeBits,
-            _cfg.maxKvSizeBits - _storageImpl.sampleSizeBits(),
+            _cfg.maxKvSizeBits - impl.sampleSizeBits(),
             _cfg.randomChecks,
             _cfg.cutoff,
             _cfg.diffAdjDivisor,
             _cfg.treasuryShare
         );
-        cloneAddress = address(_storageImpl).clone(_data, 0); // 0, no pay
+        address cloneAddress = address(impl).clone(data, 0); // 0, no pay
+        emit Created(cloneAddress);
+    }
+
+    function createCloneByAddress(address _impl, bytes memory _data) external {
+        address cloneAddress = _impl.clone(_data, 0); // 0, no pay
+        emit Created(cloneAddress);
     }
 }

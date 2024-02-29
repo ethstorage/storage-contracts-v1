@@ -20,26 +20,31 @@ const params = [
   100, // treasuryShare, means 1%
 ];
 
+async function deployCloneImpl() {
+  const StorageCloneFactory = await hre.ethers.getContractFactory("EthStorageCloneFactory");
+  const cloneFactory = await StorageCloneFactory.deploy();
+  await cloneFactory.deployed();
+  console.log("storage clone factory address is ", cloneFactory.address);
+
+  // create impl
+  let tx = await cloneFactory.createCloneImpl(params, {gasPrice: gasPrice});
+  tx = await tx.wait();
+  const log = cloneFactory.interface.parseLog(tx.logs[0]);
+  const impl = log.args[0];
+  console.log("storage impl address is ", impl);
+  return impl;
+}
+
 async function deployContract() {
   const [deployer] = await hre.ethers.getSigners();
   ownerAddress = deployer.address;
   treasuryAddress = deployer.address;
 
+  const impl = await deployCloneImpl();
   const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
-  const implContract = await StorageContract.deploy({ gasPrice: gasPrice });
-  await implContract.deployed();
-  const impl = implContract.address;
-  console.log("storage impl address is ", impl);
-
-  const StorageCloneFactory = await hre.ethers.getContractFactory("EthStorageCloneFactory");
-  const cloneFactory = await StorageCloneFactory.deploy(impl, params);
-  await cloneFactory.deployed();
-  const cloneImpl = await cloneFactory.cloneAddress();
-  console.log("storage clone impl address is ", cloneImpl);
-
-  const cloneImplContract = StorageContract.attach(cloneImpl);
-  const transaction = await cloneImplContract.populateTransaction.initialize(
+  const implContract = StorageContract.attach(impl);
+  const transaction = await implContract.populateTransaction.initialize(
     4718592000, // minimumDiff 5 * 3 * 3600 * 1024 * 1024 / 12 = 4718592000 for 5 replicas that can have 1M IOs in one epoch
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
     3145728000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
@@ -47,9 +52,10 @@ async function deployContract() {
     ownerAddress
   );
   const data = transaction.data;
-  console.log(cloneImpl, ownerAddress, data);
+  console.log(impl, ownerAddress, data);
+
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
-  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(cloneImpl, ownerAddress, data, { gasPrice: gasPrice });
+  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
   await ethStorageProxy.deployed();
   const admin = await ethStorageProxy.admin();
 
@@ -71,19 +77,9 @@ async function deployContract() {
 }
 
 async function updateContract() {
-  const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
-  const implContract = await StorageContract.deploy({ gasPrice: gasPrice });
-  await implContract.deployed();
-  console.log("storage impl address is ", implContract.address);
-
-  const StorageCloneFactory = await hre.ethers.getContractFactory("EthStorageCloneFactory");
-  const cloneFactory = await StorageCloneFactory.deploy(implContract.address, params);
-  await cloneFactory.deployed();
-  const cloneImpl = await cloneFactory.cloneAddress();
-  console.log("storage clone impl address is ", cloneImpl);
-
+  const impl = await deployCloneImpl();
   const EthStorageAdmin = await hre.ethers.getContractAt("IProxyAdmin", adminContractAddr);
-  const tx = await EthStorageAdmin.upgradeAndCall(storageContractProxy, cloneImpl, "0x");
+  const tx = await EthStorageAdmin.upgradeAndCall(storageContractProxy, impl, "0x");
   await tx.wait();
   console.log("update contract success!")
 }

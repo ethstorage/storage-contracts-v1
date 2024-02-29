@@ -17,4 +17,8 @@ contract TestEthStorageContractKZG is EthStorageContract2 {
             putBlob(key, 0, maxKvSize());
         }
     }
+
+    function test() public pure returns(uint256) {
+        return 1120;
+    }
 }
