@@ -13,28 +13,61 @@ const key2 = "0x0000000000000000000000000000000000000000000000000000000000000002
 const key3 = "0x0000000000000000000000000000000000000000000000000000000000000003";
 const ownerAddr = "0x0000000000000000000000000000000000000001";
 
+async function deployCloneImpl(factory, address, params, minimumDiff, nonceLimit, prepaidAmount, treasury) {
+  let types = [];
+  let values = [];
+  params.forEach(item => {
+    types.push("uint256");
+    values.push(item);
+  });
+  const data = ethers.utils.solidityPack(types, values);
+  let tx = await factory.createCloneByAddress(address, data);
+  tx = await tx.wait();
+  const log = factory.interface.parseLog(tx.logs[0]);
+  const impl = log.args[0];
+
+  const TestEthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+  const sc = TestEthStorageContract.attach(impl);
+  await sc.initialize(minimumDiff, nonceLimit, prepaidAmount, treasury, ownerAddr);
+  return sc;
+}
+
 describe("EthStorageContract Test", function () {
-  it("decode-8k-blob-test", async function () {
+  let factory;
+  let sc;
+  beforeEach(async () => {
+    const EthStorageCloneFactory = await ethers.getContractFactory("EthStorageCloneFactory");
+    factory = await EthStorageCloneFactory.deploy();
+    await factory.deployed();
+
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy();
+    sc = await EthStorageContract.deploy();
     await sc.deployed();
-    await sc.initialize(
-      [
-        13, // maxKvSizeBits
-        14, // shardSizeBits
-        1, // randomChecks
+  });
+
+  it("decode-8k-blob-test", async function () {
+    sc = await deployCloneImpl(
+        factory,
+        sc.address,
+        [
+          0, // storageCost
+          0, // dcfFactor
+          0, // startTime
+          1 << 13,
+          13, // maxKvSizeBits
+          14, // shardSizeBits
+          14 - 13, //_config.shardSizeBits - _config.maxKvSizeBits,
+          13 - 5, // _config.maxKvSizeBits - sampleSizeBits
+          1, // randomChecks
+          40, // cutoff
+          1024, // diffAdjDivisor
+          0, // treasuryShare
+        ],
         1, // minimumDiff
-        40, // cutoff
-        1024, // diffAdjDivisor
-        0, // treasuryShare
-      ],
-      0, // startTime
-      0, // storageCost
-      0, // dcfFactor
-      1, // nonceLimit
-      "0x0000000000000000000000000000000000000000", // treasury
-      0, // prepaidAmount
-      ownerAddr
+        1, // nonceLimit
+        0, // prepaidAmount
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
     );
 
     let elements = new Array(256);
@@ -73,26 +106,28 @@ describe("EthStorageContract Test", function () {
   });
 
   it("decode-inclusive-8k-blob-test", async function () {
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy();
-    await sc.deployed();
-    await sc.initialize(
-      [
-        13, // maxKvSizeBits
-        14, // shardSizeBits
-        1, // randomChecks
+    sc = await deployCloneImpl(
+        factory,
+        sc.address,
+        [
+          0, // storageCost
+          0, // dcfFactor
+          0, // startTime
+          1 << 13,
+          13, // maxKvSizeBits
+          14, // shardSizeBits
+          14 - 13, //_config.shardSizeBits - _config.maxKvSizeBits,
+          13 - 5, // _config.maxKvSizeBits - sampleSizeBits
+          1, // randomChecks
+          40, // cutoff
+          1024, // diffAdjDivisor
+          0, // treasuryShare
+        ],
         1, // minimumDiff
-        40, // cutoff
-        1024, // diffAdjDivisor
-        0, // treasuryShare
-      ],
-      0, // startTime
-      0, // storageCost
-      0, // dcfFactor
-      1, // nonceLimit
-      "0x0000000000000000000000000000000000000000", // treasury
-      0, // prepaidAmount
-      ownerAddr
+        1, // nonceLimit
+        0, // prepaidAmount
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
@@ -206,25 +241,27 @@ describe("EthStorageContract Test", function () {
   });
 
   it("verify-sample-8k-blob-2-samples-test", async function () {
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy();
-    await sc.deployed();
-    await sc.initialize(
+    sc = await deployCloneImpl(
+        factory,
+        sc.address,
         [
+          0, // storageCost
+          0, // dcfFactor
+          0, // startTime
+          1 << 13, // 1 << _config.maxKvSizeBits
           13, // maxKvSizeBits
           14, // shardSizeBits
+          14 - 13, //_config.shardSizeBits - _config.maxKvSizeBits,
+          13 - 5, // _config.maxKvSizeBits - sampleSizeBits
           2, // randomChecks
-          1, // minimumDiff
           40, // cutoff
           1024, // diffAdjDivisor
           0, // treasuryShare
         ],
-        0, // startTime
-        0, // storageCost
-        0, // dcfFactor
+        1, // minimumDiff
         1, // nonceLimit
-        "0x0000000000000000000000000000000000000000", // treasury
         0, // prepaidAmount
+        "0x0000000000000000000000000000000000000000", // treasury
         ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
@@ -382,25 +419,27 @@ describe("EthStorageContract Test", function () {
       console.log("[Info] complete-mining-process running");
     }
 
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy();
-    await sc.deployed();
-    await sc.initialize(
+    sc = await deployCloneImpl(
+        factory,
+        sc.address,
         [
+          0, // storageCost
+          0, // dcfFactor
+          0, // startTime
+          1 << 13, // 1 << _config.maxKvSizeBits
           13, // maxKvSizeBits
           14, // shardSizeBits
+          14 - 13, //_config.shardSizeBits - _config.maxKvSizeBits,
+          13 - 5, // _config.maxKvSizeBits - sampleSizeBits
           2, // randomChecks
-          1, // minimumDiff
           40, // cutoff
           1024, // diffAdjDivisor
           0, // treasuryShare
         ],
-        0, // startTime
-        0, // storageCost
-        0, // dcfFactor
+        1, // minimumDiff
         1, // nonceLimit
-        "0x0000000000000000000000000000000000000000", // treasury
         0, // prepaidAmount
+        "0x0000000000000000000000000000000000000000", // treasury
         ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");

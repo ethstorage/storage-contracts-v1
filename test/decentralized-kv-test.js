@@ -7,12 +7,40 @@ const key2 = "0x0000000000000000000000000000000000000000000000000000000000000002
 const key3 = "0x0000000000000000000000000000000000000000000000000000000000000003";
 const ownerAddr = "0x0000000000000000000000000000000000000001"
 
+async function deployCloneImpl(factory, address, params) {
+  let types = [];
+  let values = [];
+  params.forEach(item => {
+    types.push("uint256");
+    values.push(item);
+  });
+  const data = ethers.utils.solidityPack(types, values);
+  let tx = await factory.createCloneByAddress(address, data);
+  tx = await tx.wait();
+
+  const log = factory.interface.parseLog(tx.logs[0]);
+  const impl = log.args[0];
+  const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
+  const kv = DecentralizedKV.attach(impl);
+  await kv.initialize(ownerAddr);
+  return kv;
+}
+
 describe("DecentralizedKV Test", function () {
-  it("put/get/remove", async function () {
+  let factory;
+  let kv;
+  beforeEach(async () => {
+    const EthStorageCloneFactory = await ethers.getContractFactory("EthStorageCloneFactory");
+    factory = await EthStorageCloneFactory.deploy();
+    await factory.deployed();
+
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
-    const kv = await DecentralizedKV.deploy();
+    kv = await DecentralizedKV.deploy();
     await kv.deployed();
-    await kv.initialize(1024, 0, 0, 0, ownerAddr);
+  });
+
+  it("put/get/remove", async function () {
+    kv = await deployCloneImpl(factory, kv.address, [0, 0, 0, 1024]);
 
     await kv.put(key1, "0x11223344");
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x11223344");
@@ -25,10 +53,7 @@ describe("DecentralizedKV Test", function () {
   });
 
   it("put/get with replacement", async function () {
-    const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
-    const kv = await DecentralizedKV.deploy();
-    await kv.deployed();
-    await kv.initialize(1024, 0, 0, 0, ownerAddr);
+    kv = await deployCloneImpl(factory, kv.address, [0, 0, 0, 1024]);
 
     await kv.put(key1, "0x11223344");
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x11223344");
@@ -48,11 +73,8 @@ describe("DecentralizedKV Test", function () {
     const [addr0] = await ethers.getSigners();
     let wallet = ethers.Wallet.createRandom().connect(addr0.provider);
 
-    const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     // 1e18 cost with 0.5 discount rate per second
-    const kv = await DecentralizedKV.deploy();
-    await kv.deployed();
-    await kv.initialize(1024, 0, "1000000000000000000", "170141183460469231731687303715884105728", ownerAddr);
+    kv = await deployCloneImpl(factory, kv.address, ["1000000000000000000", "170141183460469231731687303715884105728", 0, 1024]);
 
     expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
     await expect(kv.put(key1, "0x11223344")).to.be.revertedWith("not enough payment");
@@ -84,11 +106,8 @@ describe("DecentralizedKV Test", function () {
   });
 
   it("put with payment and yearly 0.9 dcf", async function () {
-    const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     // 1e18 cost with 0.90 discount rate per year
-    const kv = await DecentralizedKV.deploy();
-    await kv.deployed();
-    await kv.initialize(1024, 0, "1000000000000000000", "340282365784068676928457747575078800565", ownerAddr);
+    kv = await deployCloneImpl(factory, kv.address, ["1000000000000000000", "340282365784068676928457747575078800565", 0, 1024]);
 
     expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
     await expect(kv.put(key1, "0x11223344")).to.be.revertedWith("not enough payment");
@@ -110,11 +129,8 @@ describe("DecentralizedKV Test", function () {
   it("removes", async function () {
     const [addr0, addr1] = await ethers.getSigners();
 
-    const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     // 1e18 cost with 0.5 discount rate per second
-    const kv = await DecentralizedKV.deploy();
-    await kv.deployed();
-    await kv.initialize(1024, 0, 0, 0, ownerAddr);
+    kv = await deployCloneImpl(factory, kv.address, [0, 0, 0, 1024]);
 
     // write random data
     for (let i = 0; i < 10; i++) {
