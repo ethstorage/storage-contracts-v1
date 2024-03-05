@@ -19,6 +19,7 @@ const params = [
   32, // diffAdjDivisor
   100, // treasuryShare, means 1%
 ];
+const prepaidAmount = 3145728000000000000000n; // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
 
 async function deployCloneImpl() {
   const StorageCloneFactory = await hre.ethers.getContractFactory("EthStorageCloneFactory");
@@ -44,18 +45,20 @@ async function deployContract() {
   const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
   const implContract = StorageContract.attach(impl);
-  const transaction = await implContract.populateTransaction.initialize(
+  const data = implContract.interface.encodeFunctionData("initialize", [
     4718592000, // minimumDiff 5 * 3 * 3600 * 1024 * 1024 / 12 = 4718592000 for 5 replicas that can have 1M IOs in one epoch
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
-    3145728000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
+    prepaidAmount, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
     treasuryAddress, // treasury
     ownerAddress
-  );
-  const data = transaction.data;
+  ]);
   console.log(impl, ownerAddress, data);
 
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
-  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
+  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, {
+    gasPrice: gasPrice,
+    value: prepaidAmount
+  });
   await ethStorageProxy.deployed();
   const admin = await ethStorageProxy.admin();
 
@@ -70,10 +73,10 @@ async function deployContract() {
   );
 
   // fund 0.5 eth into the storage contract to give reward for empty mining
-  const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
-  await tx.wait();
-  console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
+  // const ethStorage = StorageContract.attach(ethStorageProxy.address);
+  // const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
+  // await tx.wait();
+  // console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 }
 
 async function updateContract() {
