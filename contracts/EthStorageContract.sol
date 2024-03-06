@@ -179,6 +179,7 @@ contract EthStorageContract is StorageContract, Decoder {
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
     function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable virtual {
         bytes32 dataHash = blobhash(blobIdx);
+        require(dataHash != 0, "failed to get blob hash");
         uint256 kvIdx = _putInternal(key, dataHash, length);
 
         emit PutBlob(kvIdx, length, dataHash);
