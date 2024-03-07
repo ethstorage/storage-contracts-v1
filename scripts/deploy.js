@@ -2,8 +2,8 @@ const hre = require("hardhat");
 
 let ownerAddress = null;
 let treasuryAddress = null;
-const adminContractAddr = 0x11aceF404143514dbe0C1477250605646754F9e6;
-const storageContractProxy = 0x804C520d3c084C805E37A35E90057Ac32831F96f;
+const adminContractAddr = "0x11aceF404143514dbe0C1477250605646754F9e6";
+const storageContractProxy = "0x804C520d3c084C805E37A35E90057Ac32831F96f";
 const gasPrice = null;
 
 async function deployContract() {
