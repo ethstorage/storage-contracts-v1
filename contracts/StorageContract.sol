@@ -83,8 +83,8 @@ abstract contract StorageContract is DecentralizedKV {
     function sendValue() public payable {}
 
     function _prepareAppendWithTimestamp(uint256 timestamp) internal {
-        uint256 totalEntries = lastKvIdx + 1; // include the one to be put
-        uint256 shardId = lastKvIdx >> shardEntryBits; // shard id of the new KV
+        uint256 totalEntries = kvEntryCount + 1; // include the one to be put
+        uint256 shardId = kvEntryCount >> shardEntryBits; // shard id of the new KV
         if ((totalEntries % (1 << shardEntryBits)) == 1) {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
@@ -100,8 +100,8 @@ abstract contract StorageContract is DecentralizedKV {
 
     // Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
-        uint256 totalEntries = lastKvIdx + 1; // include the one to be put
-        uint256 shardId = lastKvIdx >> shardEntryBits; // shard id of the new KV
+        uint256 totalEntries = kvEntryCount + 1; // include the one to be put
+        uint256 shardId = kvEntryCount >> shardEntryBits; // shard id of the new KV
         // shard0 is already opened in constructor       
         if ((totalEntries % (1 << shardEntryBits)) == 1 && shardId != 0) {
             // Open a new shard if the KV is the first one of the shard
@@ -162,13 +162,13 @@ abstract contract StorageContract is DecentralizedKV {
 
     function _miningReward(uint256 shardId, uint256 minedTs) internal view returns (bool, uint256, uint256) {
         MiningLib.MiningInfo storage info = infos[shardId];
-        uint256 lastShardIdx = lastKvIdx > 0 ? (lastKvIdx - 1) >> shardEntryBits : 0;
+        uint256 lastShardIdx = kvEntryCount > 0 ? (kvEntryCount - 1) >> shardEntryBits : 0;
         uint256 reward = 0;
         bool updatePrepaidTime = false;
         if (shardId < lastShardIdx) {
             reward = _paymentIn(storageCost << shardEntryBits, info.lastMineTime, minedTs);
         } else if (shardId == lastShardIdx) {
-            reward = _paymentIn(storageCost * (lastKvIdx % (1 << shardEntryBits)), info.lastMineTime, minedTs);
+            reward = _paymentIn(storageCost * (kvEntryCount % (1 << shardEntryBits)), info.lastMineTime, minedTs);
             // Additional prepaid for the last shard
             if (prepaidLastMineTime < minedTs) {
                 reward += _paymentIn(prepaidAmount, prepaidLastMineTime, minedTs);

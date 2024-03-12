@@ -73,16 +73,16 @@ contract TestDecentralizedKV is DecentralizedKV {
         kvMap[skey] = PhyAddr({kvIdx: 0, kvSize: 0, hash: 0});
 
         // move last kv to current kv
-        bytes32 lastSkey = idxMap[lastKvIdx - 1];
+        bytes32 lastSkey = idxMap[kvEntryCount - 1];
         idxMap[kvIdx] = lastSkey;
         kvMap[lastSkey].kvIdx = kvIdx;
 
         // remove the last Kv
-        idxMap[lastKvIdx - 1] = 0x0;
-        lastKvIdx = lastKvIdx - 1;
+        idxMap[kvEntryCount - 1] = 0x0;
+        kvEntryCount = kvEntryCount - 1;
 
-        dataMap[kvIdx] = dataMap[lastKvIdx];
-        delete dataMap[lastKvIdx];
+        dataMap[kvIdx] = dataMap[kvEntryCount];
+        delete dataMap[kvEntryCount];
 
         payable(to).transfer(upfrontPayment());
     }
