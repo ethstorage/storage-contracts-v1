@@ -36,19 +36,19 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
             getXIn(sampleIdxs[1]),
             masks[0],
             masks[1]
-        ]);
+            ]);
     }
 
     function _checkSample(
-        uint256 startShardId, 
-        uint256 rows, 
+        uint256 startShardId,
+        uint256 rows,
         bytes32 hash0,
         bytes32 encodedSample,
         uint256 mask,
         bytes calldata inclusiveProof
     ) internal view returns (bytes32, uint256, uint256) {
         (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
-                
+
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
         require(
@@ -68,22 +68,22 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) public view virtual override returns (bytes32) {
-        require(encodedSamples.length == randomChecks, "data length mismatch");
-        require(masks.length == randomChecks, "masks length mismatch");
-        require(inclusiveProofs.length == randomChecks, "proof length mismatch");
+        require(encodedSamples.length == randomChecks(), "data length mismatch");
+        require(masks.length == randomChecks(), "masks length mismatch");
+        require(inclusiveProofs.length == randomChecks(), "proof length mismatch");
         require(decodeProof.length == 1, "decodeProof length mismatch");
         // calculate the number of samples range of the sample check
-        uint256 rows = 1 << (shardEntryBits + sampleLenBits);
+        uint256 rows = 1 << (shardEntryBits() + sampleLenBits());
 
-        uint[] memory kvIdxs = new uint[](randomChecks);
-        uint[] memory sampleIdxs = new uint[](randomChecks);
-        for (uint256 i = 0; i < randomChecks; i++) {
+        uint[] memory kvIdxs = new uint[](randomChecks());
+        uint[] memory sampleIdxs = new uint[](randomChecks());
+        for (uint256 i = 0; i < randomChecks(); i++) {
             (hash0, kvIdxs[i], sampleIdxs[i]) = _checkSample(
-                startShardId, 
-                rows, 
-                hash0, 
-                encodedSamples[i], 
-                masks[i], 
+                startShardId,
+                rows,
+                hash0,
+                encodedSamples[i],
+                masks[i],
                 inclusiveProofs[i]
             );
         }
