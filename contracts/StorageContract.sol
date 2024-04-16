@@ -9,27 +9,19 @@ import "./RandaoLib.sol";
  * EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification.
  */
 abstract contract StorageContract is DecentralizedKV {
-    struct Config {
-        uint256 maxKvSizeBits;
-        uint256 shardSizeBits;
-        uint256 randomChecks;
-        uint256 minimumDiff;
-        uint256 cutoff;
-        uint256 diffAdjDivisor;
-        uint256 treasuryShare; // 10000 = 1.0
-    }
 
     uint256 public constant sampleSizeBits = 5; // 32 bytes per sample
 
-    uint256 public maxKvSizeBits;
-    uint256 public shardSizeBits;
-    uint256 public shardEntryBits;
-    uint256 public sampleLenBits;
-    uint256 public randomChecks;
+    uint256 public constant maxKvSizeBits = 17; // 131072
+    uint256 public constant shardSizeBits = 39; // ~ 512G
+    uint256 public constant shardEntryBits = shardSizeBits - maxKvSizeBits;
+    uint256 public constant sampleLenBits = maxKvSizeBits - sampleSizeBits;
+    uint256 public constant randomChecks = 2;
+    uint256 public constant cutoff = 7200; // cutoff = 2/3 * target internal (3 hours), 3 * 3600 * 2/3
+    uint256 public constant diffAdjDivisor = 32;
+    uint256 public constant treasuryShare = 100; // 10000 = 1.0, 100 means 1%
+
     uint256 public minimumDiff;
-    uint256 public cutoff;
-    uint256 public diffAdjDivisor;
-    uint256 public treasuryShare; // 10000 = 1.0
     uint256 public prepaidAmount;
 
     mapping(uint256 => MiningLib.MiningInfo) public infos;
@@ -38,35 +30,21 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 public prepaidLastMineTime;
 
     function __init_storage(
-        Config memory _config,
+        uint256 _minimumDiff,
         uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
         uint256 _nonceLimit,
-        address _treasury,
         uint256 _prepaidAmount,
+        address _treasury,
         address _owner
     ) public onlyInitializing {
-        /* Assumptions */
-        require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
-        require(_config.maxKvSizeBits >= sampleSizeBits, "maxKvSize too small");
-        require(_config.randomChecks > 0, "At least one checkpoint needed");
+        __init_KV(_startTime, _owner);
 
-        __init_KV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor, _owner);
-
-        shardSizeBits = _config.shardSizeBits;
-        maxKvSizeBits = _config.maxKvSizeBits;
-        shardEntryBits = _config.shardSizeBits - _config.maxKvSizeBits;
-        sampleLenBits = _config.maxKvSizeBits - sampleSizeBits;
-        randomChecks = _config.randomChecks;
-        minimumDiff = _config.minimumDiff;
-        cutoff = _config.cutoff;
-        diffAdjDivisor = _config.diffAdjDivisor;
-        treasuryShare = _config.treasuryShare;
-        nonceLimit = _nonceLimit;
-        treasury = _treasury;
-        prepaidAmount = _prepaidAmount;
+        minimumDiff = _minimumDiff;
         prepaidLastMineTime = _startTime;
+        nonceLimit = _nonceLimit;
+        prepaidAmount = _prepaidAmount;
+        treasury = _treasury;
+
         // make sure shard0 is ready to mine and pay correctly
         infos[0].lastMineTime = _startTime;
     }
