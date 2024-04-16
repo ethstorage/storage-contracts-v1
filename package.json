@@ -27,7 +27,7 @@
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.8.2",
     "solidity-rlp": "^2.0.5",
-    "solc": "^0.8.24"
+    "solc": "^0.8.25"
   },
   "scripts": {
     "compile": "hardhat compile",
