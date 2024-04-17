@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { flattenContracts, changeContractBytecode } = require("./utils");
+const { flattenContracts, changeContractBytecode } = require("./utils/utils");
 
 /* declare const key */
 const key1 = "0x0000000000000000000000000000000000000000000000000000000000000001";

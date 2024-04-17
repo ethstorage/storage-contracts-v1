@@ -5,7 +5,7 @@ require("dotenv").config();
 const { TestState } = require("./lib/test-helper");
 const { printlog } = require("./lib/print");
 const { generateRandaoProof } = require("./lib/prover");
-const {flattenContracts, changeContractBytecode} = require("./utils");
+const {flattenContracts, changeContractBytecode} = require("./utils/utils");
 const { keccak256 } = ethers.utils;
 
 /* declare const key */
@@ -44,7 +44,7 @@ async function swapKVConstant(
   contractCode = contractCode.replace(maxKvSize, "1 << " + newMaxKvSizeBits);
 
   const contractName = "TestEthStorageContract";
-  return await changeContractBytecode(contractAddress, contractName, contractCode);
+  return await changeContractBytecode(contractAddress, contractName, contractCode, true);
 }
 
 describe("EthStorageContract Test", function () {
