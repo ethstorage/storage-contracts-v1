@@ -11,7 +11,7 @@ const ownerAddr = "0x0000000000000000000000000000000000000001"
 async function swapKVConstant(contractAddress, newMaxKvSize, newStorageCost, newDcfFactor) {
   let storageCost = "1500000000000000";
   let dcfFactor = "340282366367469178095360967382638002176";
-  let maxKvSize = "1 << 17";
+  let maxKvSize = "1 << maxKvSizeBits";
 
   let contractCode = flattenContracts("contracts/TestDecentralizedKV.sol");
   contractCode = contractCode.replace(storageCost, newStorageCost);

@@ -9,18 +9,6 @@ import "./RandaoLib.sol";
  * EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification.
  */
 abstract contract StorageContract is DecentralizedKV {
-
-    uint256 public constant sampleSizeBits = 5; // 32 bytes per sample
-
-    uint256 public constant maxKvSizeBits = 17; // 131072
-    uint256 public constant shardSizeBits = 39; // ~ 512G
-    uint256 public constant shardEntryBits = shardSizeBits - maxKvSizeBits;
-    uint256 public constant sampleLenBits = maxKvSizeBits - sampleSizeBits;
-    uint256 public constant randomChecks = 2;
-    uint256 public constant cutoff = 7200; // cutoff = 2/3 * target internal (3 hours), 3 * 3600 * 2/3
-    uint256 public constant diffAdjDivisor = 32;
-    uint256 public constant treasuryShare = 100; // 10000 = 1.0, 100 means 1%
-
     uint256 public minimumDiff;
     uint256 public prepaidAmount;
 

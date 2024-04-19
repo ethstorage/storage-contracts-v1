@@ -29,7 +29,7 @@ async function swapKVConstant(
 
   const storageCost = "1500000000000000";
   const dcfFactor = "340282366367469178095360967382638002176";
-  const maxKvSize = "1 << 17";
+  const maxKvSize = "1 << maxKvSizeBits";
 
   let contractCode = flattenContracts("contracts/TestEthStorageContract.sol");
   contractCode = contractCode.replace(maxKvSizeBits, `maxKvSizeBits = ${newMaxKvSizeBits}`);
