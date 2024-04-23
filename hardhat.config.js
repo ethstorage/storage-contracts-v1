@@ -1,4 +1,5 @@
 require("dotenv").config();
+const fs = require('fs');
 
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
@@ -14,6 +15,42 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   for (const account of accounts) {
     console.log(account.address);
   }
+});
+
+const temp_time = "temp_time.txt";
+
+task("times", "Change startTime", async (taskArgs, hre) => {
+  const startTime = "1713782077";
+  const newStartTime = Math.floor(new Date().getTime() / 1000);
+
+  // replace
+  let data = fs.readFileSync('./contracts/EthStorageConstants.sol', 'utf8');
+  if (data.indexOf(startTime) === -1) {
+    return;
+  }
+  data = data.replace(startTime, newStartTime);
+  fs.writeFileSync('./contracts/EthStorageConstants.sol', data);
+
+  // save time
+  fs.writeFileSync(temp_time, newStartTime + "");
+  console.log("Change start time success!");
+});
+
+task("undo", "Undo changes to startTime", async (taskArgs, hre) => {
+  const startTime = "1713782077";
+  const currentTime = fs.readFileSync(temp_time, "utf-8");
+
+  // replace
+  let data = fs.readFileSync('./contracts/EthStorageConstants.sol', 'utf8');
+  if (data.indexOf(currentTime) === -1) {
+    return;
+  }
+  data = data.replace(currentTime, startTime);
+  fs.writeFileSync('./contracts/EthStorageConstants.sol', data);
+
+  // remove
+  fs.unlinkSync(temp_time);
+  console.log("Undo change start time success!");
 });
 
 // You need to export an object to set up your config

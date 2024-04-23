@@ -7,8 +7,6 @@ const storageContractProxy = "0x804C520d3c084C805E37A35E90057Ac32831F96f";
 const gasPrice = null;
 
 async function deployContract() {
-  const startTime = Math.floor(new Date().getTime() / 1000);
-
   const [deployer] = await hre.ethers.getSigners();
   ownerAddress = deployer.address;
   treasuryAddress = deployer.address;
@@ -20,11 +18,10 @@ async function deployContract() {
   const impl = implContract.address;
   console.log("storage impl address is ", impl);
 
-  const transaction = await implContract.populateTransaction.initialize(
+  const data = implContract.interface.encodeFunctionData("initialize", [
     treasuryAddress, // treasury
     ownerAddress
-  );
-  const data = transaction.data;
+  ]);
   console.log(impl, ownerAddress, data);
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
   const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
@@ -46,6 +43,9 @@ async function deployContract() {
   const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
+
+  const startTime = await ethStorage.startTime();
+  console.log("start time is", startTime);
 }
 
 async function updateContract() {
