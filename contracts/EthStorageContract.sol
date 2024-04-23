@@ -15,14 +15,10 @@ contract EthStorageContract is StorageContract, Decoder {
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
     function initialize(
-        uint256 _minimumDiff,
-        uint256 _startTime,
-        uint256 _nonceLimit,
-        uint256 _prepaidAmount,
         address _treasury,
         address _owner
     ) public payable initializer {
-        __init_storage(_minimumDiff, _startTime, _nonceLimit, _prepaidAmount, _treasury, _owner);
+        __init_storage(_treasury, _owner);
     }
 
     function modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {

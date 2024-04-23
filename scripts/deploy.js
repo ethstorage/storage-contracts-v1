@@ -21,10 +21,6 @@ async function deployContract() {
   console.log("storage impl address is ", impl);
 
   const transaction = await implContract.populateTransaction.initialize(
-    4718592000, // minimumDiff 5 * 3 * 3600 * 1024 * 1024 / 12 = 4718592000 for 5 replicas that can have 1M IOs in one epoch
-    startTime, // startTime
-    1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
-    3145728000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
     treasuryAddress, // treasury
     ownerAddress
   );

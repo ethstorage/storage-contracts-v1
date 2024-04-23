@@ -9,32 +9,20 @@ import "./RandaoLib.sol";
  * EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification.
  */
 abstract contract StorageContract is DecentralizedKV {
-    uint256 public minimumDiff;
-    uint256 public prepaidAmount;
-
     mapping(uint256 => MiningLib.MiningInfo) public infos;
-    uint256 public nonceLimit; // maximum nonce per block
     address public treasury;
     uint256 public prepaidLastMineTime;
 
     function __init_storage(
-        uint256 _minimumDiff,
-        uint256 _startTime,
-        uint256 _nonceLimit,
-        uint256 _prepaidAmount,
         address _treasury,
         address _owner
     ) public onlyInitializing {
-        __init_KV(_startTime, _owner);
+        __init_KV(_owner);
 
-        minimumDiff = _minimumDiff;
-        prepaidLastMineTime = _startTime;
-        nonceLimit = _nonceLimit;
-        prepaidAmount = _prepaidAmount;
         treasury = _treasury;
-
+        prepaidLastMineTime = startTime;
         // make sure shard0 is ready to mine and pay correctly
-        infos[0].lastMineTime = _startTime;
+        infos[0].lastMineTime = startTime;
     }
 
     event MinedBlock(
@@ -205,13 +193,5 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata decodeProof
     ) public virtual {
         return _mine(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
-    }
-
-    function setPrepaidAmount(uint256 _prepaidAmount) public onlyOwner {
-        prepaidAmount = _prepaidAmount;
-    }
-
-    function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
-        minimumDiff = _minimumDiff;
     }
 }

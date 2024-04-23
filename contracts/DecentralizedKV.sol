@@ -14,7 +14,6 @@ contract DecentralizedKV is OwnableUpgradeable, EthStorageConstants {
         PaddingPer31Bytes
     }
 
-    uint256 public startTime;
     uint40 public lastKvIdx; // number of entries in the store
 
     struct PhyAddr {
@@ -31,11 +30,10 @@ contract DecentralizedKV is OwnableUpgradeable, EthStorageConstants {
     /* index - skey, reverse lookup */
     mapping(uint256 => bytes32) internal idxMap;
 
-    function __init_KV(uint256 _startTime, address _owner) public onlyInitializing {
+    function __init_KV(address _owner) public onlyInitializing {
         __Context_init();
         __Ownable_init(_owner);
         lastKvIdx = 0;
-        startTime = _startTime;
     }
 
     function pow(uint256 fp, uint256 n) internal pure returns (uint256) {
