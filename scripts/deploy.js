@@ -1,4 +1,7 @@
 const hre = require("hardhat");
+const fs = require('fs');
+
+const temp_file = "temp_file.txt";
 
 let ownerAddress = null;
 let treasuryAddress = null;
@@ -20,7 +23,7 @@ async function deployContract() {
 
   const data = implContract.interface.encodeFunctionData("initialize", [
     treasuryAddress, // treasury
-    ownerAddress
+    ownerAddress,
   ]);
   console.log(impl, ownerAddress, data);
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
@@ -44,30 +47,41 @@ async function deployContract() {
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 
+  // save address to file
+  const addresses = {
+    impl: impl,
+    proxy: ethStorageProxy.address,
+  };
+  fs.writeFileSync(temp_file, JSON.stringify(addresses), {flag: 'a'});
+
   const startTime = await ethStorage.startTime();
   console.log("start time is", startTime);
 }
 
 async function updateContract() {
-    const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
-    const implContract = await StorageContract.deploy({ gasPrice: gasPrice });
-    await implContract.deployed();
-    const impl = implContract.address;
-    console.log("storage impl address is ", impl);
+  const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
+  const implContract = await StorageContract.deploy({ gasPrice: gasPrice });
+  await implContract.deployed();
+  const impl = implContract.address;
+  console.log("storage impl address is ", impl);
 
-    const EthStorageAdmin = await hre.ethers.getContractAt("IProxyAdmin", adminContractAddr);
-    const tx = await EthStorageAdmin.upgradeAndCall(storageContractProxy, impl, "0x");
-    await tx.wait();
-    console.log("update contract success!")
+  const EthStorageAdmin = await hre.ethers.getContractAt("IProxyAdmin", adminContractAddr);
+  const tx = await EthStorageAdmin.upgradeAndCall(storageContractProxy, impl, "0x");
+  await tx.wait();
+  console.log("update contract success!");
+
+  // save address to file
+  const addresses = {impl: impl};
+  fs.writeFileSync(temp_file, JSON.stringify(addresses), {flag: 'a'});
 }
 
 async function main() {
-  if(!storageContractProxy) {
-      // create
-      await deployContract();
+  if (!storageContractProxy) {
+    // create
+    await deployContract();
   } else {
-      // update
-      await updateContract();
+    // update
+    await updateContract();
   }
 }
 

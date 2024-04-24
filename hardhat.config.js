@@ -7,6 +7,8 @@ require("@nomiclabs/hardhat-web3");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
 
+const { execSync } = require("child_process");
+
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
@@ -17,9 +19,16 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+const temp_file = "temp_file.txt";
 const temp_time = "temp_time.txt";
 
-task("times", "Change startTime", async (taskArgs, hre) => {
+task("change-time", "Change startTime", async (taskArgs, hre) => {
+  // remove old file
+  try {
+    fs.unlinkSync(temp_file);
+    fs.unlinkSync(temp_time);
+  } catch (e){}
+
   const startTime = "1713782077";
   const newStartTime = Math.floor(new Date().getTime() / 1000);
 
@@ -32,11 +41,11 @@ task("times", "Change startTime", async (taskArgs, hre) => {
   fs.writeFileSync('./contracts/EthStorageConstants.sol', data);
 
   // save time
-  fs.writeFileSync(temp_time, newStartTime + "");
+  fs.writeFileSync(temp_time, newStartTime.toString());
   console.log("Change start time success!");
 });
 
-task("undo", "Undo changes to startTime", async (taskArgs, hre) => {
+task("undo-time", "Undo changes to startTime", async (taskArgs, hre) => {
   const startTime = "1713782077";
   const currentTime = fs.readFileSync(temp_time, "utf-8");
 
@@ -53,6 +62,19 @@ task("undo", "Undo changes to startTime", async (taskArgs, hre) => {
   console.log("Undo change start time success!");
 });
 
+task("verify-contract", "Verify contract", async (taskArgs, hre) => {
+  const cmd = "npx hardhat verify --network sepolia ";
+  const data = fs.readFileSync(temp_file);
+  const config = JSON.parse(data);
+
+  if (config.impl) {
+    execSync(`${cmd}${config.impl}`);
+  }
+  if (config.proxy) {
+    execSync(`${cmd}${config.proxy}`);
+  }
+  console.log("Verify contract success!");
+});
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
