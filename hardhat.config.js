@@ -25,8 +25,10 @@ const temp_time = "temp_time.txt";
 task("change-time", "Change startTime", async (taskArgs, hre) => {
   // remove old file
   try {
-    fs.unlinkSync(temp_file);
     fs.unlinkSync(temp_time);
+  } catch (e){}
+  try {
+    fs.unlinkSync(temp_file);
   } catch (e){}
 
   const startTime = "1713782077";
