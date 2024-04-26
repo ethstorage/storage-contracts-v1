@@ -48,25 +48,27 @@ task("change-time", "Change startTime", async (taskArgs, hre) => {
 });
 
 task("undo-time", "Undo changes to startTime", async (taskArgs, hre) => {
-  const startTime = "1713782077";
-  const fileStat = fs.statSync(temp_time);
-  if (!fileStat.isFile()) {
+  let currentTime;
+  try {
+    currentTime = fs.readFileSync(temp_time, "utf-8");
+  } catch (e) { }
+  // not found
+  if (!currentTime) {
     return;
   }
 
-  const currentTime = fs.readFileSync(temp_time, "utf-8");
+  // remove file
+  fs.unlinkSync(temp_time);
+  console.log("Undo change start time success!");
 
   // replace
+  const startTime = "1713782077";
   let data = fs.readFileSync('./contracts/EthStorageConstants.sol', 'utf8');
   if (data.indexOf(currentTime) === -1) {
     return;
   }
   data = data.replace(currentTime, startTime);
   fs.writeFileSync('./contracts/EthStorageConstants.sol', data);
-
-  // remove
-  fs.unlinkSync(temp_time);
-  console.log("Undo change start time success!");
 });
 
 task("verify-contract", "Verify contract", async (taskArgs, hre) => {
