@@ -49,6 +49,11 @@ task("change-time", "Change startTime", async (taskArgs, hre) => {
 
 task("undo-time", "Undo changes to startTime", async (taskArgs, hre) => {
   const startTime = "1713782077";
+  const fileStat = fs.statSync(temp_time);
+  if (!fileStat.isFile()) {
+    return;
+  }
+
   const currentTime = fs.readFileSync(temp_time, "utf-8");
 
   // replace
