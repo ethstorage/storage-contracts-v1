@@ -9,66 +9,20 @@ import "./RandaoLib.sol";
  * EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification.
  */
 abstract contract StorageContract is DecentralizedKV {
-    struct Config {
-        uint256 maxKvSizeBits;
-        uint256 shardSizeBits;
-        uint256 randomChecks;
-        uint256 minimumDiff;
-        uint256 cutoff;
-        uint256 diffAdjDivisor;
-        uint256 treasuryShare; // 10000 = 1.0
-    }
-
-    uint256 public constant sampleSizeBits = 5; // 32 bytes per sample
-
-    uint256 public maxKvSizeBits;
-    uint256 public shardSizeBits;
-    uint256 public shardEntryBits;
-    uint256 public sampleLenBits;
-    uint256 public randomChecks;
-    uint256 public minimumDiff;
-    uint256 public cutoff;
-    uint256 public diffAdjDivisor;
-    uint256 public treasuryShare; // 10000 = 1.0
-    uint256 public prepaidAmount;
-
     mapping(uint256 => MiningLib.MiningInfo) public infos;
-    uint256 public nonceLimit; // maximum nonce per block
     address public treasury;
     uint256 public prepaidLastMineTime;
 
     function __init_storage(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _nonceLimit,
         address _treasury,
-        uint256 _prepaidAmount,
         address _owner
     ) public onlyInitializing {
-        /* Assumptions */
-        require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
-        require(_config.maxKvSizeBits >= sampleSizeBits, "maxKvSize too small");
-        require(_config.randomChecks > 0, "At least one checkpoint needed");
+        __init_KV(_owner);
 
-        __init_KV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor, _owner);
-
-        shardSizeBits = _config.shardSizeBits;
-        maxKvSizeBits = _config.maxKvSizeBits;
-        shardEntryBits = _config.shardSizeBits - _config.maxKvSizeBits;
-        sampleLenBits = _config.maxKvSizeBits - sampleSizeBits;
-        randomChecks = _config.randomChecks;
-        minimumDiff = _config.minimumDiff;
-        cutoff = _config.cutoff;
-        diffAdjDivisor = _config.diffAdjDivisor;
-        treasuryShare = _config.treasuryShare;
-        nonceLimit = _nonceLimit;
         treasury = _treasury;
-        prepaidAmount = _prepaidAmount;
-        prepaidLastMineTime = _startTime;
+        prepaidLastMineTime = startTime;
         // make sure shard0 is ready to mine and pay correctly
-        infos[0].lastMineTime = _startTime;
+        infos[0].lastMineTime = startTime;
     }
 
     event MinedBlock(
@@ -239,13 +193,5 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata decodeProof
     ) public virtual {
         return _mine(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
-    }
-
-    function setPrepaidAmount(uint256 _prepaidAmount) public onlyOwner {
-        prepaidAmount = _prepaidAmount;
-    }
-
-    function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
-        minimumDiff = _minimumDiff;
     }
 }
