@@ -19,59 +19,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
-const temp_file = "temp_file.txt";
-const temp_time = "temp_time.txt";
-
-task("change-time", "Change startTime", async (taskArgs, hre) => {
-  // remove old file
-  try {
-    fs.unlinkSync(temp_time);
-  } catch (e){}
-  try {
-    fs.unlinkSync(temp_file);
-  } catch (e){}
-
-  const startTime = "1713782077";
-  const newStartTime = Math.floor(new Date().getTime() / 1000);
-
-  // replace
-  let data = fs.readFileSync('./contracts/EthStorageConstants.sol', 'utf8');
-  if (data.indexOf(startTime) === -1) {
-    return;
-  }
-  data = data.replace(startTime, newStartTime);
-  fs.writeFileSync('./contracts/EthStorageConstants.sol', data);
-
-  // save time
-  fs.writeFileSync(temp_time, newStartTime.toString());
-  console.log("Change start time success!");
-});
-
-task("undo-time", "Undo changes to startTime", async (taskArgs, hre) => {
-  let currentTime;
-  try {
-    currentTime = fs.readFileSync(temp_time, "utf-8");
-  } catch (e) { }
-  // not found
-  if (!currentTime) {
-    return;
-  }
-
-  // remove file
-  fs.unlinkSync(temp_time);
-  console.log("Undo change start time success!");
-
-  // replace
-  const startTime = "1713782077";
-  let data = fs.readFileSync('./contracts/EthStorageConstants.sol', 'utf8');
-  if (data.indexOf(currentTime) === -1) {
-    return;
-  }
-  data = data.replace(currentTime, startTime);
-  fs.writeFileSync('./contracts/EthStorageConstants.sol', data);
-});
-
+const temp_file = "scripts/temp.json";
 task("verify-contract", "Verify contract", async (taskArgs, hre) => {
+  if (!fs.existsSync(temp_file)) {
+    return;
+  }
   const cmd = "npx hardhat verify --network sepolia ";
   const data = fs.readFileSync(temp_file);
   const config = JSON.parse(data);

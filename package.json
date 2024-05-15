@@ -35,9 +35,8 @@
     "prettier:check": "prettier-check contracts/**/*.sol",
     "prettier:fix": "prettier --write contracts/**/*.sol test/**/*.js scripts/**/*.js",
     "verify": "npx hardhat verify-contract",
-    "deploy-sepolia": "npx hardhat run scripts/deploy.js --network sepolia",
-    "deploy-verify": "npx hardhat change-time && npm run deploy-sepolia && npx hardhat verify-contract && npx hardhat undo-time",
-    "deploy": "npx hardhat change-time && npm run deploy-sepolia && npx hardhat undo-time"
+    "deploy-verify": "npm run deploy && npx hardhat verify-contract",
+    "deploy": "npx hardhat run scripts/deploy.js --network sepolia"
   },
   "workspaces": {
     "packages": [

@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const fs = require('fs');
 
-const temp_file = "temp_file.txt";
+const temp_file = "scripts/temp.json";
 
 let ownerAddress = null;
 let treasuryAddress = null;
@@ -53,9 +53,6 @@ async function deployContract() {
     proxy: ethStorageProxy.address,
   };
   fs.writeFileSync(temp_file, JSON.stringify(addresses), {flag: 'a'});
-
-  const startTime = await ethStorage.startTime();
-  console.log("start time is", startTime);
 }
 
 async function updateContract() {
