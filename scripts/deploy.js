@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const fs = require('fs');
 
-const temp_file = "scripts/temp.json";
+const deployment_file = "scripts/deployment.json";
 
 let ownerAddress = null;
 let treasuryAddress = null;
@@ -52,7 +52,7 @@ async function deployContract() {
     impl: impl,
     proxy: ethStorageProxy.address,
   };
-  fs.writeFileSync(temp_file, JSON.stringify(addresses), {flag: 'a'});
+  fs.writeFileSync(deployment_file, JSON.stringify(addresses), {flag: 'a'});
 }
 
 async function updateContract() {
@@ -69,7 +69,7 @@ async function updateContract() {
 
   // save address to file
   const addresses = {impl: impl};
-  fs.writeFileSync(temp_file, JSON.stringify(addresses), {flag: 'a'});
+  fs.writeFileSync(deployment_file, JSON.stringify(addresses), {flag: 'a'});
 }
 
 async function main() {

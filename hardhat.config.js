@@ -19,13 +19,13 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
-const temp_file = "scripts/temp.json";
+const deployment_file = "scripts/deployment.json";
 task("verify-contract", "Verify contract", async (taskArgs, hre) => {
-  if (!fs.existsSync(temp_file)) {
+  if (!fs.existsSync(deployment_file)) {
     return;
   }
   const cmd = "npx hardhat verify --network sepolia ";
-  const data = fs.readFileSync(temp_file);
+  const data = fs.readFileSync(deployment_file);
   const config = JSON.parse(data);
 
   if (config.impl) {
