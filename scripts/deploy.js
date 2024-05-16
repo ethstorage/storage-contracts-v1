@@ -6,7 +6,7 @@ const deployment_file = "scripts/deployment.json";
 let ownerAddress = null;
 let treasuryAddress = null;
 const adminContractAddr = "0x11aceF404143514dbe0C1477250605646754F9e6";
-const storageContractProxy = null;
+const storageContractProxy = "0x804C520d3c084C805E37A35E90057Ac32831F96f";
 const gasPrice = null;
 
 async function deployContract() {
@@ -59,8 +59,8 @@ async function deployContract() {
 
   // fund 0.5 eth into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  // const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
-  // await tx.wait();
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
+  await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 
   // save address to file
