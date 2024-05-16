@@ -9,6 +9,8 @@ const adminContractAddr = "0x11aceF404143514dbe0C1477250605646754F9e6";
 const storageContractProxy = "0x804C520d3c084C805E37A35E90057Ac32831F96f";
 const gasPrice = null;
 
+const prepaidAmount = 3145728000000000000000n; // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
+
 async function deployContract() {
   const [deployer] = await hre.ethers.getSigners();
   ownerAddress = deployer.address;
@@ -27,7 +29,10 @@ async function deployContract() {
   ]);
   console.log(impl, ownerAddress, data);
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
-  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
+  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, {
+    gasPrice: gasPrice,
+    value: prepaidAmount
+  });
   await ethStorageProxy.deployed();
   const admin = await ethStorageProxy.admin();
 
@@ -40,12 +45,13 @@ async function deployContract() {
     "at",
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
+  console.log("balance of " + ethStorageProxy.address, await hre.ethers.provider.getBalance(ethStorageProxy.address));
 
   // fund 0.5 eth into the storage contract to give reward for empty mining
-  const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
-  await tx.wait();
-  console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
+  // const ethStorage = StorageContract.attach(ethStorageProxy.address);
+  // const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
+  // await tx.wait();
+  // console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 
   // save address to file
   const addresses = {

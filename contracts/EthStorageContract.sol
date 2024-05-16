@@ -18,6 +18,7 @@ contract EthStorageContract is StorageContract, Decoder {
         address _treasury,
         address _owner
     ) public payable initializer {
+        require(msg.value >= prepaidAmount, "prepaid amount is not enough");
         __init_storage(_treasury, _owner);
     }
 
