@@ -7,6 +7,15 @@ import "./Decoder2.sol";
 
 contract EthStorageContract2 is EthStorageContract, Decoder2 {
 
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit
+    ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor, _prepaidAmount, _nonceLimit) {}
+
     function getEncodingKey(uint256 kvIdx, address miner) internal view returns (uint256) {
         return uint256(keccak256(abi.encode(kvMap[idxMap[kvIdx]].hash, miner, kvIdx))) % modulusBn254;
     }

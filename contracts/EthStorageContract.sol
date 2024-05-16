@@ -14,6 +14,15 @@ contract EthStorageContract is StorageContract, Decoder {
 
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit
+    ) StorageContract(_config, _startTime, _storageCost, _dcfFactor, _prepaidAmount, _nonceLimit) {}
+
     function initialize(
         address _treasury,
         address _owner

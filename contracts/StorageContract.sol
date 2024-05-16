@@ -9,9 +9,60 @@ import "./RandaoLib.sol";
  * EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification.
  */
 abstract contract StorageContract is DecentralizedKV {
+    struct Config {
+        uint256 maxKvSizeBits;
+        uint256 shardSizeBits;
+        uint256 randomChecks;
+        uint256 minimumDiff;
+        uint256 cutoff;
+        uint256 diffAdjDivisor;
+        uint256 treasuryShare; // 10000 = 1.0
+    }
+
+    uint256 public constant sampleSizeBits = 5; // 32 bytes per sample
+
+    uint256 public immutable maxKvSizeBits;
+    uint256 public immutable shardSizeBits;
+    uint256 public immutable shardEntryBits;
+    uint256 public immutable sampleLenBits;
+    uint256 public immutable randomChecks;
+    uint256 public immutable minimumDiff;
+    uint256 public immutable cutoff;
+    uint256 public immutable diffAdjDivisor;
+    uint256 public immutable treasuryShare; // 10000 = 1.0
+    uint256 public immutable prepaidAmount;
+    uint256 public immutable nonceLimit; // maximum nonce per block
+
     mapping(uint256 => MiningLib.MiningInfo) public infos;
     address public treasury;
     uint256 public prepaidLastMineTime;
+
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit
+    ) DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor) {
+        /* Assumptions */
+        require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
+        require(_config.maxKvSizeBits >= sampleSizeBits, "maxKvSize too small");
+        require(_config.randomChecks > 0, "At least one checkpoint needed");
+
+        maxKvSizeBits = _config.maxKvSizeBits;
+        shardSizeBits = _config.shardSizeBits;
+        shardEntryBits = _config.shardSizeBits - _config.maxKvSizeBits;
+        sampleLenBits = _config.maxKvSizeBits - sampleSizeBits;
+        randomChecks = _config.randomChecks;
+        minimumDiff = _config.minimumDiff;
+        cutoff = _config.cutoff;
+        diffAdjDivisor = _config.diffAdjDivisor;
+        treasuryShare = _config.treasuryShare;
+
+        prepaidAmount = _prepaidAmount;
+        nonceLimit = _nonceLimit;
+    }
 
     function __init_storage(
         address _treasury,
