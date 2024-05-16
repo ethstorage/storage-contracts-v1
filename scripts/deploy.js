@@ -1,14 +1,15 @@
 const hre = require("hardhat");
+const fs = require('fs');
+
+const deployment_file = "scripts/deployment.json";
 
 let ownerAddress = null;
 let treasuryAddress = null;
-const adminContractAddr = 0x11aceF404143514dbe0C1477250605646754F9e6;
-const storageContractProxy = 0x804C520d3c084C805E37A35E90057Ac32831F96f;
+const adminContractAddr = "0x11aceF404143514dbe0C1477250605646754F9e6";
+const storageContractProxy = "0x804C520d3c084C805E37A35E90057Ac32831F96f";
 const gasPrice = null;
 
 async function deployContract() {
-  const startTime = Math.floor(new Date().getTime() / 1000);
-
   const [deployer] = await hre.ethers.getSigners();
   ownerAddress = deployer.address;
   treasuryAddress = deployer.address;
@@ -20,25 +21,10 @@ async function deployContract() {
   const impl = implContract.address;
   console.log("storage impl address is ", impl);
 
-  const transaction = await implContract.populateTransaction.initialize(
-    [
-      17, // maxKvSizeBits, 131072
-      39, // shardSizeBits ~ 512G
-      2, // randomChecks
-      4718592000, // minimumDiff 5 * 3 * 3600 * 1024 * 1024 / 12 = 4718592000 for 5 replicas that can have 1M IOs in one epoch
-      7200, // cutoff = 2/3 * target internal (3 hours), 3 * 3600 * 2/3
-      32, // diffAdjDivisor
-      100, // treasuryShare, means 1%
-    ],
-    startTime, // startTime
-    1500000000000000, // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
-    340282366367469178095360967382638002176n, // dcfFactor, it mean 0.95 for yearly discount
-    1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
+  const data = implContract.interface.encodeFunctionData("initialize", [
     treasuryAddress, // treasury
-    3145728000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
-    ownerAddress
-  );
-  const data = transaction.data;
+    ownerAddress,
+  ]);
   console.log(impl, ownerAddress, data);
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
   const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
@@ -60,28 +46,39 @@ async function deployContract() {
   const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
+
+  // save address to file
+  const addresses = {
+    impl: impl,
+    proxy: ethStorageProxy.address,
+  };
+  fs.writeFileSync(deployment_file, JSON.stringify(addresses), {flag: 'a'});
 }
 
 async function updateContract() {
-    const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
-    const implContract = await StorageContract.deploy({ gasPrice: gasPrice });
-    await implContract.deployed();
-    const impl = implContract.address;
-    console.log("storage impl address is ", impl);
+  const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
+  const implContract = await StorageContract.deploy({ gasPrice: gasPrice });
+  await implContract.deployed();
+  const impl = implContract.address;
+  console.log("storage impl address is ", impl);
 
-    const EthStorageAdmin = await hre.ethers.getContractAt("IProxyAdmin", adminContractAddr);
-    const tx = await EthStorageAdmin.upgradeAndCall(storageContractProxy, impl, "0x");
-    await tx.wait();
-    console.log("update contract success!")
+  const EthStorageAdmin = await hre.ethers.getContractAt("IProxyAdmin", adminContractAddr);
+  const tx = await EthStorageAdmin.upgradeAndCall(storageContractProxy, impl, "0x");
+  await tx.wait();
+  console.log("update contract success!");
+
+  // save address to file
+  const addresses = {impl: impl};
+  fs.writeFileSync(deployment_file, JSON.stringify(addresses), {flag: 'a'});
 }
 
 async function main() {
-  if(!storageContractProxy) {
-      // create
-      await deployContract();
+  if (!storageContractProxy) {
+    // create
+    await deployContract();
   } else {
-      // update
-      await updateContract();
+    // update
+    await updateContract();
   }
 }
 

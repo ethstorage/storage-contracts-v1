@@ -1,10 +1,13 @@
 require("dotenv").config();
+const fs = require('fs');
 
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
+
+const { execSync } = require("child_process");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -16,6 +19,23 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+const deployment_file = "scripts/deployment.json";
+task("verify-contract", "Verify contract", async (taskArgs, hre) => {
+  if (!fs.existsSync(deployment_file)) {
+    return;
+  }
+  const cmd = "npx hardhat verify --network sepolia ";
+  const data = fs.readFileSync(deployment_file);
+  const config = JSON.parse(data);
+
+  if (config.impl) {
+    execSync(`${cmd}${config.impl}`);
+  }
+  if (config.proxy) {
+    execSync(`${cmd}${config.proxy}`);
+  }
+  console.log("Verify contract success!");
+});
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 

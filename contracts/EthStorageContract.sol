@@ -15,16 +15,10 @@ contract EthStorageContract is StorageContract, Decoder {
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
     function initialize(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _nonceLimit,
         address _treasury,
-        uint256 _prepaidAmount,
         address _owner
     ) public payable initializer {
-        __init_storage(_config, _startTime, _storageCost, _dcfFactor, _nonceLimit, _treasury, _prepaidAmount, _owner);
+        __init_storage(_treasury, _owner);
     }
 
     function modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {
@@ -179,6 +173,7 @@ contract EthStorageContract is StorageContract, Decoder {
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
     function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable virtual {
         bytes32 dataHash = blobhash(blobIdx);
+        require(dataHash != 0, "failed to get blob hash");
         uint256 kvIdx = _putInternal(key, dataHash, length);
 
         emit PutBlob(kvIdx, length, dataHash);

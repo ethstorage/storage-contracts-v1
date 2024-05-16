@@ -9,13 +9,9 @@ contract TestDecentralizedKV is DecentralizedKV {
     mapping(uint256 => bytes) internal dataMap;
 
     function initialize(
-        uint256 _maxKvSize,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
         address owner
     ) public initializer {
-        __init_KV(_maxKvSize, _startTime, _storageCost, _dcfFactor, owner);
+        __init_KV(owner);
     }
 
     function setTimestamp(uint256 ts) public {
