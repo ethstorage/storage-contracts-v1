@@ -17,10 +17,8 @@ contract TestEthStorageContract is EthStorageContract {
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _prepaidAmount,
-        uint256 _nonceLimit
-    ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor, _prepaidAmount, _nonceLimit) {}
+        uint256 _dcfFactor
+    ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor) {}
 
     function setTimestamp(uint256 ts) public {
         require(ts > currentTimestamp, "ts");

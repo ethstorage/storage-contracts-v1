@@ -13,7 +13,6 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 maxKvSizeBits;
         uint256 shardSizeBits;
         uint256 randomChecks;
-        uint256 minimumDiff;
         uint256 cutoff;
         uint256 diffAdjDivisor;
         uint256 treasuryShare; // 10000 = 1.0
@@ -26,14 +25,14 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 public immutable shardEntryBits;
     uint256 public immutable sampleLenBits;
     uint256 public immutable randomChecks;
-    uint256 public immutable minimumDiff;
     uint256 public immutable cutoff;
     uint256 public immutable diffAdjDivisor;
     uint256 public immutable treasuryShare; // 10000 = 1.0
-    uint256 public immutable prepaidAmount;
-    uint256 public immutable nonceLimit; // maximum nonce per block
 
     mapping(uint256 => MiningLib.MiningInfo) public infos;
+    uint256 public minimumDiff;
+    uint256 public prepaidAmount;
+    uint256 public nonceLimit; // maximum nonce per block
     address public treasury;
     uint256 public prepaidLastMineTime;
 
@@ -41,9 +40,7 @@ abstract contract StorageContract is DecentralizedKV {
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _prepaidAmount,
-        uint256 _nonceLimit
+        uint256 _dcfFactor
     ) DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor) {
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "shardSize too small");
@@ -55,21 +52,23 @@ abstract contract StorageContract is DecentralizedKV {
         shardEntryBits = _config.shardSizeBits - _config.maxKvSizeBits;
         sampleLenBits = _config.maxKvSizeBits - sampleSizeBits;
         randomChecks = _config.randomChecks;
-        minimumDiff = _config.minimumDiff;
         cutoff = _config.cutoff;
         diffAdjDivisor = _config.diffAdjDivisor;
         treasuryShare = _config.treasuryShare;
-
-        prepaidAmount = _prepaidAmount;
-        nonceLimit = _nonceLimit;
     }
 
     function __init_storage(
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
         address _treasury,
         address _owner
     ) public onlyInitializing {
         __init_KV(_owner);
 
+        minimumDiff = _minimumDiff;
+        prepaidAmount = _prepaidAmount;
+        nonceLimit = _nonceLimit;
         treasury = _treasury;
         prepaidLastMineTime = startTime;
         // make sure shard0 is ready to mine and pay correctly
@@ -244,5 +243,17 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata decodeProof
     ) public virtual {
         return _mine(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
+    }
+
+    function setNonceLimit(uint256 _nonceLimit) public onlyOwner {
+        nonceLimit = _nonceLimit;
+    }
+
+    function setPrepaidAmount(uint256 _prepaidAmount) public onlyOwner {
+        prepaidAmount = _prepaidAmount;
+    }
+
+    function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
+        minimumDiff = _minimumDiff;
     }
 }

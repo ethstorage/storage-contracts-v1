@@ -9,10 +9,8 @@ contract TestEthStorageContractKZG is EthStorageContract2 {
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _prepaidAmount,
-        uint256 _nonceLimit
-    ) EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor, _prepaidAmount, _nonceLimit) {}
+        uint256 _dcfFactor
+    ) EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor) {}
 
     // a test only method to upload multiple blobs in one tx
     function putBlobs(bytes32[] memory keys) public payable {

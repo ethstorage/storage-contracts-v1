@@ -18,16 +18,17 @@ contract EthStorageContract is StorageContract, Decoder {
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _prepaidAmount,
-        uint256 _nonceLimit
-    ) StorageContract(_config, _startTime, _storageCost, _dcfFactor, _prepaidAmount, _nonceLimit) {}
+        uint256 _dcfFactor
+    ) StorageContract(_config, _startTime, _storageCost, _dcfFactor) {}
 
     function initialize(
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
         address _treasury,
         address _owner
     ) public payable initializer {
-        __init_storage(_treasury, _owner);
+        __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
     function modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {

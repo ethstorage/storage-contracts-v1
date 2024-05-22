@@ -20,7 +20,6 @@ describe("EthStorageContract Test", function () {
           13, // maxKvSizeBits
           14, // shardSizeBits
           1, // randomChecks
-          1, // minimumDiff
           40, // cutoff
           1024, // diffAdjDivisor
           0, // treasuryShare
@@ -28,11 +27,12 @@ describe("EthStorageContract Test", function () {
         0, // startTime
         0, // storageCost
         0, // dcfFactor
-        0, // prepaidAmount
-        1, // nonceLimit
     );
     await sc.deployed();
     await sc.initialize(
+        1, // minimumDiff
+        0, // prepaidAmount
+        1, // nonceLimit
         "0x0000000000000000000000000000000000000000", // treasury
         ownerAddr
     );
@@ -78,7 +78,6 @@ describe("EthStorageContract Test", function () {
           13, // maxKvSizeBits
           14, // shardSizeBits
           1, // randomChecks
-          1, // minimumDiff
           40, // cutoff
           1024, // diffAdjDivisor
           0, // treasuryShare
@@ -86,11 +85,12 @@ describe("EthStorageContract Test", function () {
         0, // startTime
         0, // storageCost
         0, // dcfFactor
-        0, // prepaidAmount
-        1, // nonceLimit
     );
     await sc.deployed();
     await sc.initialize(
+        1, // minimumDiff
+        0, // prepaidAmount
+        1, // nonceLimit
         "0x0000000000000000000000000000000000000000", // treasury
         ownerAddr
     );
@@ -211,7 +211,6 @@ describe("EthStorageContract Test", function () {
           13, // maxKvSizeBits
           14, // shardSizeBits
           2, // randomChecks
-          1, // minimumDiff
           40, // cutoff
           1024, // diffAdjDivisor
           0, // treasuryShare
@@ -219,11 +218,12 @@ describe("EthStorageContract Test", function () {
         0, // startTime
         0, // storageCost
         0, // dcfFactor
-        0, // prepaidAmount
-        1, // nonceLimit
     );
     await sc.deployed();
     await sc.initialize(
+        1, // minimumDiff
+        0, // prepaidAmount
+        1, // nonceLimit
         "0x0000000000000000000000000000000000000000", // treasury
         ownerAddr
     );
@@ -387,7 +387,6 @@ describe("EthStorageContract Test", function () {
           13, // maxKvSizeBits
           14, // shardSizeBits
           2, // randomChecks
-          1, // minimumDiff
           40, // cutoff
           1024, // diffAdjDivisor
           0, // treasuryShare
@@ -395,11 +394,12 @@ describe("EthStorageContract Test", function () {
         0, // startTime
         0, // storageCost
         0, // dcfFactor
-        0, // prepaidAmount
-        1, // nonceLimit
     );
     await sc.deployed();
     await sc.initialize(
+        1, // minimumDiff
+        0, // prepaidAmount
+        1, // nonceLimit
         "0x0000000000000000000000000000000000000000", // treasury
         ownerAddr
     );
