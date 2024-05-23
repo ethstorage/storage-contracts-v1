@@ -1,13 +1,23 @@
 const hre = require("hardhat");
-const fs = require('fs');
+const { execSync } = require("child_process");
+const dotenv = require("dotenv")
+dotenv.config()
 
-const deployment_file = "scripts/deployment.json";
 
 let ownerAddress = null;
 let treasuryAddress = null;
 const adminContractAddr = "0x11aceF404143514dbe0C1477250605646754F9e6";
 const storageContractProxy = "0x804C520d3c084C805E37A35E90057Ac32831F96f";
 const gasPrice = null;
+
+function verifyContract(contract) {
+  if (!process.env.ETHERSCAN_API_KEY) {
+    return;
+  }
+
+  const cmd = `npx hardhat verify --network sepolia ${contract}`;
+  execSync(cmd);
+}
 
 async function deployContract() {
   const startTime = Math.floor(new Date().getTime() / 1000);
@@ -63,12 +73,9 @@ async function deployContract() {
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 
-  // save address to file
-  const addresses = {
-    impl: impl,
-    proxy: ethStorageProxy.address,
-  };
-  fs.writeFileSync(deployment_file, JSON.stringify(addresses), {flag: 'a'});
+  // verify contract
+  verifyContract(ethStorageProxy.address);
+  verifyContract(impl);
 }
 
 async function updateContract() {
@@ -83,9 +90,8 @@ async function updateContract() {
   await tx.wait();
   console.log("update contract success!");
 
-  // save address to file
-  const addresses = {impl: impl};
-  fs.writeFileSync(deployment_file, JSON.stringify(addresses), {flag: 'a'});
+  // verify contract
+  verifyContract(impl);
 }
 
 async function main() {
