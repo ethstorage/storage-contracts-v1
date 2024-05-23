@@ -46,8 +46,8 @@ async function generateRandaoProof(block) {
     '0x0000000000000000',
     block.baseFeePerGas,
     block.withdrawalsRoot,
-    block.blobGasUsed,
-    block.excessBlobGas,
+    block.blobGasUsed == "0x0" ? "0x" : block.blobGasUsed,
+    block.excessBlobGas == "0x0" ? "0x" : block.excessBlobGas,
     block.parentBeaconBlockRoot,
   ];
 
