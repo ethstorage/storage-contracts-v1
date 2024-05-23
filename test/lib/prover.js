@@ -43,9 +43,12 @@ async function generateRandaoProof(block) {
     block.timestamp,
     block.extraData,
     block.mixHash,
-    block.nonce,
-    "0x",
-    block.withdrawalsRoot
+    '0x0000000000000000',
+    block.baseFeePerGas,
+    block.withdrawalsRoot,
+    block.blobGasUsed,
+    block.excessBlobGas,
+    block.parentBeaconBlockRoot,
   ];
 
   return RLP.encode(header);
