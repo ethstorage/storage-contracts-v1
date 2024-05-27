@@ -45,6 +45,12 @@ describe("Randao Test", function () {
       let bn = await ethers.provider.getBlockNumber();
       const blockNumber = ethers.utils.hexValue(bn);
       const block = await ethers.provider.send('eth_getBlockByNumber', [blockNumber, false]);
+      
+      // assert it is a cancun block
+      expect(block.blobGasUsed).to.exist;
+      expect(block.excessBlobGas).to.exist;
+      expect(block.parentBeaconBlockRoot).to.exist;
+ 
       const encodedHeader = await generateRandaoProof(block);
       const hash = keccak256(encodedHeader);
       expect(hash).to.equal(block.hash);
