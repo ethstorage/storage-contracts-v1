@@ -9,6 +9,17 @@ const adminContractAddr = "0x11aceF404143514dbe0C1477250605646754F9e6";
 const storageContractProxy = "0x804C520d3c084C805E37A35E90057Ac32831F96f";
 const gasPrice = null;
 
+const config = [
+  17, // maxKvSizeBits, 131072
+  39, // shardSizeBits ~ 512G
+  2, // randomChecks
+  7200, // cutoff = 2/3 * target internal (3 hours), 3 * 3600 * 2/3
+  32, // diffAdjDivisor
+  100, // treasuryShare, means 1%
+];
+const storageCost = 1500000000000000; // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
+const dcfFactor = 340282366367469178095360967382638002176n; // dcfFactor, it mean 0.95 for yearly discount
+
 async function verifyContract(contract, args) {
   if (!process.env.ETHERSCAN_API_KEY) {
     return;
@@ -28,18 +39,13 @@ async function deployContract() {
 
   const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
-  const implContract = await StorageContract.deploy([
-        17, // maxKvSizeBits, 131072
-        39, // shardSizeBits ~ 512G
-        2, // randomChecks
-        7200, // cutoff = 2/3 * target internal (3 hours), 3 * 3600 * 2/3
-        32, // diffAdjDivisor
-        100, // treasuryShare, means 1%
-      ],
+  const implContract = await StorageContract.deploy(
+      config,
       startTime, // startTime
-      1500000000000000, // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
-      340282366367469178095360967382638002176n, // dcfFactor, it mean 0.95 for yearly discount
-      { gasPrice: gasPrice });
+      storageCost,
+      dcfFactor,
+      { gasPrice: gasPrice }
+  );
   await implContract.deployed();
   const impl = implContract.address;
   console.log("storage impl address is ", impl);
@@ -75,10 +81,7 @@ async function deployContract() {
 
   // verify contract
   await verifyContract(ethStorageProxy.address);
-  await verifyContract(impl, [
-    {maxKvSizeBits: 17, shardSizeBits: 39, randomChecks: 2, cutoff: 7200, diffAdjDivisor: 32, treasuryShare: 100},
-    startTime, 1500000000000000, 340282366367469178095360967382638002176n]
-  );
+  await verifyContract(impl, [config, startTime, storageCost, dcfFactor]);
 }
 
 async function updateContract() {
@@ -89,18 +92,13 @@ async function updateContract() {
   const startTime = await ethStorage.startTime();
 
   // deploy
-  const implContract = await StorageContract.deploy([
-        17, // maxKvSizeBits, 131072
-        39, // shardSizeBits ~ 512G
-        2, // randomChecks
-        7200, // cutoff = 2/3 * target internal (3 hours), 3 * 3600 * 2/3
-        32, // diffAdjDivisor
-        100, // treasuryShare, means 1%
-      ],
+  const implContract = await StorageContract.deploy(
+      config,
       startTime, // startTime
-      1500000000000000, // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
-      340282366367469178095360967382638002176n, // dcfFactor, it mean 0.95 for yearly discount
-      { gasPrice: gasPrice });
+      storageCost,
+      dcfFactor,
+      { gasPrice: gasPrice }
+  );
   await implContract.deployed();
   const impl = implContract.address;
   console.log("storage impl address is ", impl);
@@ -112,10 +110,7 @@ async function updateContract() {
   console.log("update contract success!");
 
   // verify contract
-  await verifyContract(impl, [
-    {maxKvSizeBits: 17, shardSizeBits: 39, randomChecks: 2, cutoff: 7200, diffAdjDivisor: 32, treasuryShare: 100},
-    startTime, 1500000000000000, 340282366367469178095360967382638002176n]
-  );
+  await verifyContract(impl, [config, startTime, storageCost, dcfFactor]);
 }
 
 async function main() {
