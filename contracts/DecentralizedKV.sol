@@ -4,9 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./MerkleLib.sol";
 import "./BinaryRelated.sol";
-import "./EthStorageConstants.sol";
 
-contract DecentralizedKV is OwnableUpgradeable, EthStorageConstants {
+contract DecentralizedKV is OwnableUpgradeable {
     event Remove(uint256 indexed kvIdx, uint256 indexed lastKvIdx);
 
     enum DecodeType {
@@ -14,6 +13,12 @@ contract DecentralizedKV is OwnableUpgradeable, EthStorageConstants {
         PaddingPer31Bytes
     }
 
+    uint256 public immutable storageCost; // Upfront storage cost (pre-dcf)
+    // Discounted cash flow factor in seconds
+    // E.g., 0.85 yearly discount in second = 0.9999999948465585 = 340282365167313208607671216367074279424 in Q128.128
+    uint256 public immutable dcfFactor;
+    uint256 public immutable startTime;
+    uint256 public immutable maxKvSize;
     uint40 public lastKvIdx; // number of entries in the store
 
     struct PhyAddr {
@@ -29,6 +34,13 @@ contract DecentralizedKV is OwnableUpgradeable, EthStorageConstants {
     mapping(bytes32 => PhyAddr) internal kvMap;
     /* index - skey, reverse lookup */
     mapping(uint256 => bytes32) internal idxMap;
+
+    constructor(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor) {
+        maxKvSize = _maxKvSize;
+        startTime = _startTime;
+        storageCost = _storageCost;
+        dcfFactor = _dcfFactor;
+    }
 
     function __init_KV(address _owner) public onlyInitializing {
         __Context_init();

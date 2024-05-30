@@ -13,6 +13,13 @@ contract TestEthStorageContract is EthStorageContract {
         bytes32[] proofs;
     }
 
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor
+    ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor) {}
+
     function setTimestamp(uint256 ts) public {
         require(ts > currentTimestamp, "ts");
         currentTimestamp = ts;

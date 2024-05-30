@@ -26,16 +26,13 @@
     "snarkjs": "^0.6.11",
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.8.2",
-    "solidity-rlp": "^2.0.5",
-    "solc": "^0.8.25"
+    "solidity-rlp": "^2.0.5"
   },
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
     "prettier:check": "prettier-check contracts/**/*.sol",
     "prettier:fix": "prettier --write contracts/**/*.sol test/**/*.js scripts/**/*.js",
-    "verify": "npx hardhat verify-contract",
-    "deploy-verify": "npm run deploy && npx hardhat verify-contract",
     "deploy": "npx hardhat run scripts/deploy.js --network sepolia"
   },
   "workspaces": {
