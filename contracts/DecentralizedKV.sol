@@ -19,6 +19,11 @@ contract DecentralizedKV is OwnableUpgradeable {
     uint256 public immutable dcfFactor;
     uint256 public immutable startTime;
     uint256 public immutable maxKvSize;
+
+    /// @custom:spacer storageCost, dcfFactor, startTime, maxKvSize
+    /// @notice Spacer for backwards compatibility.
+    uint256[4] public kvSpacers;
+
     uint40 public lastKvIdx; // number of entries in the store
 
     struct PhyAddr {
@@ -34,6 +39,8 @@ contract DecentralizedKV is OwnableUpgradeable {
     mapping(bytes32 => PhyAddr) internal kvMap;
     /* index - skey, reverse lookup */
     mapping(uint256 => bytes32) internal idxMap;
+
+    // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     constructor(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor) {
         maxKvSize = _maxKvSize;
