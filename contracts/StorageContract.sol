@@ -29,12 +29,24 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 public immutable diffAdjDivisor;
     uint256 public immutable treasuryShare; // 10000 = 1.0
 
-    mapping(uint256 => MiningLib.MiningInfo) public infos;
+    /// @custom:spacer maxKvSizeBits, shardSizeBits, shardEntryBits, sampleLenBits, randomChecks
+    /// @notice Spacer for backwards compatibility.
+    uint256[5] public storSpacers1;
+
     uint256 public minimumDiff;
+
+    /// @custom:spacer cutoff, diffAdjDivisor, treasuryShare
+    /// @notice Spacer for backwards compatibility.
+    uint256[3] public storSpacers2;
+
     uint256 public prepaidAmount;
+
+    mapping(uint256 => MiningLib.MiningInfo) public infos;
     uint256 public nonceLimit; // maximum nonce per block
     address public treasury;
     uint256 public prepaidLastMineTime;
+
+    // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     constructor(
         Config memory _config,
@@ -106,7 +118,7 @@ abstract contract StorageContract is DecentralizedKV {
     function upfrontPayment() public view virtual override returns (uint256) {
         uint256 totalEntries = lastKvIdx + 1; // include the one to be put
         uint256 shardId = lastKvIdx >> shardEntryBits; // shard id of the new KV
-        // shard0 is already opened in constructor       
+        // shard0 is already opened in constructor
         if ((totalEntries % (1 << shardEntryBits)) == 1 && shardId != 0) {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
@@ -187,7 +199,7 @@ abstract contract StorageContract is DecentralizedKV {
 
     function miningReward(uint256 shardId, uint256 blockNumber) public view returns (uint256) {
         uint256 minedTs = block.timestamp - (block.number - blockNumber) * 12;
-        (,, uint256 minerReward) = _miningReward(shardId, minedTs);
+        (, , uint256 minerReward) = _miningReward(shardId, minedTs);
         return minerReward;
     }
 
@@ -242,7 +254,8 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) public virtual {
-        return _mine(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
+        return
+            _mine(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
     }
 
     function setNonceLimit(uint256 _nonceLimit) public onlyOwner {
