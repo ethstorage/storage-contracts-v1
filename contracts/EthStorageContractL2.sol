@@ -13,7 +13,6 @@ interface IL1Block {
 
 contract EthStorageContractL2 is EthStorageContract2 {
     IL1Block public constant l1Block = IL1Block(0x4200000000000000000000000000000000000015);
-    uint16 public constant maxL2MiningDrift = 64 * 6;
 
     constructor(
         Config memory _config,
