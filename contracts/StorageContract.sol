@@ -248,11 +248,11 @@ abstract contract StorageContract is DecentralizedKV {
         bytes calldata randaoProof,
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
-    ) internal {
+    ) internal virtual {
         // Obtain the blockhash of the block number of recent blocks
-        require(block.number - blockNumber <= _getMaxMiningDrift(), "block number too old");
+        require(block.number - blockNumber <= maxL1MiningDrift, "block number too old");
         // To avoid stack too deep, we resue the hash0 instead of using randao
-        bytes32 hash0 = _getRandao(blockNumber, randaoProof);
+        bytes32 hash0 = RandaoLib.verifyHistoricalRandao(blockNumber, randaoProof);
         // Estimate block timestamp
         uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
 
@@ -269,13 +269,5 @@ abstract contract StorageContract is DecentralizedKV {
         require(uint256(hash0) <= required, "diff not match");
 
         _rewardMiner(shardId, miner, mineTs, diff);
-    }
-
-    function _getRandao(uint256 l1BlockNumber, bytes calldata headerRlpBytes) internal view virtual returns (bytes32) {
-        return RandaoLib.verifyHistoricalRandao(l1BlockNumber, headerRlpBytes);
-    }
-
-    function _getMaxMiningDrift() internal pure virtual returns (uint256) {
-        return maxL1MiningDrift;
     }
 }
