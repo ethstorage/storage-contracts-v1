@@ -171,6 +171,7 @@ abstract contract StorageContract is DecentralizedKV {
         // Update mining info.
         MiningLib.update(infos[shardId], minedTs, diff);
 
+        require(treasuryReward + minerReward <= address(this).balance, "not enough balance");
         // TODO: avoid reentrancy attack
         payable(treasury).transfer(treasuryReward);
         payable(miner).transfer(minerReward);
