@@ -5,7 +5,6 @@ require("dotenv").config();
 const { TestState } = require("./lib/test-helper");
 const { printlog } = require("./lib/print");
 const { generateRandaoProof } = require("./lib/prover");
-const {flattenContracts, changeContractBytecode} = require("./utils/utils");
 const { keccak256 } = ethers.utils;
 
 /* declare const key */
@@ -14,72 +13,28 @@ const key2 = "0x0000000000000000000000000000000000000000000000000000000000000002
 const key3 = "0x0000000000000000000000000000000000000000000000000000000000000003";
 const ownerAddr = "0x0000000000000000000000000000000000000001";
 
-async function swapKVConstant(
-    contractAddress,
-    newMaxKvSizeBits, newShardSizeBits, newRandomChecks, newMinimumDiff,
-    newCutoff, newDiffAdjDivisor, newTreasuryShare, newStartTime,
-    newStorageCost, newDcfFactor, newNonceLimit, newPrepaidAmount
-) {
-  const maxKvSizeBits = "maxKvSizeBits = 17";
-  const shardSizeBits = "shardSizeBits = 39";
-  const randomChecks = "randomChecks = 2";
-  const minimumDiff = "minimumDiff = 4718592000";
-  const cutoff = "cutoff = 7200";
-  const diffAdjDivisor = "diffAdjDivisor = 32";
-  const treasuryShare = "treasuryShare = 100";
-  const prepaidAmount = "3145728000000000000000";
-
-  const storageCost = "1500000000000000";
-  const dcfFactor = "340282366367469178095360967382638002176";
-  const startTime = "1713782077";
-  const maxKvSize = "1 << maxKvSizeBits";
-
-  const nonceLimit = "1048576";
-
-  let contractCode = flattenContracts("contracts/TestEthStorageContract.sol");
-  contractCode = contractCode.replace(maxKvSizeBits, `maxKvSizeBits = ${newMaxKvSizeBits}`);
-  contractCode = contractCode.replace(shardSizeBits, `shardSizeBits = ${newShardSizeBits}`);
-  contractCode = contractCode.replace(randomChecks, `randomChecks = ${newRandomChecks}`);
-  contractCode = contractCode.replace(minimumDiff, `minimumDiff = ${newMinimumDiff}`);
-  contractCode = contractCode.replace(cutoff, `cutoff = ${newCutoff}`);
-  contractCode = contractCode.replace(diffAdjDivisor, `diffAdjDivisor = ${newDiffAdjDivisor}`);
-  contractCode = contractCode.replace(treasuryShare, `treasuryShare = ${newTreasuryShare}`);
-  contractCode = contractCode.replace(prepaidAmount, newPrepaidAmount);
-
-  contractCode = contractCode.replace(storageCost, newStorageCost);
-  contractCode = contractCode.replace(dcfFactor, newDcfFactor);
-  contractCode = contractCode.replace(startTime, newStartTime);
-  contractCode = contractCode.replace(maxKvSize, "1 << " + newMaxKvSizeBits);
-
-  contractCode = contractCode.replace(nonceLimit, newNonceLimit);
-
-  const contractName = "TestEthStorageContract";
-  return await changeContractBytecode(contractAddress, contractName, contractCode, true);
-}
-
 describe("EthStorageContract Test", function () {
   it("decode-8k-blob-test", async function () {
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy();
-    await sc.deployed();
-    await sc.initialize(
-        "0x0000000000000000000000000000000000000000", // treasury
-        ownerAddr
-    );
-    await swapKVConstant(
-        sc.address,
-        13, // maxKvSizeBits
-        14, // shardSizeBits
-        1, // randomChecks
-        1, // minimumDiff
-        40, // cutoff
-        1024, // diffAdjDivisor
-        0, // treasuryShare
+    const sc = await EthStorageContract.deploy([
+          13, // maxKvSizeBits
+          14, // shardSizeBits
+          1, // randomChecks
+          40, // cutoff
+          1024, // diffAdjDivisor
+          0, // treasuryShare
+        ],
         0, // startTime
         0, // storageCost
         0, // dcfFactor
-        1, // nonceLimit
+    );
+    await sc.deployed();
+    await sc.initialize(
+        1, // minimumDiff
         0, // prepaidAmount
+        1, // nonceLimit
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
     );
 
     let elements = new Array(256);
@@ -119,26 +74,25 @@ describe("EthStorageContract Test", function () {
 
   it("decode-inclusive-8k-blob-test", async function () {
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy();
-    await sc.deployed();
-    await sc.initialize(
-        "0x0000000000000000000000000000000000000000", // treasury
-        ownerAddr
-    );
-    await swapKVConstant(
-        sc.address,
-        13, // maxKvSizeBits
-        14, // shardSizeBits
-        1, // randomChecks
-        1, // minimumDiff
-        40, // cutoff
-        1024, // diffAdjDivisor
-        0, // treasuryShare
+    const sc = await EthStorageContract.deploy(     [
+          13, // maxKvSizeBits
+          14, // shardSizeBits
+          1, // randomChecks
+          40, // cutoff
+          1024, // diffAdjDivisor
+          0, // treasuryShare
+        ],
         0, // startTime
         0, // storageCost
         0, // dcfFactor
-        1, // nonceLimit
+    );
+    await sc.deployed();
+    await sc.initialize(
+        1, // minimumDiff
         0, // prepaidAmount
+        1, // nonceLimit
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
@@ -253,26 +207,25 @@ describe("EthStorageContract Test", function () {
 
   it("verify-sample-8k-blob-2-samples-test", async function () {
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy();
-    await sc.deployed();
-    await sc.initialize(
-        "0x0000000000000000000000000000000000000000", // treasury
-        ownerAddr
-    );
-    await swapKVConstant(
-        sc.address,
-        13, // maxKvSizeBits
-        14, // shardSizeBits
-        2, // randomChecks
-        1, // minimumDiff
-        40, // cutoff
-        1024, // diffAdjDivisor
-        0, // treasuryShare
+    const sc = await EthStorageContract.deploy([
+          13, // maxKvSizeBits
+          14, // shardSizeBits
+          2, // randomChecks
+          40, // cutoff
+          1024, // diffAdjDivisor
+          0, // treasuryShare
+        ],
         0, // startTime
         0, // storageCost
         0, // dcfFactor
-        1, // nonceLimit
+    );
+    await sc.deployed();
+    await sc.initialize(
+        1, // minimumDiff
         0, // prepaidAmount
+        1, // nonceLimit
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
@@ -430,26 +383,25 @@ describe("EthStorageContract Test", function () {
     }
 
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy();
-    await sc.deployed();
-    await sc.initialize(
-        "0x0000000000000000000000000000000000000000", // treasury
-        ownerAddr
-    );
-    await swapKVConstant(
-        sc.address,
-        13, // maxKvSizeBits
-        14, // shardSizeBits
-        2, // randomChecks
-        1, // minimumDiff
-        40, // cutoff
-        1024, // diffAdjDivisor
-        0, // treasuryShare
+    const sc = await EthStorageContract.deploy([
+          13, // maxKvSizeBits
+          14, // shardSizeBits
+          2, // randomChecks
+          40, // cutoff
+          1024, // diffAdjDivisor
+          0, // treasuryShare
+        ],
         0, // startTime
         0, // storageCost
         0, // dcfFactor
-        1, // nonceLimit
+    );
+    await sc.deployed();
+    await sc.initialize(
+        1, // minimumDiff
         0, // prepaidAmount
+        1, // nonceLimit
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
     );
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();

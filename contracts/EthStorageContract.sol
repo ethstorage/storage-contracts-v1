@@ -12,14 +12,26 @@ contract EthStorageContract is StorageContract, Decoder {
     uint256 constant modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
     uint256 constant fieldElementsPerBlob = 0x1000;
 
+    // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
+
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor
+    ) StorageContract(_config, _startTime, _storageCost, _dcfFactor) {}
+
     function initialize(
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
         address _treasury,
         address _owner
     ) public payable initializer {
         require(msg.value >= prepaidAmount, "prepaid amount is not enough");
-        __init_storage(_treasury, _owner);
+        __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
     function modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {
@@ -120,9 +132,7 @@ contract EthStorageContract is StorageContract, Decoder {
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
         Proof memory proof = abi.decode(decodeProof, (Proof));
         // BLOB decoding check
-        if (
-            !decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
-        ) {
+        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)) {
             return false;
         }
 
@@ -130,11 +140,7 @@ contract EthStorageContract is StorageContract, Decoder {
         return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), inclusiveProof);
     }
 
-    function getSampleIdx(
-        uint256 rows,
-        uint256 startShardId,
-        bytes32 hash0
-    ) public view returns (uint256, uint256) {
+    function getSampleIdx(uint256 rows, uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256) {
         uint256 parent = uint256(hash0) % rows;
         uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
         uint256 kvIdx = sampleIdx >> sampleLenBits;
@@ -163,13 +169,21 @@ contract EthStorageContract is StorageContract, Decoder {
             (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
 
             require(
-                decodeAndCheckInclusive(kvIdx, sampleIdxInKv, miner, encodedSamples[i], masks[i], inclusiveProofs[i], decodeProof[i]),
+                decodeAndCheckInclusive(
+                    kvIdx,
+                    sampleIdxInKv,
+                    miner,
+                    encodedSamples[i],
+                    masks[i],
+                    inclusiveProofs[i],
+                    decodeProof[i]
+                ),
                 "invalid samples"
             );
             hash0 = keccak256(abi.encode(hash0, encodedSamples[i]));
         }
         return hash0;
-    }    
+    }
 
     // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
     function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable virtual {
