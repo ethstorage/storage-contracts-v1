@@ -28,6 +28,9 @@ contract EthStorageContractL2 is EthStorageContract2 {
         return RandaoLib.verifyHeaderAndGetRandao(bh, headerRlpBytes);
     }
 
+    /// @dev We are still using L1 block number, timestamp, and blockhash to mine.
+    /// @param blockNumber  L1 blocknumber.
+    /// @param randaoProof  L1 block header RLP bytes.
     function _mine(
         uint256 blockNumber,
         uint256 shardId,
