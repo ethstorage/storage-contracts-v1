@@ -19,6 +19,7 @@ const config = [
 ];
 const storageCost = 1500000000000000; // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
 const dcfFactor = 340282366367469178095360967382638002176n; // dcfFactor, it mean 0.95 for yearly discount
+const prepaidAmount = 3145728000000000000000n; // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
 
 async function verifyContract(contract, args) {
   if (!process.env.ETHERSCAN_API_KEY) {
@@ -52,16 +53,20 @@ async function deployContract() {
 
   const data = implContract.interface.encodeFunctionData("initialize", [
     4718592000, // minimumDiff 5 * 3 * 3600 * 1024 * 1024 / 12 = 4718592000 for 5 replicas that can have 1M IOs in one epoch
-    3145728000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
+    prepaidAmount, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
     treasuryAddress, // treasury
     ownerAddress,
   ]);
   console.log(impl, ownerAddress, data);
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
-  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
+  const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, {
+    gasPrice: gasPrice,
+    value: prepaidAmount
+  });
   await ethStorageProxy.deployed();
   const admin = await ethStorageProxy.admin();
+  console.log("balance of " + ethStorageProxy.address, await hre.ethers.provider.getBalance(ethStorageProxy.address));
 
   console.log("storage admin address is ", admin);
   console.log("storage contract address is ", ethStorageProxy.address);
@@ -73,11 +78,11 @@ async function deployContract() {
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
 
-  // fund 0.5 eth into the storage contract to give reward for empty mining
-  const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
-  await tx.wait();
-  console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
+  // // fund 0.5 eth into the storage contract to give reward for empty mining
+  // const ethStorage = StorageContract.attach(ethStorageProxy.address);
+  // const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
+  // await tx.wait();
+  // console.log("balance of " + ethStorageProxy.address, await hre.ethers.provider.getBalance(ethStorageProxy.address));
 
   // verify contract
   await verifyContract(ethStorageProxy.address);
