@@ -5,12 +5,15 @@ library BinaryRelated {
     function pow(uint256 fp, uint256 n) internal pure returns (uint256) {
         // 1.0 in Q128.128
         uint256 v = 1 << 128;
-        while (n != 0) {
-            if ((n & 1) == 1) {
-                v = (v * fp) >> 128;
+        // we can use unchecked here because we know that fp is in the range [0, 2^128), and it can save gas if n is large
+        unchecked {
+            while (n != 0) {
+                if ((n & 1) == 1) {
+                    v = (v * fp) >> 128;
+                }
+                fp = (fp * fp) >> 128;
+                n = n / 2;
             }
-            fp = (fp * fp) >> 128;
-            n = n / 2;
         }
         return v;
     }
