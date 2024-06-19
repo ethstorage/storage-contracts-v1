@@ -19,6 +19,7 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     uint256 public constant sampleSizeBits = 5; // 32 bytes per sample
+    uint8 public constant maxL1MiningDrift = 64; // 64 blocks
 
     uint256 public immutable maxKvSizeBits;
     uint256 public immutable shardSizeBits;
@@ -170,6 +171,7 @@ abstract contract StorageContract is DecentralizedKV {
         // Update mining info.
         MiningLib.update(infos[shardId], minedTs, diff);
 
+        require(treasuryReward + minerReward <= address(this).balance, "not enough balance");
         // TODO: avoid reentrancy attack
         payable(treasury).transfer(treasuryReward);
         payable(miner).transfer(minerReward);
@@ -203,46 +205,6 @@ abstract contract StorageContract is DecentralizedKV {
         return minerReward;
     }
 
-    /*
-     * On-chain verification of storage proof of sufficient sampling.
-     * On-chain verifier will go same routine as off-chain data host, will check the encoded samples by decoding
-     * to decoded one. The decoded samples will be used to perform inclusive check with on-chain datahashes.
-     * The encoded samples will be used to calculate the solution hash, and if the hash passes the difficulty check,
-     * the miner, or say the storage provider, shall be rewarded by the token number from out economic models
-     */
-    function _mine(
-        uint256 blockNumber,
-        uint256 shardId,
-        address miner,
-        uint256 nonce,
-        bytes32[] memory encodedSamples,
-        uint256[] memory masks,
-        bytes calldata randaoProof,
-        bytes[] calldata inclusiveProofs,
-        bytes[] calldata decodeProof
-    ) internal {
-        // Obtain the blockhash of the block number of recent blocks
-        require(block.number - blockNumber <= 64, "block number too old");
-        // To avoid stack too deep, we resue the hash0 instead of using randao
-        bytes32 hash0 = RandaoLib.verifyHistoricalRandao(blockNumber, randaoProof);
-        // Estimate block timestamp
-        uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
-
-        // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
-        require(nonce < nonceLimit, "nonce too big");
-
-        // Check if the data matches the hash in metadata and obtain the solution hash.
-        hash0 = keccak256(abi.encode(miner, hash0, nonce));
-        hash0 = verifySamples(shardId, hash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
-
-        // Check difficulty
-        uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
-        uint256 required = uint256(2 ** 256 - 1) / diff;
-        require(uint256(hash0) <= required, "diff not match");
-
-        _rewardMiner(shardId, miner, mineTs, diff);
-    }
-
     function mine(
         uint256 blockNumber,
         uint256 shardId,
@@ -268,5 +230,45 @@ abstract contract StorageContract is DecentralizedKV {
 
     function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
         minimumDiff = _minimumDiff;
+    }
+
+    /*
+     * On-chain verification of storage proof of sufficient sampling.
+     * On-chain verifier will go same routine as off-chain data host, will check the encoded samples by decoding
+     * to decoded one. The decoded samples will be used to perform inclusive check with on-chain datahashes.
+     * The encoded samples will be used to calculate the solution hash, and if the hash passes the difficulty check,
+     * the miner, or say the storage provider, shall be rewarded by the token number from out economic models
+     */
+    function _mine(
+        uint256 blockNumber,
+        uint256 shardId,
+        address miner,
+        uint256 nonce,
+        bytes32[] memory encodedSamples,
+        uint256[] memory masks,
+        bytes calldata randaoProof,
+        bytes[] calldata inclusiveProofs,
+        bytes[] calldata decodeProof
+    ) internal virtual {
+        // Obtain the blockhash of the block number of recent blocks
+        require(block.number - blockNumber <= maxL1MiningDrift, "block number too old");
+        // To avoid stack too deep, we resue the hash0 instead of using randao
+        bytes32 hash0 = RandaoLib.verifyHistoricalRandao(blockNumber, randaoProof);
+        // Estimate block timestamp
+        uint256 mineTs = block.timestamp - (block.number - blockNumber) * 12;
+
+        // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
+        require(nonce < nonceLimit, "nonce too big");
+
+        // Check if the data matches the hash in metadata and obtain the solution hash.
+        hash0 = keccak256(abi.encode(miner, hash0, nonce));
+        hash0 = verifySamples(shardId, hash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
+
+        // Check difficulty
+        uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
+        uint256 required = uint256(2 ** 256 - 1) / diff;
+        require(uint256(hash0) <= required, "diff not match");
+
+        _rewardMiner(shardId, miner, mineTs, diff);
     }
 }

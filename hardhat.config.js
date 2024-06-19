@@ -45,7 +45,12 @@ module.exports = {
       url: process.env.SEPOLIA_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },    
+    },
+    qkc: {
+      url: process.env.QKC_URL || "",
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     kovan: {
       url: process.env.KOVAN_URL || "",
       accounts:
