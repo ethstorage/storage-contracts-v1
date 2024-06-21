@@ -65,7 +65,7 @@ contract EthStorageContractL2 is EthStorageContract2 {
         bytes[] calldata _decodeProof
     ) internal override {
         // Obtain the blockhash of the block number of recent blocks
-        require(L1_BLOCK.number() - _blockNumber <= MAX_L1_MINING_DRIFT, "block number too old");
+        require(L1_BLOCK.number() - _blockNumber <= MAX_L1_MINING_DRIFT, "EthStorageContractL2: block number too old");
         // To avoid stack too deep, we resue the hash0 instead of using randao
 
         bytes32 hash0 = _getRandao(_blockNumber, _randaoProof);
@@ -73,7 +73,7 @@ contract EthStorageContractL2 is EthStorageContract2 {
         uint256 mineTs = L1_BLOCK.timestamp() - (L1_BLOCK.number() - _blockNumber) * 12;
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
-        require(_nonce < nonceLimit, "nonce too big");
+        require(_nonce < nonceLimit, "EthStorageContractL2: nonce too big");
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         hash0 = keccak256(abi.encode(_miner, hash0, _nonce));

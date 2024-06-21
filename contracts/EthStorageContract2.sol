@@ -16,7 +16,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         uint256 _dcfFactor
     ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor) {}
 
-    /// @notice Comupte the encoding key using the kvIdx and miner address
+    /// @notice Compute the encoding key using the kvIdx and miner address
     function _getEncodingKey(uint256 _kvIdx, address _miner) internal view returns (uint256) {
         return uint256(keccak256(abi.encode(kvMap[idxMap[_kvIdx]].hash, _miner, _kvIdx))) % MODULUS_BN254;
     }
@@ -92,7 +92,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
 
         require(
             checkInclusive(kvInfo.hash, sampleIdxInKv, _mask ^ uint256(_encodedSample), _inclusiveProof),
-            "invalid samples"
+            "EthStorageContract2: invalid samples"
         );
         _hash0 = keccak256(abi.encode(_hash0, _encodedSample));
         return (_hash0, kvIdx, sampleIdxInKv);
@@ -108,10 +108,10 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public view virtual override returns (bytes32) {
-        require(_encodedSamples.length == RANDOM_CHECKS, "data length mismatch");
-        require(_masks.length == RANDOM_CHECKS, "masks length mismatch");
-        require(_inclusiveProofs.length == RANDOM_CHECKS, "proof length mismatch");
-        require(_decodeProof.length == 1, "decodeProof length mismatch");
+        require(_encodedSamples.length == RANDOM_CHECKS, "EthStorageContract2: data length mismatch");
+        require(_masks.length == RANDOM_CHECKS, "EthStorageContract2: masks length mismatch");
+        require(_inclusiveProofs.length == RANDOM_CHECKS, "EthStorageContract2: proof length mismatch");
+        require(_decodeProof.length == 1, "EthStorageContract2: decodeProof length mismatch");
         // calculate the number of samples range of the sample check
         uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS);
 

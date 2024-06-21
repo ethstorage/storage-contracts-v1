@@ -109,7 +109,7 @@ abstract contract StorageContract is DecentralizedKV {
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "StorageContract: shardSize too small");
         require(_config.maxKvSizeBits >= SAMPLE_SIZE_BITS, "StorageContract: maxKvSize too small");
-        require(_config.randomChecks > 0, "StorageContract: At least one checkpoint needed");
+        require(_config.randomChecks > 0, "StorageContract: at least one checkpoint needed");
 
         MAX_KV_SIZE_BITS = _config.maxKvSizeBits;
         SHARD_SIZE_BITS = _config.shardSizeBits;

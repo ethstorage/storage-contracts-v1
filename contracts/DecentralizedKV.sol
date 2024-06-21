@@ -55,7 +55,7 @@ contract DecentralizedKV is OwnableUpgradeable {
     /// @notice index and skey mapping, reverse lookup
     mapping(uint256 => bytes32) internal idxMap;
 
-    /// @notice Emitted when an key-value is removed.
+    /// @notice Emitted when a key-value is removed.
     /// @param kvIdx        The removed key-value index.
     /// @param kvEntryCount The key-value entry count after removing the kvIdx.
     event Remove(uint256 indexed kvIdx, uint256 indexed kvEntryCount);
