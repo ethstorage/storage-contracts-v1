@@ -4,9 +4,11 @@ pragma solidity ^0.8.0;
 import "./EthStorageContract.sol";
 import "./Decoder2.sol";
 
-
+/// @custom:proxied
+/// @title EthStorageContract2
+/// @notice EthStorage Contract that verifies two sample decodings using only one zk proof
 contract EthStorageContract2 is EthStorageContract, Decoder2 {
-
+    /// @notice Constructs the EthStorageContract2 contract.
     constructor(
         Config memory _config,
         uint256 _startTime,
@@ -14,88 +16,119 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         uint256 _dcfFactor
     ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor) {}
 
-    function getEncodingKey(uint256 kvIdx, address miner) internal view returns (uint256) {
-        return uint256(keccak256(abi.encode(kvMap[idxMap[kvIdx]].hash, miner, kvIdx))) % modulusBn254;
+    /// @notice Comupte the encoding key using the kvIdx and miner address
+    function _getEncodingKey(uint256 _kvIdx, address _miner) internal view returns (uint256) {
+        return uint256(keccak256(abi.encode(kvMap[idxMap[_kvIdx]].hash, _miner, _kvIdx))) % MODULUS_BN254;
     }
 
-    function getXIn(uint256 sampleIdx) internal view returns (uint256) {
-        return modExp(ruBn254, sampleIdx, modulusBn254);
+    /// @notice Compute the input X for inclusion proof using the sample index
+    function _getXIn(uint256 _sampleIdx) internal view returns (uint256) {
+        return _modExp(RU_BN254, _sampleIdx, MODULUS_BN254);
     }
 
-    function _decodeSample(bytes calldata decodeProof, uint[6] memory _pubSignals) internal view returns (bool) {
-        (uint[2] memory pA, uint[2][2] memory pB, uint[2] memory pC) = abi.decode(decodeProof, (uint[2], uint[2][2], uint[2]));
-        // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code' 
-        // and causes the caller function return directly        
+    /// @notice Verify the zk proof for two sample decoding
+    /// @param _decodeProof The zk proof for multiple sample decoding
+    /// @param _pubSignals The public signals for the zk proof
+    /// @return true if the proof is valid, false otherwise
+    function _decodeSample(bytes calldata _decodeProof, uint[6] memory _pubSignals) internal view returns (bool) {
+        (uint[2] memory pA, uint[2][2] memory pB, uint[2] memory pC) = abi.decode(
+            _decodeProof,
+            (uint[2], uint[2][2], uint[2])
+        );
+        // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code'
+        // and causes the caller function return directly
         return this.verifyProof(pA, pB, pC, _pubSignals);
     }
 
+    /// @notice Verify the masks using the zk proof
+    /// @param _masks The masks for the samples
+    /// @param _kvIdxs The kvIdxs that contain the samples
+    /// @param _sampleIdxs The sampleIdxs in the kvIdxs
+    /// @param _miner The miner address
+    /// @param _decodeProof The zk proof for two sample decoding
+    /// @return true if the proof is valid, false otherwise
     function decodeSample(
-        uint256[] memory masks,
-        uint256[] memory kvIdxs,
-        uint256[] memory sampleIdxs,
-        address miner,
-        bytes calldata decodeProof
+        uint256[] memory _masks,
+        uint256[] memory _kvIdxs,
+        uint256[] memory _sampleIdxs,
+        address _miner,
+        bytes calldata _decodeProof
     ) public view returns (bool) {
-        return _decodeSample(decodeProof, [
-            getEncodingKey(kvIdxs[0], miner),
-            getEncodingKey(kvIdxs[1], miner),
-            getXIn(sampleIdxs[0]),
-            getXIn(sampleIdxs[1]),
-            masks[0],
-            masks[1]
-        ]);
+        return
+            _decodeSample(
+                _decodeProof,
+                [
+                    _getEncodingKey(_kvIdxs[0], _miner),
+                    _getEncodingKey(_kvIdxs[1], _miner),
+                    _getXIn(_sampleIdxs[0]),
+                    _getXIn(_sampleIdxs[1]),
+                    _masks[0],
+                    _masks[1]
+                ]
+            );
     }
 
+    /// @notice Check the sample is included in the kvIdx
+    /// @param _startShardId The start shard id
+    /// @param _rows The number of samples per shard
+    /// @param _hash0 The hash0 value
+    /// @param _encodedSample The encoded sample data
+    /// @param _mask The mask for the sample
+    /// @param _inclusiveProof The zk proof for the sample inclusion
+    /// @return The next hash0 value
+    /// @return The kvIdx that contains the sample
+    /// @return The sampleIdx in the kvIdx
     function _checkSample(
-        uint256 startShardId, 
-        uint256 rows, 
-        bytes32 hash0,
-        bytes32 encodedSample,
-        uint256 mask,
-        bytes calldata inclusiveProof
+        uint256 _startShardId,
+        uint256 _rows,
+        bytes32 _hash0,
+        bytes32 _encodedSample,
+        uint256 _mask,
+        bytes calldata _inclusiveProof
     ) internal view returns (bytes32, uint256, uint256) {
-        (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
-                
+        (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(_rows, _startShardId, _hash0);
+
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
         require(
-            checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedSample), inclusiveProof),
+            checkInclusive(kvInfo.hash, sampleIdxInKv, _mask ^ uint256(_encodedSample), _inclusiveProof),
             "invalid samples"
         );
-        hash0 = keccak256(abi.encode(hash0, encodedSample));
-        return (hash0, kvIdx, sampleIdxInKv);
+        _hash0 = keccak256(abi.encode(_hash0, _encodedSample));
+        return (_hash0, kvIdx, sampleIdxInKv);
     }
 
+    /// @inheritdoc EthStorageContract
     function verifySamples(
-        uint256 startShardId,
-        bytes32 hash0,
-        address miner,
-        bytes32[] memory encodedSamples,
-        uint256[] memory masks,
-        bytes[] calldata inclusiveProofs,
-        bytes[] calldata decodeProof
+        uint256 _startShardId,
+        bytes32 _hash0,
+        address _miner,
+        bytes32[] memory _encodedSamples,
+        uint256[] memory _masks,
+        bytes[] calldata _inclusiveProofs,
+        bytes[] calldata _decodeProof
     ) public view virtual override returns (bytes32) {
-        require(encodedSamples.length == randomChecks, "data length mismatch");
-        require(masks.length == randomChecks, "masks length mismatch");
-        require(inclusiveProofs.length == randomChecks, "proof length mismatch");
-        require(decodeProof.length == 1, "decodeProof length mismatch");
+        require(_encodedSamples.length == RANDOM_CHECKS, "data length mismatch");
+        require(_masks.length == RANDOM_CHECKS, "masks length mismatch");
+        require(_inclusiveProofs.length == RANDOM_CHECKS, "proof length mismatch");
+        require(_decodeProof.length == 1, "decodeProof length mismatch");
         // calculate the number of samples range of the sample check
-        uint256 rows = 1 << (shardEntryBits + sampleLenBits);
+        uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS);
 
-        uint[] memory kvIdxs = new uint[](randomChecks);
-        uint[] memory sampleIdxs = new uint[](randomChecks);
-        for (uint256 i = 0; i < randomChecks; i++) {
-            (hash0, kvIdxs[i], sampleIdxs[i]) = _checkSample(
-                startShardId, 
-                rows, 
-                hash0, 
-                encodedSamples[i], 
-                masks[i], 
-                inclusiveProofs[i]
+        uint[] memory kvIdxs = new uint[](RANDOM_CHECKS);
+        uint[] memory sampleIdxs = new uint[](RANDOM_CHECKS);
+        for (uint256 i = 0; i < RANDOM_CHECKS; i++) {
+            (_hash0, kvIdxs[i], sampleIdxs[i]) = _checkSample(
+                _startShardId,
+                rows,
+                _hash0,
+                _encodedSamples[i],
+                _masks[i],
+                _inclusiveProofs[i]
             );
         }
 
-        require(decodeSample(masks, kvIdxs, sampleIdxs, miner, decodeProof[0]), "decode failed");
-        return hash0;
+        require(decodeSample(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0]), "decode failed");
+        return _hash0;
     }
 }
