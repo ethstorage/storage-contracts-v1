@@ -78,7 +78,7 @@ contract DecentralizedKV is OwnableUpgradeable {
         kvEntryCount = 0;
     }
 
-    /// @notice pow function in Q128.
+    /// @notice Pow function in Q128.
     function _pow(uint256 _fp, uint256 _n) internal pure returns (uint256) {
         return BinaryRelated.pow(_fp, _n);
     }

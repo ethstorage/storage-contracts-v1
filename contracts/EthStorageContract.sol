@@ -57,8 +57,8 @@ contract EthStorageContract is StorageContract, Decoder {
     /// @param _b The base
     /// @param _e The exponent
     /// @param _m The modulus
-    /// @return result The result of the modular exponentiation
-    function _modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {
+    /// @return result_ The result of the modular exponentiation
+    function _modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result_) {
         assembly {
             // Free memory pointer
             let pointer := mload(0x40)
@@ -78,7 +78,7 @@ contract EthStorageContract is StorageContract, Decoder {
                 revert(0, 0)
             }
 
-            result := mload(0x0)
+            result_ := mload(0x0)
 
             // Clear memory or exclude the memory
             mstore(0x40, add(pointer, 0xc0))
