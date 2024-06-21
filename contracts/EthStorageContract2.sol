@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./EthStorageContract.sol";
-import "./Decoder2.sol";
+import "./zk-verify/Decoder2.sol";
 
 /// @custom:proxied
 /// @title EthStorageContract2

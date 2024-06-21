@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "./DecentralizedKV.sol";
-import "./MiningLib.sol";
-import "./RandaoLib.sol";
+import "./libraries/MiningLib.sol";
+import "./libraries/RandaoLib.sol";
 
 /// @custom:upgradeable
 /// @title StorageContract

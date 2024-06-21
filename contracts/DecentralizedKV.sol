@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./MerkleLib.sol";
-import "./BinaryRelated.sol";
+import "./libraries/MerkleLib.sol";
+import "./libraries/BinaryRelated.sol";
 
 /// @custom:upgradeable
 /// @title DecentralizedKV

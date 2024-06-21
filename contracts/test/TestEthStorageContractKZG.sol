@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./EthStorageContract2.sol";
+import "../EthStorageContract2.sol";
 
 contract TestEthStorageContractKZG is EthStorageContract2 {
     constructor(

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "./StorageContract.sol";
-import "./Decoder.sol";
-import "./BinaryRelated.sol";
+import "./zk-verify/Decoder.sol";
+import "./libraries//BinaryRelated.sol";
 
 /// @custom:proxied
 /// @title EthStorageContract
