@@ -232,7 +232,7 @@ contract DecentralizedKV is OwnableUpgradeable {
     }
 
     /// @notice This is for compatibility with earlier versions and can be removed in the future.
-    function lastKvIndex() public view returns (uint40) {
+    function lastKvIdx() public view returns (uint40) {
         return kvEntryCount;
     }
 
