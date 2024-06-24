@@ -51,7 +51,7 @@ async function deployContract() {
   console.log("storage impl address is ", impl);
 
   const data = implContract.interface.encodeFunctionData("initialize", [
-    94371840, // minimumDiff 5 * 3 * 3600 * 1024 * 1024 / 12 = 4718592000 for 5 replicas that can have 1M IOs in one epoch
+    94371840, // minimumDiff 0.1 * 3 * 3600 * 1024 * 1024 / 12 = 94371840 for 0.1 replicas that can have 1M IOs in one epoch
     3145728000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
     treasuryAddress, // treasury
@@ -85,7 +85,7 @@ async function deployContract() {
 }
 
 async function updateContract() {
-  const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
+  const StorageContract = await hre.ethers.getContractFactory("EthStorageContractL2");
 
   // get start time
   const ethStorage = StorageContract.attach(storageContractProxy);
