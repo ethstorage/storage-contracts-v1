@@ -128,7 +128,10 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
             );
         }
 
-        require(decodeSample(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0]), "decode failed");
+        require(
+            decodeSample(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0]),
+            "EthStorageContract2: decode failed"
+        );
         return _hash0;
     }
 }
