@@ -2,27 +2,47 @@
 pragma solidity ^0.8.0;
 
 import "./StorageContract.sol";
-import "./Decoder.sol";
-import "./BinaryRelated.sol";
+import "./zk-verify/Decoder.sol";
+import "./libraries//BinaryRelated.sol";
 
+/// @custom:proxied
+/// @title EthStorageContract
+/// @notice EthStorage Contract that using EIP-4844 BLOB
 contract EthStorageContract is StorageContract, Decoder {
-    uint256 constant modulusBls = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
-    uint256 constant ruBls = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
-    uint256 constant ruBn254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
-    uint256 constant modulusBn254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
-    uint256 constant fieldElementsPerBlob = 0x1000;
+    /// @notice The modulus for the BLS curve
+    uint256 internal constant MODULUS_BLS = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
+
+    /// @notice The root of unity of BLS curve
+    uint256 internal constant RU_BLS = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
+
+    /// @notice The root of unity for the BN254 curve
+    uint256 constant RU_BN254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
+
+    /// @notice The modulus for the BN254 curve
+    uint256 constant MODULUS_BN254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
+
+    /// @notice The field elements per BLOB
+    uint256 constant FIELD_ELEMENTS_PER_BLOB = 0x1000;
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
+    /// @notice Emitted when a BLOB is appended.
+    /// @param kvIdx    The index of the KV pair
+    /// @param kvSize   The size of the KV pair
+    /// @param dataHash The hash of the data
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
+    /// @notice Constructs the EthStorageContract contract.
     constructor(
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
         uint256 _dcfFactor
-    ) StorageContract(_config, _startTime, _storageCost, _dcfFactor) {}
+    ) StorageContract(_config, _startTime, _storageCost, _dcfFactor) {
+        //initialize(0, 0, 0, address(0x0), msg.sender);
+    }
 
+    /// @notice Initialize the contract
     function initialize(
         uint256 _minimumDiff,
         uint256 _prepaidAmount,
@@ -33,7 +53,12 @@ contract EthStorageContract is StorageContract, Decoder {
         __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
-    function modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result) {
+    /// @notice Performs modular exponentiation, which is a type of exponentiation performed over a modulus.
+    /// @param _b The base
+    /// @param _e The exponent
+    /// @param _m The modulus
+    /// @return result_ The result of the modular exponentiation
+    function _modExp(uint256 _b, uint256 _e, uint256 _m) internal view returns (uint256 result_) {
         assembly {
             // Free memory pointer
             let pointer := mload(0x40)
@@ -53,143 +78,179 @@ contract EthStorageContract is StorageContract, Decoder {
                 revert(0, 0)
             }
 
-            result := mload(0x0)
+            result_ := mload(0x0)
 
             // Clear memory or exclude the memory
             mstore(0x40, add(pointer, 0xc0))
         }
     }
 
-    function pointEvaluation(bytes memory input) internal view returns (uint256 versionedHash, uint256 x, uint256 y) {
+    /// @notice Perform point evaluation
+    /// @param _input The input data
+    /// @return versionedHash_ The versioned hash
+    /// @return x_ The x coordinate
+    /// @return y_ The y coordinate
+    function _pointEvaluation(
+        bytes memory _input
+    ) internal view returns (uint256 versionedHash_, uint256 x_, uint256 y_) {
         assembly {
-            versionedHash := mload(add(input, 0x20))
-            x := mload(add(input, 0x40))
-            y := mload(add(input, 0x60))
+            versionedHash_ := mload(add(_input, 0x20))
+            x_ := mload(add(_input, 0x40))
+            y_ := mload(add(_input, 0x60))
 
             // Call the precompiled contract 0x0a = point evaluation, reuse scratch to get the results
-            if iszero(staticcall(not(0), 0x0a, add(input, 0x20), 0xc0, 0x0, 0x40)) {
+            if iszero(staticcall(not(0), 0x0a, add(_input, 0x20), 0xc0, 0x0, 0x40)) {
                 revert(0, 0)
             }
             // Check the results
-            if iszero(eq(mload(0x0), fieldElementsPerBlob)) {
+            if iszero(eq(mload(0x0), FIELD_ELEMENTS_PER_BLOB)) {
                 revert(0, 0)
             }
-            if iszero(eq(mload(0x20), modulusBls)) {
+            if iszero(eq(mload(0x20), MODULUS_BLS)) {
                 revert(0, 0)
             }
         }
     }
 
+    /// @notice Verify the mask is correct
+    /// @param _proof The ZK proof
+    /// @param _encodingKey The encoding key
+    /// @param _sampleIdxInKv The sample index in the KV
+    /// @param _mask The mask of the sample
+    /// @return The result of the verification
     function decodeSample(
-        Proof memory proof,
-        uint256 encodingKey,
-        uint256 sampleIdxInKv,
-        uint256 mask
+        Proof memory _proof,
+        uint256 _encodingKey,
+        uint256 _sampleIdxInKv,
+        uint256 _mask
     ) public view returns (bool) {
-        uint256 xBn254 = modExp(ruBn254, sampleIdxInKv, modulusBn254);
+        uint256 xBn254 = _modExp(RU_BN254, _sampleIdxInKv, MODULUS_BN254);
 
         uint256[] memory input = new uint256[](3);
         // TODO: simple hash to curve mapping
-        input[0] = encodingKey % modulusBn254;
+        input[0] = _encodingKey % MODULUS_BN254;
         input[1] = xBn254;
-        input[2] = mask;
-        return (verifyDecoding(input, proof) == 0);
+        input[2] = _mask;
+        return (verifyDecoding(input, _proof) == 0);
     }
 
+    /// @notice Check the decoded data is included in the BLOB corresponding to on-chain datahashes
+    /// @param _dataHash The data hash
+    /// @param _sampleIdxInKv The sample index in the KV
+    /// @param _decodedData The decoded sample
+    /// @param _peInput The point evaluation input
+    /// @return The result of the check
     function checkInclusive(
-        bytes32 dataHash,
-        uint256 sampleIdxInKv,
-        uint256 decodedData,
-        bytes memory peInput
+        bytes32 _dataHash,
+        uint256 _sampleIdxInKv,
+        uint256 _decodedData,
+        bytes memory _peInput
     ) public view returns (bool) {
-        if (dataHash == 0x0) {
-            return decodedData == 0;
+        if (_dataHash == 0x0) {
+            return _decodedData == 0;
         }
         // peInput includes an input point that comes from bit reversed sampleIdxInKv
-        uint256 sampleIdxInKvRev = BinaryRelated.reverseBits(12, sampleIdxInKv);
-        uint256 xBls = modExp(ruBls, sampleIdxInKvRev, modulusBls);
-        (uint256 versionedHash, uint256 evalX, uint256 evalY) = pointEvaluation(peInput);
-        if (evalX != xBls || bytes24(bytes32(versionedHash)) != dataHash) {
+        uint256 sampleIdxInKvRev = BinaryRelated.reverseBits(12, _sampleIdxInKv);
+        uint256 xBls = _modExp(RU_BLS, sampleIdxInKvRev, MODULUS_BLS);
+        (uint256 versionedHash, uint256 evalX, uint256 evalY) = _pointEvaluation(_peInput);
+        if (evalX != xBls || bytes24(bytes32(versionedHash)) != _dataHash) {
             return false;
         }
 
-        return evalY == decodedData;
+        return evalY == _decodedData;
     }
 
-    /*
-     * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
-     */
+    /// @notice Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes
+    /// @param _kvIdx The index of the KV pair
+    /// @param _sampleIdxInKv The sample index in the KV
+    /// @param _miner The miner address
+    /// @param _encodedData The encoded sample data
+    /// @param _mask The mask of the sample
+    /// @param _inclusiveProof The inclusive proof
+    /// @param _decodeProof The decode proof
+    /// @return The result of the check
     function decodeAndCheckInclusive(
-        uint256 kvIdx,
-        uint256 sampleIdxInKv,
-        address miner,
-        bytes32 encodedData,
-        uint256 mask,
-        bytes calldata inclusiveProof,
-        bytes calldata decodeProof
+        uint256 _kvIdx,
+        uint256 _sampleIdxInKv,
+        address _miner,
+        bytes32 _encodedData,
+        uint256 _mask,
+        bytes calldata _inclusiveProof,
+        bytes calldata _decodeProof
     ) public view virtual returns (bool) {
-        PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
-        Proof memory proof = abi.decode(decodeProof, (Proof));
+        PhyAddr memory kvInfo = kvMap[idxMap[_kvIdx]];
+        Proof memory proof = abi.decode(_decodeProof, (Proof));
         // BLOB decoding check
-        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)) {
+        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, _miner, _kvIdx))), _sampleIdxInKv, _mask)) {
             return false;
         }
 
         // Inclusive proof of decodedData = mask ^ encodedData
-        return checkInclusive(kvInfo.hash, sampleIdxInKv, mask ^ uint256(encodedData), inclusiveProof);
+        return checkInclusive(kvInfo.hash, _sampleIdxInKv, _mask ^ uint256(_encodedData), _inclusiveProof);
     }
 
-    function getSampleIdx(uint256 rows, uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256) {
-        uint256 parent = uint256(hash0) % rows;
-        uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
-        uint256 kvIdx = sampleIdx >> sampleLenBits;
-        uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
+    /// @notice Get the sample index
+    /// @param _rows The sample count per shard
+    /// @param _startShardId The start shard ID
+    /// @param _hash0 The hash0
+    /// @return The key index contains the sample
+    /// @return The sample index in the key
+    function getSampleIdx(uint256 _rows, uint256 _startShardId, bytes32 _hash0) public view returns (uint256, uint256) {
+        uint256 parent = uint256(_hash0) % _rows;
+        uint256 sampleIdx = parent + (_startShardId << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS));
+        uint256 kvIdx = sampleIdx >> SAMPLE_LEN_BITS;
+        uint256 sampleIdxInKv = sampleIdx % (1 << SAMPLE_LEN_BITS);
         return (kvIdx, sampleIdxInKv);
     }
 
+    /// @inheritdoc StorageContract
     function verifySamples(
-        uint256 startShardId,
-        bytes32 hash0,
-        address miner,
-        bytes32[] memory encodedSamples,
-        uint256[] memory masks,
-        bytes[] calldata inclusiveProofs,
-        bytes[] calldata decodeProof
+        uint256 _startShardId,
+        bytes32 _hash0,
+        address _miner,
+        bytes32[] memory _encodedSamples,
+        uint256[] memory _masks,
+        bytes[] calldata _inclusiveProofs,
+        bytes[] calldata _decodeProof
     ) public view virtual override returns (bytes32) {
-        require(encodedSamples.length == randomChecks, "data length mismatch");
-        require(masks.length == randomChecks, "masks length mismatch");
-        require(inclusiveProofs.length == randomChecks, "proof length mismatch");
-        require(decodeProof.length == randomChecks, "decodeProof length mismatch");
+        require(_encodedSamples.length == RANDOM_CHECKS, "EthStorageContract: data length mismatch");
+        require(_masks.length == RANDOM_CHECKS, "EthStorageContract: masks length mismatch");
+        require(_inclusiveProofs.length == RANDOM_CHECKS, "EthStorageContract: proof length mismatch");
+        require(_decodeProof.length == RANDOM_CHECKS, "EthStorageContract: decodeProof length mismatch");
 
         // calculate the number of samples range of the sample check
-        uint256 rows = 1 << (shardEntryBits + sampleLenBits);
+        uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS);
 
-        for (uint256 i = 0; i < randomChecks; i++) {
-            (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, startShardId, hash0);
+        for (uint256 i = 0; i < RANDOM_CHECKS; i++) {
+            (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, _startShardId, _hash0);
 
             require(
                 decodeAndCheckInclusive(
                     kvIdx,
                     sampleIdxInKv,
-                    miner,
-                    encodedSamples[i],
-                    masks[i],
-                    inclusiveProofs[i],
-                    decodeProof[i]
+                    _miner,
+                    _encodedSamples[i],
+                    _masks[i],
+                    _inclusiveProofs[i],
+                    _decodeProof[i]
                 ),
-                "invalid samples"
+                "EthStorageContract: invalid samples"
             );
-            hash0 = keccak256(abi.encode(hash0, encodedSamples[i]));
+            _hash0 = keccak256(abi.encode(_hash0, _encodedSamples[i]));
         }
-        return hash0;
+        return _hash0;
     }
 
-    // Write a large value to KV store.  If the KV pair exists, overrides it.  Otherwise, will append the KV to the KV array.
-    function putBlob(bytes32 key, uint256 blobIdx, uint256 length) public payable virtual {
-        bytes32 dataHash = blobhash(blobIdx);
-        require(dataHash != 0, "failed to get blob hash");
-        uint256 kvIdx = _putInternal(key, dataHash, length);
+    /// @notice Write a large value to KV store.  If the KV pair exists, overrides it.
+    ///         Otherwise, will append the KV to the KV array.
+    /// @param _key The key of the KV pair
+    /// @param _blobIdx The index of the blob
+    /// @param _length The length of the blob
+    function putBlob(bytes32 _key, uint256 _blobIdx, uint256 _length) public payable virtual {
+        bytes32 dataHash = blobhash(_blobIdx);
+        require(dataHash != 0, "EthStorageContract: failed to get blob hash");
+        uint256 kvIdx = _putInternal(_key, dataHash, _length);
 
-        emit PutBlob(kvIdx, length, dataHash);
+        emit PutBlob(kvIdx, _length, dataHash);
     }
 }

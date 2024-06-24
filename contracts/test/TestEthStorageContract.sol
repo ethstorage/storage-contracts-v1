@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./EthStorageContract.sol";
-import "./MerkleLib.sol";
+import "../EthStorageContract.sol";
+import "../libraries/MerkleLib.sol";
 
 contract TestEthStorageContract is EthStorageContract {
     uint256 public currentTimestamp;
@@ -50,9 +50,7 @@ contract TestEthStorageContract is EthStorageContract {
         Proof memory proof = abi.decode(decodeProof, (Proof));
 
         // BLOB decoding check
-        if (
-            !decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)
-        ) {
+        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)) {
             return false;
         }
 
@@ -68,12 +66,12 @@ contract TestEthStorageContract is EthStorageContract {
 
     function getSampleIdx(uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256, uint256) {
         // calculate the number of samples range of the sample check
-        uint256 rows = 1 << (shardEntryBits + sampleLenBits); // kvNumbersPerShard * smapleNumersPerKV
+        uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS); // kvNumbersPerShard * smapleNumersPerKV
 
         uint256 parent = uint256(hash0) % rows;
-        uint256 sampleIdx = parent + (startShardId << (shardEntryBits + sampleLenBits));
-        uint256 kvIdx = sampleIdx >> sampleLenBits;
-        uint256 sampleIdxInKv = sampleIdx % (1 << sampleLenBits);
+        uint256 sampleIdx = parent + (startShardId << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS));
+        uint256 kvIdx = sampleIdx >> SAMPLE_LEN_BITS;
+        uint256 sampleIdxInKv = sampleIdx % (1 << SAMPLE_LEN_BITS);
 
         return (sampleIdx, kvIdx, sampleIdxInKv);
     }
@@ -134,7 +132,18 @@ contract TestEthStorageContract is EthStorageContract {
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) public virtual override {
-        return _mineWithoutDiffCompare(blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof);
+        return
+            _mineWithoutDiffCompare(
+                blockNumber,
+                shardId,
+                miner,
+                nonce,
+                encodedSamples,
+                masks,
+                randaoProof,
+                inclusiveProofs,
+                decodeProof
+            );
     }
 
     function _mineWithFixedHash0(
@@ -171,6 +180,7 @@ contract TestEthStorageContract is EthStorageContract {
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) public virtual {
-        return _mineWithFixedHash0(initHash0, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
+        return
+            _mineWithFixedHash0(initHash0, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
     }
 }

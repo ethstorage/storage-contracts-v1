@@ -55,12 +55,12 @@ describe("DecentralizedKV Test", function () {
     await kv.initialize(ownerAddr);
 
     expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
-    await expect(kv.put(key1, "0x11223344")).to.be.revertedWith("not enough payment");
+    await expect(kv.put(key1, "0x11223344")).to.be.revertedWith("DecentralizedKV: not enough payment");
     await expect(
       kv.put(key1, "0x11223344", {
         value: "900000000000000000",
       })
-    ).to.be.revertedWith("not enough payment");
+    ).to.be.revertedWith("DecentralizedKV: not enough payment");
     await kv.put(key1, "0x11223344", {
       value: ethers.utils.parseEther("1.0"),
     });
@@ -91,12 +91,12 @@ describe("DecentralizedKV Test", function () {
     await kv.initialize(ownerAddr);
 
     expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
-    await expect(kv.put(key1, "0x11223344")).to.be.revertedWith("not enough payment");
+    await expect(kv.put(key1, "0x11223344")).to.be.revertedWith("DecentralizedKV: not enough payment");
     await expect(
       kv.put(key1, "0x11223344", {
         value: "900000000000000000",
       })
-    ).to.be.revertedWith("not enough payment");
+    ).to.be.revertedWith("DecentralizedKV: not enough payment");
     await kv.put(key1, "0x11223344", {
       value: ethers.utils.parseEther("1.0"),
     });
