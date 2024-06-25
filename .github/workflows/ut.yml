@@ -19,5 +19,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+          
       - name: Test
         run: npm run test
