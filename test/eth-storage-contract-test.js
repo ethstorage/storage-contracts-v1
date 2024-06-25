@@ -14,28 +14,34 @@ const key3 = "0x0000000000000000000000000000000000000000000000000000000000000003
 const ownerAddr = "0x0000000000000000000000000000000000000001";
 
 describe("EthStorageContract Test", function () {
+
   it("decode-8k-blob-test", async function () {
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy([
-          13, // maxKvSizeBits
-          14, // shardSizeBits
-          1, // randomChecks
-          40, // cutoff
-          1024, // diffAdjDivisor
-          0, // treasuryShare
-        ],
-        0, // startTime
-        0, // storageCost
-        0, // dcfFactor
+    const impl = await EthStorageContract.deploy([
+      13, // maxKvSizeBits
+      14, // shardSizeBits
+      1, // randomChecks
+      40, // cutoff
+      1024, // diffAdjDivisor
+      0, // treasuryShare
+    ],
+      0, // startTime
+      0, // storageCost
+      0, // dcfFactor
     );
-    await sc.deployed();
-    await sc.initialize(
-        1, // minimumDiff
-        0, // prepaidAmount
-        1, // nonceLimit
-        "0x0000000000000000000000000000000000000000", // treasury
-        ownerAddr
-    );
+    await impl.deployed();
+    const data = impl.interface.encodeFunctionData("initialize", [
+      1, // minimumDiff
+      0, // prepaidAmount
+      1, // nonceLimit
+      "0x0000000000000000000000000000000000000000", // treasury
+      ownerAddr
+    ]);
+
+    const Proxy = await ethers.getContractFactory("EthStorageUpgradeableProxy");
+    const proxy = await Proxy.deploy(impl.address, ownerAddr, data);
+    await proxy.deployed();
+    const sc = EthStorageContract.attach(proxy.address);
 
     let elements = new Array(256);
 
@@ -74,26 +80,31 @@ describe("EthStorageContract Test", function () {
 
   it("decode-inclusive-8k-blob-test", async function () {
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy(     [
-          13, // maxKvSizeBits
-          14, // shardSizeBits
-          1, // randomChecks
-          40, // cutoff
-          1024, // diffAdjDivisor
-          0, // treasuryShare
-        ],
-        0, // startTime
-        0, // storageCost
-        0, // dcfFactor
+    const impl = await EthStorageContract.deploy([
+      13, // maxKvSizeBits
+      14, // shardSizeBits
+      1, // randomChecks
+      40, // cutoff
+      1024, // diffAdjDivisor
+      0, // treasuryShare
+    ],
+      0, // startTime
+      0, // storageCost
+      0, // dcfFactor
     );
-    await sc.deployed();
-    await sc.initialize(
-        1, // minimumDiff
-        0, // prepaidAmount
-        1, // nonceLimit
-        "0x0000000000000000000000000000000000000000", // treasury
-        ownerAddr
-    );
+    await impl.deployed();
+    const data = impl.interface.encodeFunctionData("initialize", [
+      1, // minimumDiff
+      0, // prepaidAmount
+      1, // nonceLimit
+      "0x0000000000000000000000000000000000000000", // treasury
+      ownerAddr
+    ]);
+    const Proxy = await ethers.getContractFactory("EthStorageUpgradeableProxy");
+    const proxy = await Proxy.deploy(impl.address, ownerAddr, data);
+    await proxy.deployed();
+    const sc = EthStorageContract.attach(proxy.address);
+
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
     await ml.deployed();
@@ -156,8 +167,8 @@ describe("EthStorageContract Test", function () {
 
     // combine all proof into single decode-and-inclusive proof
     const decodeProofData = abiCoder.encode(
-        ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
-        [decodeProof]
+      ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
+      [decodeProof]
     );
     const inclusiveProofData = abiCoder.encode(
       ["tuple(bytes32, bytes32, bytes32[])"],
@@ -207,26 +218,31 @@ describe("EthStorageContract Test", function () {
 
   it("verify-sample-8k-blob-2-samples-test", async function () {
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy([
-          13, // maxKvSizeBits
-          14, // shardSizeBits
-          2, // randomChecks
-          40, // cutoff
-          1024, // diffAdjDivisor
-          0, // treasuryShare
-        ],
-        0, // startTime
-        0, // storageCost
-        0, // dcfFactor
+    const impl = await EthStorageContract.deploy([
+      13, // maxKvSizeBits
+      14, // shardSizeBits
+      2, // randomChecks
+      40, // cutoff
+      1024, // diffAdjDivisor
+      0, // treasuryShare
+    ],
+      0, // startTime
+      0, // storageCost
+      0, // dcfFactor
     );
-    await sc.deployed();
-    await sc.initialize(
-        1, // minimumDiff
-        0, // prepaidAmount
-        1, // nonceLimit
-        "0x0000000000000000000000000000000000000000", // treasury
-        ownerAddr
-    );
+    await impl.deployed();
+    const data = impl.interface.encodeFunctionData("initialize", [
+      1, // minimumDiff
+      0, // prepaidAmount
+      1, // nonceLimit
+      "0x0000000000000000000000000000000000000000", // treasury
+      ownerAddr
+    ]);
+    const Proxy = await ethers.getContractFactory("EthStorageUpgradeableProxy");
+    const proxy = await Proxy.deploy(impl.address, ownerAddr, data);
+    await proxy.deployed();
+    const sc = EthStorageContract.attach(proxy.address);
+
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
     await ml.deployed();
@@ -361,14 +377,14 @@ describe("EthStorageContract Test", function () {
     ).to.equal(ethers.utils.keccak256(ethers.utils.hexConcat([nextHash0, nextEncodedSample])));
 
     await sc.mineWithFixedHash0(
-        hash0,
-        0,
-        miner,
-        0,
-        [encodedSample, nextEncodedSample],
-        [mask, nextMask],
-        [proof.inclusiveProof, nextProof.inclusiveProof],
-        [proof.decodeProof, nextProof.decodeProof]
+      hash0,
+      0,
+      miner,
+      0,
+      [encodedSample, nextEncodedSample],
+      [mask, nextMask],
+      [proof.inclusiveProof, nextProof.inclusiveProof],
+      [proof.decodeProof, nextProof.decodeProof]
     );
   });
 
@@ -383,26 +399,31 @@ describe("EthStorageContract Test", function () {
     }
 
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
-    const sc = await EthStorageContract.deploy([
-          13, // maxKvSizeBits
-          14, // shardSizeBits
-          2, // randomChecks
-          40, // cutoff
-          1024, // diffAdjDivisor
-          0, // treasuryShare
-        ],
-        0, // startTime
-        0, // storageCost
-        0, // dcfFactor
+    const impl = await EthStorageContract.deploy([
+      13, // maxKvSizeBits
+      14, // shardSizeBits
+      2, // randomChecks
+      40, // cutoff
+      1024, // diffAdjDivisor
+      0, // treasuryShare
+    ],
+      0, // startTime
+      0, // storageCost
+      0, // dcfFactor
     );
-    await sc.deployed();
-    await sc.initialize(
-        1, // minimumDiff
-        0, // prepaidAmount
-        1, // nonceLimit
-        "0x0000000000000000000000000000000000000000", // treasury
-        ownerAddr
-    );
+    await impl.deployed();
+    const data = impl.interface.encodeFunctionData("initialize", [
+      1, // minimumDiff
+      0, // prepaidAmount
+      1, // nonceLimit
+      "0x0000000000000000000000000000000000000000", // treasury
+      ownerAddr
+    ]);
+    const Proxy = await ethers.getContractFactory("EthStorageUpgradeableProxy");
+    const proxy = await Proxy.deploy(impl.address, ownerAddr, data);
+    await proxy.deployed();
+    const sc = EthStorageContract.attach(proxy.address);
+
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
     await ml.deployed();
@@ -430,7 +451,7 @@ describe("EthStorageContract Test", function () {
     let proofs = await testState.getAllIntegrityProofs();
     let inclusiveProofs = [];
     let decodeProof = [];
-    for(let proof of proofs) {
+    for (let proof of proofs) {
       inclusiveProofs.push(proof.inclusiveProof);
       decodeProof.push(proof.decodeProof);
     }

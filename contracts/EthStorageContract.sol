@@ -39,7 +39,7 @@ contract EthStorageContract is StorageContract, Decoder {
         uint256 _storageCost,
         uint256 _dcfFactor
     ) StorageContract(_config, _startTime, _storageCost, _dcfFactor) {
-        //initialize(0, 0, 0, address(0x0), msg.sender);
+        initialize(0, 0, 0, address(0x0), msg.sender);
     }
 
     /// @notice Initialize the contract
