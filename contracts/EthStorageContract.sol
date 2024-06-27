@@ -4,11 +4,12 @@ pragma solidity ^0.8.0;
 import "./StorageContract.sol";
 import "./zk-verify/Decoder.sol";
 import "./libraries//BinaryRelated.sol";
+import "./Interfaces/ISemver.sol";
 
 /// @custom:proxied
 /// @title EthStorageContract
 /// @notice EthStorage Contract that using EIP-4844 BLOB
-contract EthStorageContract is StorageContract, Decoder {
+contract EthStorageContract is StorageContract, Decoder, ISemver {
     /// @notice The modulus for the BLS curve
     uint256 internal constant MODULUS_BLS = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
 
@@ -23,6 +24,10 @@ contract EthStorageContract is StorageContract, Decoder {
 
     /// @notice The field elements per BLOB
     uint256 constant FIELD_ELEMENTS_PER_BLOB = 0x1000;
+
+    /// @notice Semantic version.
+    /// @custom:semver 0.1.1
+    string public constant version = "0.1.1";
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
