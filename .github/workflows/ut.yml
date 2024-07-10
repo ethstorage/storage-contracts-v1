@@ -25,7 +25,7 @@ jobs:
           version: nightly
 
       - name: Install forge-std
-        run: forge install foundry-rs/forge-std --no-commit
+        run: git submodule init
 
       - name: Test
         run: npm run test
