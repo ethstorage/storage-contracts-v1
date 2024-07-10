@@ -176,6 +176,8 @@ contract DecentralizedKV is OwnableUpgradeable {
         require(paddr.hash != 0, "DecentralizedKV: data not exist");
         if (_decodeType == DecodeType.OptimismCompact) {
             // kvSize is the actual data size that dApp contract stores
+            // (4*31+3)*1024 - 4 is the maximum value of optimization blob storage content. It can store 3068 bytes more data than standard blob.
+            // https://github.com/ethereum-optimism/optimism/blob/develop/op-service/eth/blob.go#L16
             require(
                 (paddr.kvSize >= _off + _len) && (_off + _len <= (4 * 31 + 3) * 1024 - 4),
                 "DecentralizedKV: beyond the range of kvSize"
