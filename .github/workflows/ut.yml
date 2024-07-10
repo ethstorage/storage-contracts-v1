@@ -25,7 +25,7 @@ jobs:
           version: nightly
 
       - name: Install forge-std
-        run: forge install foundry-rs/forge-std
+        run: forge install foundry-rs/forge-std --no-commit
 
       - name: Test
         run: npm run test
