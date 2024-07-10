@@ -176,12 +176,16 @@ contract DecentralizedKV is OwnableUpgradeable {
         require(paddr.hash != 0, "DecentralizedKV: data not exist");
         if (_decodeType == DecodeType.OptimismCompact) {
             // kvSize is the actual data size that dApp contract stores
-            uint256 size = (4 * 31 + 3) * 1024 - 4 > paddr.kvSize ? paddr.kvSize : (4 * 31 + 3) * 1024 - 4;
-            require(_off + _len <= size, "DecentralizedKV: beyond the range of kvSize");
+            require(
+                (paddr.kvSize >= _off + _len) && (_off + _len <= (4 * 31 + 3) * 1024 - 4),
+                "DecentralizedKV: beyond the range of kvSize"
+            );
         } else if (_decodeType == DecodeType.PaddingPer31Bytes) {
             // kvSize is the actual data size that dApp contract stores
-            uint256 size = maxKvSize - 4096 > paddr.kvSize ? paddr.kvSize : MAX_KV_SIZE - 4096;
-            require(_off + _len <= size, "DecentralizedKV: beyond the range of kvSize");
+            require(
+                (paddr.kvSize >= _off + _len) && (_off + _len <= MAX_KV_SIZE - 4096),
+                "DecentralizedKV: beyond the range of kvSize"
+            );
         } else {
             // maxKvSize is blob size
             require(MAX_KV_SIZE >= _off + _len, "DecentralizedKV: beyond the range of maxKvSize");
