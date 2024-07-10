@@ -31,7 +31,7 @@
   },
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test",
+    "test": "hardhat test && forge test",
     "prettier:check": "prettier-check contracts/**/*.sol",
     "prettier:fix": "prettier --write contracts/**/*.sol test/**/*.js scripts/**/*.js",
     "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
