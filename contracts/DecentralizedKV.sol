@@ -23,10 +23,16 @@ contract DecentralizedKV is OwnableUpgradeable {
     /// @notice Enum representing different decoding types when getting key-value.
     /// @custom:field RawData           Don't do any decoding.
     /// @custom:field PaddingPer31Bytes Will remove the padding byte every 31 bytes.
+    /// @custom:field OptimismCompact   Use Op blob encoding format.
     enum DecodeType {
         RawData,
-        PaddingPer31Bytes
+        PaddingPer31Bytes,
+        OptimismCompact
     }
+
+    /// @notice The maximum value of optimization blob storage content. It can store 3068 bytes more data than standard blob.
+    /// https://github.com/ethereum-optimism/optimism/blob/develop/op-service/eth/blob.go#L16
+    uint256 internal constant MAX_OPTIMISM_BLOB_DATA_SIZE = (4 * 31 + 3) * 1024 - 4;
 
     /// @notice Upfront storage cost (pre-dcf)
     uint256 internal immutable STORAGE_COST;
@@ -172,7 +178,13 @@ contract DecentralizedKV is OwnableUpgradeable {
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
         PhyAddr memory paddr = kvMap[skey];
         require(paddr.hash != 0, "DecentralizedKV: data not exist");
-        if (_decodeType == DecodeType.PaddingPer31Bytes) {
+        if (_decodeType == DecodeType.OptimismCompact) {
+            // kvSize is the actual data size that dApp contract stores
+            require(
+                (paddr.kvSize >= _off + _len) && (_off + _len <= MAX_OPTIMISM_BLOB_DATA_SIZE),
+                "DecentralizedKV: beyond the range of kvSize"
+            );
+        } else if (_decodeType == DecodeType.PaddingPer31Bytes) {
             // kvSize is the actual data size that dApp contract stores
             require(
                 (paddr.kvSize >= _off + _len) && (_off + _len <= MAX_KV_SIZE - 4096),
@@ -182,6 +194,7 @@ contract DecentralizedKV is OwnableUpgradeable {
             // maxKvSize is blob size
             require(MAX_KV_SIZE >= _off + _len, "DecentralizedKV: beyond the range of maxKvSize");
         }
+
         bytes memory input = abi.encode(paddr.kvIdx, _decodeType, _off, _len, paddr.hash);
         bytes memory output = new bytes(_len);
 
