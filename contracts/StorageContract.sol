@@ -145,23 +145,6 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice People can sent ETH to the contract.
     function sendValue() public payable {}
 
-    /// @notice Checks the payment using the last mine time.
-    function _prepareAppendWithTimestamp(uint256 _timestamp) internal {
-        uint256 totalEntries = kvEntryCount + 1; // include the one to be put
-        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id of the new KV
-        if ((totalEntries % (1 << SHARD_ENTRY_BITS)) == 1) {
-            // Open a new shard if the KV is the first one of the shard
-            // and mark the shard is ready to mine.
-            // (TODO): Setup shard difficulty as current difficulty / factor?
-            if (shardId != 0) {
-                // shard0 is already opened in constructor
-                infos[shardId].lastMineTime = _timestamp;
-            }
-        }
-
-        require(msg.value >= _upfrontPayment(infos[shardId].lastMineTime), "StorageContract: not enough payment");
-    }
-
     /// @notice Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
         uint256 totalEntries = kvEntryCount + 1; // include the one to be put
@@ -175,11 +158,6 @@ abstract contract StorageContract is DecentralizedKV {
         } else {
             return _upfrontPayment(infos[shardId].lastMineTime);
         }
-    }
-
-    /// @inheritdoc DecentralizedKV
-    function _prepareAppend() internal virtual override {
-        return _prepareAppendWithTimestamp(block.timestamp);
     }
 
     /// @notice Verify the samples of the BLOBs by the miner (storage provider) including
