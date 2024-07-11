@@ -30,6 +30,10 @@ contract DecentralizedKV is OwnableUpgradeable {
         OptimismCompact
     }
 
+    /// @notice The maximum value of optimization blob storage content. It can store 3068 bytes more data than standard blob.
+    /// https://github.com/ethereum-optimism/optimism/blob/develop/op-service/eth/blob.go#L16
+    uint256 internal constant MAX_OPTIMISM_BLOB_DATA_SIZE = (4 * 31 + 3) * 1024 - 4;
+
     /// @notice Upfront storage cost (pre-dcf)
     uint256 internal immutable STORAGE_COST;
 
@@ -179,7 +183,7 @@ contract DecentralizedKV is OwnableUpgradeable {
             // (4*31+3)*1024 - 4 is the maximum value of optimization blob storage content. It can store 3068 bytes more data than standard blob.
             // https://github.com/ethereum-optimism/optimism/blob/develop/op-service/eth/blob.go#L16
             require(
-                (paddr.kvSize >= _off + _len) && (_off + _len <= (4 * 31 + 3) * 1024 - 4),
+                (paddr.kvSize >= _off + _len) && (_off + _len <= MAX_OPTIMISM_BLOB_DATA_SIZE),
                 "DecentralizedKV: beyond the range of kvSize"
             );
         } else if (_decodeType == DecodeType.PaddingPer31Bytes) {
