@@ -255,8 +255,10 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
         payable
         virtual
     {
-        require(_keys.length == _blobIdxs.length, "EthStorageContract: key length mismatch");
-        require(_keys.length == _lengths.length, "EthStorageContract: length length mismatch");
+        require(
+            _keys.length == _blobIdxs.length && _keys.length == _lengths.length,
+            "EthStorageContract: input length mismatch"
+        );
 
         bytes32[] memory dataHashes = new bytes32[](_blobIdxs.length);
         for (uint256 i = 0; i < _blobIdxs.length; i++) {
