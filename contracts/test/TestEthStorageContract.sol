@@ -27,6 +27,14 @@ contract TestEthStorageContract is EthStorageContract {
         _putInternal(key, dataHash, data.length);
     }
 
+    function putBlob(bytes32 _key, uint256 _blobIdx, uint256 _length) public payable override {
+        bytes32 dataHash = bytes32(uint256(1 << 8 * 8));
+        require(dataHash != 0, "EthStorageContract: failed to get blob hash");
+        uint256 kvIdx = _putInternal(_key, dataHash, _length);
+
+        emit PutBlob(kvIdx, _length, dataHash);
+    }
+
     function putBlobs(bytes32[] memory _keys, uint256[] memory _blobIdxs, uint256[] memory _lengths)
         public
         payable

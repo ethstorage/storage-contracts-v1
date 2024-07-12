@@ -28,6 +28,35 @@ contract EthStorageContractTest is Test {
         storageContract = TestEthStorageContract(address(proxy));
     }
 
+    function testPutBlob() public {
+        bytes32 key = bytes32(uint256(0));
+        uint256 blobIdx = 0;
+        uint256 length = 10;
+
+        uint256 insufficientCost = storageContract.upfrontPayment() - 1;
+
+        // Expect the specific revert reason from _prepareAppend due to insufficient msg.value
+        vm.expectRevert("DecentralizedKV: not enough payment");
+        storageContract.putBlob{value: insufficientCost}(key, blobIdx, length);
+
+        // Enough storage cost
+        uint256 sufficientCost = storageContract.upfrontPayment();
+        storageContract.putBlob{value: sufficientCost}(key, blobIdx, length);
+
+        assertEq(storageContract.kvEntryCount(), 1);
+        assertEq(storageContract.hash(key), bytes32(uint256(1 << 8 * 8)));
+        assertEq(storageContract.size(key), 10);
+
+        // Appending a new key-value
+        key = bytes32(uint256(1));
+        length = 20;
+        sufficientCost = storageContract.upfrontPayment();
+        storageContract.putBlob{value: sufficientCost}(key, blobIdx, length);
+        assertEq(storageContract.kvEntryCount(), 2);
+        assertEq(storageContract.hash(key), bytes32(uint256(1 << 8 * 8)));
+        assertEq(storageContract.size(key), 20);
+    }
+
     function testPutBlobs() public {
         bytes32[] memory keys = new bytes32[](2);
         keys[0] = bytes32(uint256(0));
