@@ -73,9 +73,9 @@ async function deployContract() {
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
 
-  // fund 0.5 eth into the storage contract to give reward for empty mining
+  // fund 50 qkc into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("0.5") });
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("50") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 
