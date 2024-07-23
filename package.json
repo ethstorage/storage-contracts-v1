@@ -35,7 +35,8 @@
     "prettier:check": "prettier-check contracts/**/*.sol",
     "prettier:fix": "prettier --write contracts/**/*.sol test/**/*.js scripts/**/*.js",
     "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
-    "deployL2": "npx hardhat run scripts/deployL2.js --network qkc"
+    "deployL2Dev": "npx hardhat run scripts/deployL2.js --network qkc_devnet",
+    "deployL2Test": "npx hardhat run scripts/deployL2.js --network qkc_testnet"
   },
   "workspaces": {
     "packages": [
