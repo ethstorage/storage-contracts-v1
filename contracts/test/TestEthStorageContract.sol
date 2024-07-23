@@ -23,16 +23,33 @@ contract TestEthStorageContract is EthStorageContract {
     }
 
     function put(bytes32 key, bytes memory data) public payable {
-        bytes32 dataHash = MerkleLib.merkleRootWithMinTree(data, 32); // TODO: 64-bytes should be more efficient.
-        _putInternal(key, dataHash, data.length);
+        bytes32 dataHash = MerkleLib.merkleRootWithMinTree(data, 32);
+
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = key;
+        bytes32[] memory dataHashes = new bytes32[](1);
+        dataHashes[0] = dataHash;
+        uint256[] memory lengths = new uint256[](1);
+        lengths[0] = data.length;
+
+        // TODO: 64-bytes should be more efficient.
+        _putBatchInternal(keys, dataHashes, lengths);
     }
 
     function putBlob(bytes32 _key, uint256 _blobIdx, uint256 _length) public payable override {
         bytes32 dataHash = bytes32(uint256(1 << 8 * 8));
         require(dataHash != 0, "EthStorageContract: failed to get blob hash");
-        uint256 kvIdx = _putInternal(_key, dataHash, _length);
 
-        emit PutBlob(kvIdx, _length, dataHash);
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = _key;
+        bytes32[] memory dataHashes = new bytes32[](1);
+        dataHashes[0] = dataHash;
+        uint256[] memory lengths = new uint256[](1);
+        lengths[0] = _length;
+
+        uint256[] memory kvIndices = _putBatchInternal(keys, dataHashes, lengths);
+
+        emit PutBlob(kvIndices[0], _length, dataHash);
     }
 
     function putBlobs(bytes32[] memory _keys, uint256[] memory _blobIdxs, uint256[] memory _lengths)

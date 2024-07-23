@@ -241,9 +241,17 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
     function putBlob(bytes32 _key, uint256 _blobIdx, uint256 _length) public payable virtual {
         bytes32 dataHash = blobhash(_blobIdx);
         require(dataHash != 0, "EthStorageContract: failed to get blob hash");
-        uint256 kvIdx = _putInternal(_key, dataHash, _length);
 
-        emit PutBlob(kvIdx, _length, dataHash);
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = _key;
+        bytes32[] memory dataHashes = new bytes32[](1);
+        dataHashes[0] = dataHash;
+        uint256[] memory lengths = new uint256[](1);
+        lengths[0] = _length;
+
+        uint256[] memory kvIndices = _putBatchInternal(keys, dataHashes, lengths);
+
+        emit PutBlob(kvIndices[0], _length, dataHash);
     }
 
     /// @notice Write multiple large values to KV store.

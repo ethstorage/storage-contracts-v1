@@ -8,12 +8,9 @@ contract TestDecentralizedKV is DecentralizedKV {
 
     mapping(uint256 => bytes) internal dataMap;
 
-    constructor(
-        uint256 _maxKvSize,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor
-    ) DecentralizedKV(_maxKvSize, _startTime, _storageCost, _dcfFactor) {}
+    constructor(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
+        DecentralizedKV(_maxKvSize, _startTime, _storageCost, _dcfFactor)
+    {}
 
     function initialize(address owner) public initializer {
         __init_KV(owner);
@@ -30,16 +27,24 @@ contract TestDecentralizedKV is DecentralizedKV {
 
     function put(bytes32 key, bytes memory data) public payable {
         bytes32 dataHash = keccak256(data);
-        uint256 kvIdx = _putInternal(key, dataHash, data.length);
-        dataMap[kvIdx] = data;
+
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = key;
+        bytes32[] memory dataHashes = new bytes32[](1);
+        dataHashes[0] = dataHash;
+        uint256[] memory lengths = new uint256[](1);
+        lengths[0] = data.length;
+
+        uint256[] memory kvIndices = _putBatchInternal(keys, dataHashes, lengths);
+        dataMap[kvIndices[0]] = data;
     }
 
-    function get(
-        bytes32 key,
-        DecodeType decodeType,
-        uint256 off,
-        uint256 len
-    ) public view override returns (bytes memory) {
+    function get(bytes32 key, DecodeType decodeType, uint256 off, uint256 len)
+        public
+        view
+        override
+        returns (bytes memory)
+    {
         if (len == 0) {
             return new bytes(0);
         }

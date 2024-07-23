@@ -119,34 +119,19 @@ contract DecentralizedKV is OwnableUpgradeable {
         require(msg.value >= upfrontPayment() * _batchSize, "DecentralizedKV: not enough batch payment");
     }
 
-    /// @notice Called by public put method.
-    /// @param _key      Key of the data.
-    /// @param _dataHash Hash of the data.
-    /// @param _length   Length of the data.
-    /// @return          The index of the key-value.
-    function _putInternal(bytes32 _key, bytes32 _dataHash, uint256 _length) internal returns (uint256) {
-        require(_length <= MAX_KV_SIZE, "DecentralizedKV: data too large");
-        bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        PhyAddr memory paddr = kvMap[skey];
-
-        if (paddr.hash == 0) {
-            // append (require payment from sender)
-            _prepareAppend(1);
-            paddr.kvIdx = kvEntryCount;
-            idxMap[paddr.kvIdx] = skey;
-            kvEntryCount = kvEntryCount + 1;
-        }
-        paddr.kvSize = uint24(_length);
-        paddr.hash = bytes24(_dataHash);
-        kvMap[skey] = paddr;
-
-        return paddr.kvIdx;
-    }
-
+    /// @notice Called by public putBlob and putBlobs methods.
+    /// @param _keys       Keys of the data.
+    /// @param _dataHashes Hashes of the data.
+    /// @param _lengths    Lengths of the data.
+    /// @return            The indices of the key-value.
     function _putBatchInternal(bytes32[] memory _keys, bytes32[] memory _dataHashes, uint256[] memory _lengths)
         internal
         returns (uint256[] memory)
     {
+        for (uint256 i = 0; i < _keys.length; i++) {
+            require(_lengths[i] <= MAX_KV_SIZE, "DecentralizedKV: data too large");
+        }
+
         uint256[] memory res = new uint256[](_keys.length);
         uint256 batchPaymentSize = 0;
         for (uint256 i = 0; i < _keys.length; i++) {
