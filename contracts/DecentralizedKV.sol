@@ -147,8 +147,6 @@ contract DecentralizedKV is OwnableUpgradeable {
         internal
         returns (uint256[] memory)
     {
-        require(_keys.length == _dataHashes.length && _keys.length == _lengths.length, "DecentralizedKV: invalid input");
-
         uint256[] memory res = new uint256[](_keys.length);
         uint256 batchPaymentSize = 0;
         for (uint256 i = 0; i < _keys.length; i++) {
