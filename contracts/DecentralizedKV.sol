@@ -115,13 +115,7 @@ contract DecentralizedKV is OwnableUpgradeable {
     }
 
     /// @notice Checks before appending the key-value.
-    function _prepareAppend() internal virtual {
-        require(msg.value >= upfrontPayment(), "DecentralizedKV: not enough payment");
-    }
-
-    /// @notice Checks before batch appending the key-value.
-    /// @param _batchSize The size of the batch.
-    function _prepareBatchAppend(uint256 _batchSize) internal virtual {
+    function _prepareAppend(uint256 _batchSize) internal virtual {
         require(msg.value >= upfrontPayment() * _batchSize, "DecentralizedKV: not enough batch payment");
     }
 
@@ -137,7 +131,7 @@ contract DecentralizedKV is OwnableUpgradeable {
 
         if (paddr.hash == 0) {
             // append (require payment from sender)
-            _prepareAppend();
+            _prepareAppend(1);
             paddr.kvIdx = kvEntryCount;
             idxMap[paddr.kvIdx] = skey;
             kvEntryCount = kvEntryCount + 1;
@@ -175,7 +169,7 @@ contract DecentralizedKV is OwnableUpgradeable {
             res[i] = paddr.kvIdx;
         }
 
-        _prepareBatchAppend(batchPaymentSize);
+        _prepareAppend(batchPaymentSize);
 
         return res;
     }

@@ -36,7 +36,7 @@ contract EthStorageContractTest is Test {
         uint256 insufficientCost = storageContract.upfrontPayment() - 1;
 
         // Expect the specific revert reason from _prepareAppend due to insufficient msg.value
-        vm.expectRevert("DecentralizedKV: not enough payment");
+        vm.expectRevert("StorageContract: not enough batch payment");
         storageContract.putBlob{value: insufficientCost}(key, blobIdx, length);
 
         // Enough storage cost
@@ -71,7 +71,7 @@ contract EthStorageContractTest is Test {
         uint256 insufficientCost = storageContract.upfrontPayment();
 
         // Expect the specific revert reason from _prepareBatchAppend due to insufficient msg.value
-        vm.expectRevert("DecentralizedKV: not enough batch payment");
+        vm.expectRevert("StorageContract: not enough batch payment");
         storageContract.putBlobs{value: insufficientCost}(keys, blobIdxs, lengths);
 
         // Enough storage cost
