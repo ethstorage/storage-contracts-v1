@@ -30,6 +30,7 @@
     "solidity-rlp": "^2.0.5"
   },
   "scripts": {
+    "install": "npm install && forge install foundry-rs/forge-std --no-commit",
     "compile": "hardhat compile",
     "test": "hardhat test && forge test",
     "prettier:check": "prettier-check contracts/**/*.sol",
