@@ -2,8 +2,7 @@
 
 ## Setup
  - Install foundry by following the [link](https://book.getfoundry.sh/getting-started/installation)
- - npm run install
- - npm run compile
+ - npm run install:all
  - npm run test
 
 
