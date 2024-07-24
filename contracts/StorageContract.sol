@@ -146,7 +146,7 @@ abstract contract StorageContract is DecentralizedKV {
     function sendValue() public payable {}
 
     /// @notice Checks the payment using the last mine time.
-    function _prepareAppendWithTimestamp(uint256 _timestamp) internal {
+    function _prepareAppendWithTimestamp(uint256 _timestamp, uint256 _batchSize) internal {
         uint256 totalEntries = kvEntryCount + 1; // include the one to be put
         uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id of the new KV
         if ((totalEntries % (1 << SHARD_ENTRY_BITS)) == 1) {
@@ -159,7 +159,10 @@ abstract contract StorageContract is DecentralizedKV {
             }
         }
 
-        require(msg.value >= _upfrontPayment(infos[shardId].lastMineTime), "StorageContract: not enough payment");
+        require(
+            msg.value >= _upfrontPayment(infos[shardId].lastMineTime) * _batchSize,
+            "StorageContract: not enough batch payment"
+        );
     }
 
     /// @notice Upfront payment for the next insertion
@@ -178,8 +181,8 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @inheritdoc DecentralizedKV
-    function _prepareAppend() internal virtual override {
-        return _prepareAppendWithTimestamp(block.timestamp);
+    function _prepareAppend(uint256 _batchSize) internal virtual override {
+        return _prepareAppendWithTimestamp(block.timestamp, _batchSize);
     }
 
     /// @notice Verify the samples of the BLOBs by the miner (storage provider) including

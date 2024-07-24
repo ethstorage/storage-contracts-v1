@@ -115,32 +115,46 @@ contract DecentralizedKV is OwnableUpgradeable {
     }
 
     /// @notice Checks before appending the key-value.
-    function _prepareAppend() internal virtual {
-        require(msg.value >= upfrontPayment(), "DecentralizedKV: not enough payment");
+    function _prepareAppend(uint256 _batchSize) internal virtual {
+        require(msg.value >= upfrontPayment() * _batchSize, "DecentralizedKV: not enough batch payment");
     }
 
-    /// @notice Called by public put method.
-    /// @param _key      Key of the data.
-    /// @param _dataHash Hash of the data.
-    /// @param _length   Length of the data.
-    /// @return          The index of the key-value.
-    function _putInternal(bytes32 _key, bytes32 _dataHash, uint256 _length) internal returns (uint256) {
-        require(_length <= MAX_KV_SIZE, "DecentralizedKV: data too large");
-        bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        PhyAddr memory paddr = kvMap[skey];
-
-        if (paddr.hash == 0) {
-            // append (require payment from sender)
-            _prepareAppend();
-            paddr.kvIdx = kvEntryCount;
-            idxMap[paddr.kvIdx] = skey;
-            kvEntryCount = kvEntryCount + 1;
+    /// @notice Called by public putBlob and putBlobs methods.
+    /// @param _keys       Keys of the data.
+    /// @param _dataHashes Hashes of the data.
+    /// @param _lengths    Lengths of the data.
+    /// @return            The indices of the key-value.
+    function _putBatchInternal(bytes32[] memory _keys, bytes32[] memory _dataHashes, uint256[] memory _lengths)
+        internal
+        returns (uint256[] memory)
+    {
+        for (uint256 i = 0; i < _keys.length; i++) {
+            require(_lengths[i] <= MAX_KV_SIZE, "DecentralizedKV: data too large");
         }
-        paddr.kvSize = uint24(_length);
-        paddr.hash = bytes24(_dataHash);
-        kvMap[skey] = paddr;
 
-        return paddr.kvIdx;
+        uint256[] memory res = new uint256[](_keys.length);
+        uint256 batchPaymentSize = 0;
+        for (uint256 i = 0; i < _keys.length; i++) {
+            bytes32 skey = keccak256(abi.encode(msg.sender, _keys[i]));
+            PhyAddr memory paddr = kvMap[skey];
+
+            if (paddr.hash == 0) {
+                // append (require payment from sender)
+                batchPaymentSize++;
+                paddr.kvIdx = kvEntryCount;
+                idxMap[paddr.kvIdx] = skey;
+                kvEntryCount = kvEntryCount + 1;
+            }
+            paddr.kvSize = uint24(_lengths[i]);
+            paddr.hash = bytes24(_dataHashes[i]);
+            kvMap[skey] = paddr;
+
+            res[i] = paddr.kvIdx;
+        }
+
+        _prepareAppend(batchPaymentSize);
+
+        return res;
     }
 
     /// @notice Return the size of the keyed value.
@@ -167,12 +181,12 @@ contract DecentralizedKV is OwnableUpgradeable {
     /// @param _off        Offset of the data.
     /// @param _len        Length of the data.
     /// @return            The data.
-    function get(
-        bytes32 _key,
-        DecodeType _decodeType,
-        uint256 _off,
-        uint256 _len
-    ) public view virtual returns (bytes memory) {
+    function get(bytes32 _key, DecodeType _decodeType, uint256 _off, uint256 _len)
+        public
+        view
+        virtual
+        returns (bytes memory)
+    {
         require(_len > 0, "DecentralizedKV: data len should be non zero");
 
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
@@ -201,9 +215,7 @@ contract DecentralizedKV is OwnableUpgradeable {
         uint256 retSize = 0;
 
         assembly {
-            if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0xa0, add(output, 0x20), _len)) {
-                revert(0, 0)
-            }
+            if iszero(staticcall(not(0), 0x33301, add(input, 0x20), 0xa0, add(output, 0x20), _len)) { revert(0, 0) }
             retSize := returndatasize()
         }
 

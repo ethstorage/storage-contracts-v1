@@ -38,12 +38,9 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
     /// @notice Constructs the EthStorageContract contract.
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor
-    ) StorageContract(_config, _startTime, _storageCost, _dcfFactor) {
+    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
+        StorageContract(_config, _startTime, _storageCost, _dcfFactor)
+    {
         _disableInitializers();
     }
 
@@ -79,9 +76,7 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
             mstore(add(pointer, 0xa0), _m)
 
             // Call the precompiled contract 0x05 = bigModExp, reuse scratch to get the results
-            if iszero(staticcall(not(0), 0x05, pointer, 0xc0, 0x0, 0x20)) {
-                revert(0, 0)
-            }
+            if iszero(staticcall(not(0), 0x05, pointer, 0xc0, 0x0, 0x20)) { revert(0, 0) }
 
             result_ := mload(0x0)
 
@@ -95,25 +90,21 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
     /// @return versionedHash_ The versioned hash
     /// @return x_ The x coordinate
     /// @return y_ The y coordinate
-    function _pointEvaluation(
-        bytes memory _input
-    ) internal view returns (uint256 versionedHash_, uint256 x_, uint256 y_) {
+    function _pointEvaluation(bytes memory _input)
+        internal
+        view
+        returns (uint256 versionedHash_, uint256 x_, uint256 y_)
+    {
         assembly {
             versionedHash_ := mload(add(_input, 0x20))
             x_ := mload(add(_input, 0x40))
             y_ := mload(add(_input, 0x60))
 
             // Call the precompiled contract 0x0a = point evaluation, reuse scratch to get the results
-            if iszero(staticcall(not(0), 0x0a, add(_input, 0x20), 0xc0, 0x0, 0x40)) {
-                revert(0, 0)
-            }
+            if iszero(staticcall(not(0), 0x0a, add(_input, 0x20), 0xc0, 0x0, 0x40)) { revert(0, 0) }
             // Check the results
-            if iszero(eq(mload(0x0), FIELD_ELEMENTS_PER_BLOB)) {
-                revert(0, 0)
-            }
-            if iszero(eq(mload(0x20), MODULUS_BLS)) {
-                revert(0, 0)
-            }
+            if iszero(eq(mload(0x0), FIELD_ELEMENTS_PER_BLOB)) { revert(0, 0) }
+            if iszero(eq(mload(0x20), MODULUS_BLS)) { revert(0, 0) }
         }
     }
 
@@ -123,12 +114,11 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
     /// @param _sampleIdxInKv The sample index in the KV
     /// @param _mask The mask of the sample
     /// @return The result of the verification
-    function decodeSample(
-        Proof memory _proof,
-        uint256 _encodingKey,
-        uint256 _sampleIdxInKv,
-        uint256 _mask
-    ) public view returns (bool) {
+    function decodeSample(Proof memory _proof, uint256 _encodingKey, uint256 _sampleIdxInKv, uint256 _mask)
+        public
+        view
+        returns (bool)
+    {
         uint256 xBn254 = _modExp(RU_BN254, _sampleIdxInKv, MODULUS_BN254);
 
         uint256[] memory input = new uint256[](3);
@@ -145,12 +135,11 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
     /// @param _decodedData The decoded sample
     /// @param _peInput The point evaluation input
     /// @return The result of the check
-    function checkInclusive(
-        bytes32 _dataHash,
-        uint256 _sampleIdxInKv,
-        uint256 _decodedData,
-        bytes memory _peInput
-    ) public view returns (bool) {
+    function checkInclusive(bytes32 _dataHash, uint256 _sampleIdxInKv, uint256 _decodedData, bytes memory _peInput)
+        public
+        view
+        returns (bool)
+    {
         if (_dataHash == 0x0) {
             return _decodedData == 0;
         }
@@ -200,7 +189,11 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
     /// @param _hash0 The hash0
     /// @return The key index contains the sample
     /// @return The sample index in the key
-    function getSampleIdx(uint256 _rows, uint256 _startShardId, bytes32 _hash0) public view returns (uint256, uint256) {
+    function getSampleIdx(uint256 _rows, uint256 _startShardId, bytes32 _hash0)
+        public
+        view
+        returns (uint256, uint256)
+    {
         uint256 parent = uint256(_hash0) % _rows;
         uint256 sampleIdx = parent + (_startShardId << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS));
         uint256 kvIdx = sampleIdx >> SAMPLE_LEN_BITS;
@@ -231,13 +224,7 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
 
             require(
                 decodeAndCheckInclusive(
-                    kvIdx,
-                    sampleIdxInKv,
-                    _miner,
-                    _encodedSamples[i],
-                    _masks[i],
-                    _inclusiveProofs[i],
-                    _decodeProof[i]
+                    kvIdx, sampleIdxInKv, _miner, _encodedSamples[i], _masks[i], _inclusiveProofs[i], _decodeProof[i]
                 ),
                 "EthStorageContract: invalid samples"
             );
@@ -254,8 +241,43 @@ contract EthStorageContract is StorageContract, Decoder, ISemver {
     function putBlob(bytes32 _key, uint256 _blobIdx, uint256 _length) public payable virtual {
         bytes32 dataHash = blobhash(_blobIdx);
         require(dataHash != 0, "EthStorageContract: failed to get blob hash");
-        uint256 kvIdx = _putInternal(_key, dataHash, _length);
 
-        emit PutBlob(kvIdx, _length, dataHash);
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = _key;
+        bytes32[] memory dataHashes = new bytes32[](1);
+        dataHashes[0] = dataHash;
+        uint256[] memory lengths = new uint256[](1);
+        lengths[0] = _length;
+
+        uint256[] memory kvIndices = _putBatchInternal(keys, dataHashes, lengths);
+
+        emit PutBlob(kvIndices[0], _length, dataHash);
+    }
+
+    /// @notice Write multiple large values to KV store.
+    /// @param _keys The keys of the KV pairs
+    /// @param _blobIdxs The indexes of the blobs
+    /// @param _lengths The lengths of the blobs
+    function putBlobs(bytes32[] memory _keys, uint256[] memory _blobIdxs, uint256[] memory _lengths)
+        public
+        payable
+        virtual
+    {
+        require(
+            _keys.length == _blobIdxs.length && _keys.length == _lengths.length,
+            "EthStorageContract: input length mismatch"
+        );
+
+        bytes32[] memory dataHashes = new bytes32[](_blobIdxs.length);
+        for (uint256 i = 0; i < _blobIdxs.length; i++) {
+            dataHashes[i] = blobhash(_blobIdxs[i]);
+            require(dataHashes[i] != 0, "EthStorageContract: failed to get blob hash");
+        }
+
+        uint256[] memory kvIdxs = _putBatchInternal(_keys, dataHashes, _lengths);
+
+        for (uint256 i = 0; i < _blobIdxs.length; i++) {
+            emit PutBlob(kvIdxs[i], _lengths[i], dataHashes[i]);
+        }
     }
 }

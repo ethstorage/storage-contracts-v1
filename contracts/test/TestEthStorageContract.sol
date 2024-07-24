@@ -13,12 +13,9 @@ contract TestEthStorageContract is EthStorageContract {
         bytes32[] proofs;
     }
 
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor
-    ) EthStorageContract(_config, _startTime, _storageCost, _dcfFactor) {}
+    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
+        EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
+    {}
 
     function setTimestamp(uint256 ts) public {
         require(ts > currentTimestamp, "ts");
@@ -26,8 +23,54 @@ contract TestEthStorageContract is EthStorageContract {
     }
 
     function put(bytes32 key, bytes memory data) public payable {
-        bytes32 dataHash = MerkleLib.merkleRootWithMinTree(data, 32); // TODO: 64-bytes should be more efficient.
-        _putInternal(key, dataHash, data.length);
+        bytes32 dataHash = MerkleLib.merkleRootWithMinTree(data, 32);
+
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = key;
+        bytes32[] memory dataHashes = new bytes32[](1);
+        dataHashes[0] = dataHash;
+        uint256[] memory lengths = new uint256[](1);
+        lengths[0] = data.length;
+
+        // TODO: 64-bytes should be more efficient.
+        _putBatchInternal(keys, dataHashes, lengths);
+    }
+
+    function putBlob(bytes32 _key, uint256 _blobIdx, uint256 _length) public payable override {
+        bytes32 dataHash = bytes32(uint256(1 << 8 * 8));
+        require(dataHash != 0, "EthStorageContract: failed to get blob hash");
+
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = _key;
+        bytes32[] memory dataHashes = new bytes32[](1);
+        dataHashes[0] = dataHash;
+        uint256[] memory lengths = new uint256[](1);
+        lengths[0] = _length;
+
+        uint256[] memory kvIndices = _putBatchInternal(keys, dataHashes, lengths);
+
+        emit PutBlob(kvIndices[0], _length, dataHash);
+    }
+
+    function putBlobs(bytes32[] memory _keys, uint256[] memory _blobIdxs, uint256[] memory _lengths)
+        public
+        payable
+        override
+    {
+        require(_keys.length == _blobIdxs.length, "EthStorageContract: key length mismatch");
+        require(_keys.length == _lengths.length, "EthStorageContract: length length mismatch");
+
+        bytes32[] memory dataHashes = new bytes32[](_blobIdxs.length);
+        for (uint256 i = 0; i < _blobIdxs.length; i++) {
+            dataHashes[i] = bytes32(i + 1 << 8 * 8); // dummy data hash
+            require(dataHashes[i] != 0, "EthStorageContract: failed to get blob hash");
+        }
+
+        uint256[] memory kvIdxs = _putBatchInternal(_keys, dataHashes, _lengths);
+
+        for (uint256 i = 0; i < _blobIdxs.length; i++) {
+            emit PutBlob(kvIdxs[i], _lengths[i], dataHashes[i]);
+        }
     }
 
     function getEncodingKey(uint256 kvIdx, address miner) public view returns (bytes32) {
@@ -132,18 +175,9 @@ contract TestEthStorageContract is EthStorageContract {
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) public virtual override {
-        return
-            _mineWithoutDiffCompare(
-                blockNumber,
-                shardId,
-                miner,
-                nonce,
-                encodedSamples,
-                masks,
-                randaoProof,
-                inclusiveProofs,
-                decodeProof
-            );
+        return _mineWithoutDiffCompare(
+            blockNumber, shardId, miner, nonce, encodedSamples, masks, randaoProof, inclusiveProofs, decodeProof
+        );
     }
 
     function _mineWithFixedHash0(
