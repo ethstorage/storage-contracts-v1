@@ -30,6 +30,7 @@
     "solidity-rlp": "^2.0.5"
   },
   "scripts": {
+    "install:all": "npm install && forge install",
     "compile": "hardhat compile",
     "test": "hardhat test && forge test",
     "prettier:check": "prettier-check contracts/**/*.sol",

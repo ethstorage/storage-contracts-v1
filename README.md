@@ -1,5 +1,11 @@
 # EthStorage Decentralized Storage Contracts V1
 
+## Setup
+ - Install foundry by following the [link](https://book.getfoundry.sh/getting-started/installation)
+ - npm run install:all
+ - npm run test
+
+
 ## Style Guide
 Smart contracts should be written according to this [STYLE_GUIDE.md](https://github.com/ethstorage/optimism/blob/develop/packages/contracts-bedrock/STYLE_GUIDE.md)
 
