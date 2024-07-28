@@ -1,3 +1,4 @@
+const fs = require('fs');
 const hre = require("hardhat");
 const dotenv = require("dotenv")
 dotenv.config()
@@ -51,7 +52,7 @@ async function deployContract() {
   console.log("storage impl address is ", impl);
 
   const data = implContract.interface.encodeFunctionData("initialize", [
-    1572864, // minimumDiff 0.1 * 180 * 1024 * 1024 / 12 = 1572864 for 0.1 replicas that can have 1M IOs in one epoch
+    1572864, // minimumDiff 0.1 * 180 (3 minutes) * 1024 * 1024 / 12 = 1572864 for 0.1 replicas that can have 1M IOs in one epoch
     3145728000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
     treasuryAddress, // treasury
@@ -65,6 +66,7 @@ async function deployContract() {
 
   console.log("storage admin address is ", admin);
   console.log("storage contract address is ", ethStorageProxy.address);
+  fs.writeFileSync("exportcontractaddress.sh", "export ES_NODE_CONTRACT_ADDRESS="+ethStorageProxy.address);
   const receipt = await hre.ethers.provider.getTransactionReceipt(ethStorageProxy.deployTransaction.hash);
   console.log(
     "deployed in block number",
