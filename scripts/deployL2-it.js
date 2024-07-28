@@ -66,7 +66,7 @@ async function deployContract() {
 
   console.log("storage admin address is ", admin);
   console.log("storage contract address is ", ethStorageProxy.address);
-  fs.writeFileSync("exportcontractaddress.sh", "export ES_NODE_CONTRACT_ADDRESS="+ethStorageProxy.address);
+  fs.writeFileSync(".caddr", ethStorageProxy.address);
   const receipt = await hre.ethers.provider.getTransactionReceipt(ethStorageProxy.deployTransaction.hash);
   console.log(
     "deployed in block number",
