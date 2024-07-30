@@ -84,6 +84,30 @@ async function deployContract() {
   // verify contract
   await verifyContract(ethStorageProxy.address);
   await verifyContract(impl, [config, startTime, storageCost, dcfFactor]);
+
+  // wait for contract finalized
+  await waitForFinalized (receipt.blockNumber)
+}
+
+async function waitForFinalized (number) {
+    if number == 0 {
+        return
+    }
+
+    while (true) {
+        const block = await hre.ethers.provider.getBlock("finalized")
+        console.log(
+            "finalized block number is",
+            block.number,
+            "at",
+            new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        );
+
+        if number > block.number{
+            return
+        }
+        setTimeout( 60 * 1000)
+    }
 }
 
 async function updateContract() {
