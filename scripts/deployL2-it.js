@@ -20,6 +20,7 @@ const config = [
 ];
 const storageCost = 1500000000000000; // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
 const dcfFactor = 340282366367469178095360967382638002176n; // dcfFactor, it mean 0.95 for yearly discount
+const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
 async function verifyContract(contract, args) {
   // if (!process.env.ETHERSCAN_API_KEY) {
@@ -86,28 +87,20 @@ async function deployContract() {
   await verifyContract(impl, [config, startTime, storageCost, dcfFactor]);
 
   // wait for contract finalized
-  await waitForFinalized (receipt.blockNumber)
-}
+  while (true) {
+    const block = await hre.ethers.provider.getBlock("finalized");
+    console.log(
+      "finalized block number is",
+      block.number,
+      "at",
+      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    );
 
-async function waitForFinalized(number) {
-    if (number == 0) {
-        return;
+    if (receipt.blockNumber < block.number) {
+      return;
     }
-
-    while (true) {
-        const block = await hre.ethers.provider.getBlock("finalized");
-        console.log(
-            "finalized block number is",
-            block.number,
-            "at",
-            new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-        );
-
-        if (number < block.number) {
-            return;
-        }
-        setTimeout(60 * 1000);
-    }
+    sleep(60*000);
+  }
 }
 
 async function updateContract() {
