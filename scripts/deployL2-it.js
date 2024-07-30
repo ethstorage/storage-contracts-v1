@@ -91,11 +91,11 @@ async function deployContract() {
 
 async function waitForFinalized (number) {
     if number == 0 {
-        return
+        return;
     }
 
     while (true) {
-        const block = await hre.ethers.provider.getBlock("finalized")
+        const block = await hre.ethers.provider.getBlock("finalized");
         console.log(
             "finalized block number is",
             block.number,
@@ -104,9 +104,9 @@ async function waitForFinalized (number) {
         );
 
         if number > block.number{
-            return
+            return;
         }
-        setTimeout( 60 * 1000)
+        setTimeout( 60 * 1000);
     }
 }
 
