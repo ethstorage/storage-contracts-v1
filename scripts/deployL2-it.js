@@ -66,7 +66,6 @@ async function deployContract() {
 
   console.log("storage admin address is ", admin);
   console.log("storage contract address is ", ethStorageProxy.address);
-  fs.writeFileSync(".caddr", ethStorageProxy.address);
   const receipt = await hre.ethers.provider.getTransactionReceipt(ethStorageProxy.deployTransaction.hash);
   console.log(
     "deployed in block number",
@@ -86,21 +85,19 @@ async function deployContract() {
   await verifyContract(impl, [config, startTime, storageCost, dcfFactor]);
 
   // wait for contract finalized
-  const i = 1
-  while (true) {
+  intervalId = setInterval(function (){
     const block = await hre.ethers.provider.getBlock("finalized");
-    setTimeout( () =>
-      console.log(
-        "finalized block number is",
-        block.number,
-        "at",
-        new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-    ), 60000 * i++);
-
+    console.log(
+      "finalized block number is",
+      block.number,
+      "at",
+      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    );
     if (receipt.blockNumber < block.number) {
-      return;
+      fs.writeFileSync(".caddr", ethStorageProxy.address);
+      clearInterval(intervalId)
     }
-  }
+  }, 60000);
 }
 
 async function updateContract() {
