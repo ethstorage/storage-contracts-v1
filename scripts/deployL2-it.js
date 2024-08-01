@@ -86,16 +86,20 @@ async function deployContract() {
 
   // wait for contract finalized
   var intervalId = setInterval(async function (){
-    const block = await hre.ethers.provider.getBlock("finalized");
-    console.log(
-      "finalized block number is",
-      block.number,
-      "at",
-      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-    );
-    if (receipt.blockNumber < block.number) {
-      fs.writeFileSync(".caddr", ethStorageProxy.address);
-      clearInterval(intervalId)
+    try {
+      const block = await hre.ethers.provider.getBlock("finalized");
+      console.log(
+        "finalized block number is",
+        block.number,
+        "at",
+        new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        );
+      if (receipt.blockNumber < block.number) {
+        fs.writeFileSync(".caddr", ethStorageProxy.address);
+        clearInterval(intervalId);
+      }
+    } catch (e) {
+      console.error(`EthStorage: get finalized block failed!`, e.message);g
     }
   }, 60000);
 }
