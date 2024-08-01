@@ -85,7 +85,7 @@ async function deployContract() {
   await verifyContract(impl, [config, startTime, storageCost, dcfFactor]);
 
   // wait for contract finalized
-  intervalId = setInterval(function (){
+  var intervalId = setInterval(async function (){
     const block = await hre.ethers.provider.getBlock("finalized");
     console.log(
       "finalized block number is",
