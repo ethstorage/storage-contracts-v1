@@ -147,11 +147,10 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Checks the payment using the last mine time.
     function _prepareAppendWithTimestamp(uint256 _timestamp, uint256 _batchSize) internal {
-        uint256 totalEntries = kvEntryCount + _batchSize; // include the one to be put
-        uint256 shardId = totalEntries >> SHARD_ENTRY_BITS; // shard id of the new KV
-        if (shardId - (kvEntryCount >> SHARD_ENTRY_BITS) == 1) {
-            // Open a new shard if the KV is the first one of the shard
-            // and mark the shard is ready to mine.
+        uint256 totalEntries = kvEntryCount + _batchSize; // include the batch to be put
+        uint256 shardId = totalEntries >> SHARD_ENTRY_BITS; // shard id after the batch
+        if (shardId > (kvEntryCount >> SHARD_ENTRY_BITS)) {
+            // Open a new shard and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
             if (shardId != 0) {
                 // shard0 is already opened in constructor
