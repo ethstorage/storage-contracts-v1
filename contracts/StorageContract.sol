@@ -100,9 +100,12 @@ abstract contract StorageContract is DecentralizedKV {
     );
 
     /// @notice Constructs the StorageContract contract. Initializes the storage config.
-    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor)
-    {
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor
+    ) DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor) {
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "StorageContract: shardSize too small");
         require(_config.maxKvSizeBits >= SAMPLE_SIZE_BITS, "StorageContract: maxKvSize too small");
@@ -147,31 +150,35 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Checks the payment using the last mine time.
     function _prepareAppendWithTimestamp(uint256 _timestamp, uint256 _batchSize) internal {
+        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS;
         uint256 totalEntries = kvEntryCount + _batchSize; // include the batch to be put
-        uint256 shardId = totalEntries >> SHARD_ENTRY_BITS; // shard id after the batch
-        if (shardId > (kvEntryCount >> SHARD_ENTRY_BITS)) {
+        uint256 shardIdNew = totalEntries >> SHARD_ENTRY_BITS; // shard id after the batch
+        uint256 totalPayment = 0;
+
+        if (shardIdNew > shardId) {
+            uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
+            totalPayment += _upfrontPayment(block.timestamp) * kvCountNew;
+            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
             // Open a new shard and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
-            if (shardId != 0) {
+            if (shardIdNew != 0) {
                 // shard0 is already opened in constructor
-                infos[shardId].lastMineTime = _timestamp;
+                infos[shardIdNew].lastMineTime = _timestamp;
             }
+        } else {
+            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * _batchSize;
         }
 
-        require(
-            msg.value >= upfrontPayment() * _batchSize,
-            "StorageContract: not enough batch payment"
-        );
+        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
     }
 
     /// @notice Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
         uint256 totalEntries = kvEntryCount + 1; // include the one to be put
-        uint256 shardId = totalEntries >> SHARD_ENTRY_BITS; // shard id of the new KV
+        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS;
         // shard0 is already opened in constructor
         if ((totalEntries % (1 << SHARD_ENTRY_BITS)) == 1 && shardId != 0) {
             // Open a new shard if the KV is the first one of the shard
-            // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
             return _upfrontPayment(block.timestamp);
         } else {
@@ -210,11 +217,10 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param _shardId  The shard id.
     /// @param _minedTs  The mined timestamp.
     /// @return diff_ The difficulty of the shard.
-    function _calculateDiffAndInitHashSingleShard(uint256 _shardId, uint256 _minedTs)
-        internal
-        view
-        returns (uint256 diff_)
-    {
+    function _calculateDiffAndInitHashSingleShard(
+        uint256 _shardId,
+        uint256 _minedTs
+    ) internal view returns (uint256 diff_) {
         MiningLib.MiningInfo storage info = infos[_shardId];
         require(_minedTs >= info.lastMineTime, "StorageContract: minedTs too small");
         diff_ = MiningLib.expectedDiff(info, _minedTs, CUTOFF, DIFF_ADJ_DIVISOR, minimumDiff);
@@ -260,8 +266,8 @@ abstract contract StorageContract is DecentralizedKV {
             reward = _paymentIn(STORAGE_COST * (kvEntryCount % (1 << SHARD_ENTRY_BITS)), info.lastMineTime, _minedTs);
             // Additional prepaid for the last shard
             if (prepaidLastMineTime < _minedTs) {
-                uint256 prepaidAmountCap =
-                    STORAGE_COST * ((1 << SHARD_ENTRY_BITS) - kvEntryCount % (1 << SHARD_ENTRY_BITS));
+                uint256 prepaidAmountCap = STORAGE_COST *
+                    ((1 << SHARD_ENTRY_BITS) - (kvEntryCount % (1 << SHARD_ENTRY_BITS)));
                 if (prepaidAmountCap > prepaidAmount) {
                     prepaidAmountCap = prepaidAmount;
                 }
@@ -281,7 +287,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @return The mining reward.
     function miningReward(uint256 _shardId, uint256 _blockNumber) public view returns (uint256) {
         uint256 minedTs = block.timestamp - (block.number - _blockNumber) * 12;
-        (,, uint256 minerReward) = _miningReward(_shardId, minedTs);
+        (, , uint256 minerReward) = _miningReward(_shardId, minedTs);
         return minerReward;
     }
 
