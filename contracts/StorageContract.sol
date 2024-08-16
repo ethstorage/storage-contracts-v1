@@ -147,9 +147,9 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Checks the payment using the last mine time.
     function _prepareAppendWithTimestamp(uint256 _timestamp, uint256 _batchSize) internal {
-        uint256 totalEntries = kvEntryCount + 1; // include the one to be put
-        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id of the new KV
-        if ((totalEntries % (1 << SHARD_ENTRY_BITS)) == 1) {
+        uint256 totalEntries = kvEntryCount + _batchSize; // include the one to be put
+        uint256 shardId = totalEntries >> SHARD_ENTRY_BITS; // shard id of the new KV
+        if (shardId - (kvEntryCount >> SHARD_ENTRY_BITS) == 1) {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
@@ -160,7 +160,7 @@ abstract contract StorageContract is DecentralizedKV {
         }
 
         require(
-            msg.value >= _upfrontPayment(infos[shardId].lastMineTime) * _batchSize,
+            msg.value >= upfrontPayment() * _batchSize,
             "StorageContract: not enough batch payment"
         );
     }
@@ -168,7 +168,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
         uint256 totalEntries = kvEntryCount + 1; // include the one to be put
-        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id of the new KV
+        uint256 shardId = totalEntries >> SHARD_ENTRY_BITS; // shard id of the new KV
         // shard0 is already opened in constructor
         if ((totalEntries % (1 << SHARD_ENTRY_BITS)) == 1 && shardId != 0) {
             // Open a new shard if the KV is the first one of the shard
