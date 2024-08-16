@@ -103,15 +103,21 @@ contract DecentralizedKV is OwnableUpgradeable {
     function _paymentIn(uint256 _x, uint256 _fromTs, uint256 _toTs) internal view returns (uint256) {
         return _paymentInInterval(_x, _fromTs - START_TIME, _toTs - START_TIME);
     }
-
+    
     /// @notice Evaluate payment given the timestamp.
     function _upfrontPayment(uint256 _ts) internal view returns (uint256) {
+        require(_ts >= START_TIME, "DecentralizedKV: invalid timestamp to evaluate payment");
         return _paymentInf(STORAGE_COST, _ts - START_TIME);
     }
 
     /// @notice Evaluate the storage cost of a single put().
     function upfrontPayment() public view virtual returns (uint256) {
         return _upfrontPayment(block.timestamp);
+    }
+
+    /// @notice Upfront payment for the next batch insertion
+    function upfrontPaymentInBatch(uint256 _batchSize) public view virtual returns (uint256) {
+        return upfrontPayment() * _batchSize;
     }
 
     /// @notice Checks before appending the key-value.

@@ -75,7 +75,7 @@ contract EthStorageContractTest is Test {
         storageContract.putBlobs{value: insufficientCost}(keys, blobIdxs, lengths);
 
         // Enough storage cost
-        uint256 sufficientCost = 2 * storageContract.upfrontPayment();
+        uint256 sufficientCost = storageContract.upfrontPaymentInBatch(2);
         storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
 
         assertEq(storageContract.kvEntryCount(), 2);
@@ -98,5 +98,29 @@ contract EthStorageContractTest is Test {
         assertEq(storageContract.size(bytes32(uint256(0))), 30);
         assertEq(storageContract.size(bytes32(uint256(1))), 20);
         assertEq(storageContract.size(bytes32(uint256(2))), 30);
+    }
+
+    function testPutBlobsXshard() public {
+        uint256 size = 5;
+        bytes32[] memory keys = new bytes32[](size);
+        uint256[] memory blobIdxs = new uint256[](size);
+        uint256[] memory lengths = new uint256[](size);
+        for (uint256 i = 0; i < size; i++) {
+            keys[i] = bytes32(uint256(i));
+            blobIdxs[i] = i;
+            lengths[i] = 10 + i*10;
+        }
+        vm.warp(vm.unixTime());
+        
+        // uint256 insufficientCost = storageContract.upfrontPaymentInBatch(size - 1);
+        // // Expect the specific revert reason from _prepareBatchAppend due to insufficient msg.value
+        // vm.expectRevert("StorageContract: not enough batch payment");
+        // storageContract.putBlobs{value: insufficientCost}(keys, blobIdxs, lengths);
+        
+        // Enough storage cost
+        uint256 sufficientCost = storageContract.upfrontPaymentInBatch(size);
+        storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
+
+        assertEq(storageContract.kvEntryCount(), size);
     }
 }

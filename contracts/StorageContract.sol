@@ -150,26 +150,15 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Checks the payment using the last mine time.
     function _prepareAppendWithTimestamp(uint256 _timestamp, uint256 _batchSize) internal {
-        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS;
-        uint256 totalEntries = kvEntryCount + _batchSize; // include the batch to be put
-        uint256 shardIdNew = totalEntries >> SHARD_ENTRY_BITS; // shard id after the batch
-        uint256 totalPayment = 0;
+        uint256 totalPayment = upfrontPaymentInBatch(_batchSize);
+        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
 
-        if (shardIdNew > shardId) {
-            uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
-            totalPayment += _upfrontPayment(block.timestamp) * kvCountNew;
-            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
+        uint256 shardIdNew = (kvEntryCount + _batchSize) >> SHARD_ENTRY_BITS; // shard id after the batch
+        if (shardIdNew > (kvEntryCount >> SHARD_ENTRY_BITS)) {
             // Open a new shard and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
-            if (shardIdNew != 0) {
-                // shard0 is already opened in constructor
-                infos[shardIdNew].lastMineTime = _timestamp;
-            }
-        } else {
-            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * _batchSize;
+            infos[shardIdNew].lastMineTime = _timestamp;
         }
-
-        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
     }
 
     /// @notice Upfront payment for the next insertion
@@ -184,6 +173,21 @@ abstract contract StorageContract is DecentralizedKV {
         } else {
             return _upfrontPayment(infos[shardId].lastMineTime);
         }
+    }
+
+    /// @notice Upfront payment for a batch insertion
+    function upfrontPaymentInBatch(uint256 _batchSize) public view virtual override returns (uint256) {
+        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS;
+        uint256 totalEntries = kvEntryCount + _batchSize; // include the batch to be put
+        uint256 shardIdNew = totalEntries >> SHARD_ENTRY_BITS; // shard id after the batch
+        uint256 totalPayment = 0;
+        if (shardIdNew > shardId) {
+            uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
+            totalPayment += _upfrontPayment(block.timestamp) * kvCountNew;            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
+        } else {
+            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * _batchSize;
+        }
+        return totalPayment;
     }
 
     /// @inheritdoc DecentralizedKV
