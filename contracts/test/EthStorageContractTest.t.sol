@@ -110,13 +110,13 @@ contract EthStorageContractTest is Test {
             blobIdxs[i] = i;
             lengths[i] = 10 + i*10;
         }
-        vm.warp(vm.unixTime());
+        vm.warp(0);
         
-        // uint256 insufficientCost = storageContract.upfrontPaymentInBatch(size - 1);
-        // // Expect the specific revert reason from _prepareBatchAppend due to insufficient msg.value
-        // vm.expectRevert("StorageContract: not enough batch payment");
-        // storageContract.putBlobs{value: insufficientCost}(keys, blobIdxs, lengths);
-        
+        uint256 insufficientCost = storageContract.upfrontPaymentInBatch(size) - 1;
+        // Expect the specific revert reason from _prepareBatchAppend due to insufficient msg.value
+        vm.expectRevert("StorageContract: not enough batch payment");
+        storageContract.putBlobs{value: insufficientCost}(keys, blobIdxs, lengths);
+
         // Enough storage cost
         uint256 sufficientCost = storageContract.upfrontPaymentInBatch(size);
         storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);

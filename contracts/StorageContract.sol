@@ -150,15 +150,21 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Checks the payment using the last mine time.
     function _prepareAppendWithTimestamp(uint256 _timestamp, uint256 _batchSize) internal {
-        uint256 totalPayment = upfrontPaymentInBatch(_batchSize);
-        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
-
-        uint256 shardIdNew = (kvEntryCount + _batchSize) >> SHARD_ENTRY_BITS; // shard id after the batch
-        if (shardIdNew > (kvEntryCount >> SHARD_ENTRY_BITS)) {
+        uint256 shardId = (kvEntryCount - _batchSize) >> SHARD_ENTRY_BITS;
+        uint256 shardIdNew = kvEntryCount >> SHARD_ENTRY_BITS; // shard id after the batch
+        uint256 totalPayment = 0;
+        if (shardIdNew > shardId) {
+            uint256 kvCountNew = kvEntryCount % (1 << SHARD_ENTRY_BITS);
+            totalPayment += _upfrontPayment(block.timestamp) * kvCountNew;
+            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
             // Open a new shard and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
             infos[shardIdNew].lastMineTime = _timestamp;
+        } else {
+            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * _batchSize;
         }
+
+        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
     }
 
     /// @notice Upfront payment for the next insertion
@@ -183,7 +189,8 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 totalPayment = 0;
         if (shardIdNew > shardId) {
             uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
-            totalPayment += _upfrontPayment(block.timestamp) * kvCountNew;            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
+            totalPayment += _upfrontPayment(block.timestamp) * kvCountNew;
+            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
         } else {
             totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * _batchSize;
         }
