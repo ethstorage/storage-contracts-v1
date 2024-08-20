@@ -359,7 +359,7 @@ abstract contract StorageContract is DecentralizedKV {
         bytes calldata _randaoProof,
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
-    ) internal virtual {        
+    ) internal virtual {
         require(blockNumber() - _blockNumber <= MAX_L1_MINING_DRIFT, "StorageContract: block number too old");
         // To avoid stack too deep, we resue the hash0 instead of using randao
         bytes32 hash0 = getRandao(_blockNumber, _randaoProof);

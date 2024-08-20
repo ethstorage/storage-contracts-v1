@@ -28,12 +28,9 @@ contract EthStorageContractL2 is EthStorageContract2 {
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
 
     /// @notice Constructs the EthStorageContractL2 contract.
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor
-    ) EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor) {}
+    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
+        EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor)
+    {}
 
     /// @notice Get the current block number
     function blockNumber() internal view override returns (uint256) {
@@ -46,10 +43,12 @@ contract EthStorageContractL2 is EthStorageContract2 {
     }
 
     /// @notice Get the randao value from the L1 blockhash.
-    function getRandao(
-        uint256 _l1BlockNumber,
-        bytes calldata _headerRlpBytes
-    ) internal view override returns (bytes32) {
+    function getRandao(uint256 _l1BlockNumber, bytes calldata _headerRlpBytes)
+        internal
+        view
+        override
+        returns (bytes32)
+    {
         bytes32 bh = L1_BLOCK.blockHash(_l1BlockNumber);
         require(bh != bytes32(0), "EthStorageContractL2: failed to obtain blockhash");
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
