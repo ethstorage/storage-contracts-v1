@@ -276,7 +276,7 @@ abstract contract StorageContract is DecentralizedKV {
             // Additional prepaid for the last shard
             if (prepaidLastMineTime < _minedTs) {
                 uint256 prepaidAmountCap =
-                    STORAGE_COST * ((1 << SHARD_ENTRY_BITS) - (kvEntryCount % (1 << SHARD_ENTRY_BITS)));
+                    STORAGE_COST * ((1 << SHARD_ENTRY_BITS) - kvEntryCount % (1 << SHARD_ENTRY_BITS));
                 if (prepaidAmountCap > prepaidAmount) {
                     prepaidAmountCap = prepaidAmount;
                 }
