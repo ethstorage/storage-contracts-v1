@@ -103,7 +103,7 @@ contract DecentralizedKV is OwnableUpgradeable {
     function _paymentIn(uint256 _x, uint256 _fromTs, uint256 _toTs) internal view returns (uint256) {
         return _paymentInInterval(_x, _fromTs - START_TIME, _toTs - START_TIME);
     }
-    
+
     /// @notice Evaluate payment given the timestamp.
     function _upfrontPayment(uint256 _ts) internal view returns (uint256) {
         require(_ts >= START_TIME, "DecentralizedKV: invalid timestamp to evaluate payment");
