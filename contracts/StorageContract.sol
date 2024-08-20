@@ -175,7 +175,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Upfront payment for a batch insertion
     /// @param _batchSize The blob count for a batch insertion.
     /// @return The total payment for a batch insertion.
-    function upfrontPaymentInBatch(uint256 _batchSize) public view virtual override returns (uint256) {
+    function upfrontPaymentInBatch(uint256 _batchSize) public view returns (uint256) {
         return _upfrontPaymentInBatch(kvEntryCount, _batchSize);
     }
 

@@ -28,12 +28,9 @@ contract EthStorageContractL2 is EthStorageContract2 {
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
 
     /// @notice Constructs the EthStorageContractL2 contract.
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor
-    ) EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor) {}
+    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
+        EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor)
+    {}
 
     /// @notice Get the randao value from the L1 blockhash.
     function _getRandao(uint256 _l1BlockNumber, bytes calldata _headerRlpBytes) internal view returns (bytes32) {
