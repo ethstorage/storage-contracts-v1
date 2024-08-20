@@ -100,12 +100,9 @@ abstract contract StorageContract is DecentralizedKV {
     );
 
     /// @notice Constructs the StorageContract contract. Initializes the storage config.
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor
-    ) DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor) {
+    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
+        DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor)
+    {
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "StorageContract: shardSize too small");
         require(_config.maxKvSizeBits >= SAMPLE_SIZE_BITS, "StorageContract: maxKvSize too small");
@@ -178,7 +175,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Upfront payment for a batch insertion
     /// @param _batchSize The blob count for a batch insertion.
     /// @return The total payment for a batch insertion.
-    function upfrontPaymentInBatch(uint256 _batchSize) public view virtual override returns (uint256) {
+    function upfrontPaymentInBatch(uint256 _batchSize) public view returns (uint256) {
         return _upfrontPaymentInBatch(kvEntryCount, _batchSize);
     }
 
@@ -228,10 +225,11 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param _shardId  The shard id.
     /// @param _minedTs  The mined timestamp.
     /// @return diff_ The difficulty of the shard.
-    function _calculateDiffAndInitHashSingleShard(
-        uint256 _shardId,
-        uint256 _minedTs
-    ) internal view returns (uint256 diff_) {
+    function _calculateDiffAndInitHashSingleShard(uint256 _shardId, uint256 _minedTs)
+        internal
+        view
+        returns (uint256 diff_)
+    {
         MiningLib.MiningInfo storage info = infos[_shardId];
         require(_minedTs >= info.lastMineTime, "StorageContract: minedTs too small");
         diff_ = MiningLib.expectedDiff(info, _minedTs, CUTOFF, DIFF_ADJ_DIVISOR, minimumDiff);
@@ -277,8 +275,8 @@ abstract contract StorageContract is DecentralizedKV {
             reward = _paymentIn(STORAGE_COST * (kvEntryCount % (1 << SHARD_ENTRY_BITS)), info.lastMineTime, _minedTs);
             // Additional prepaid for the last shard
             if (prepaidLastMineTime < _minedTs) {
-                uint256 prepaidAmountCap = STORAGE_COST *
-                    ((1 << SHARD_ENTRY_BITS) - (kvEntryCount % (1 << SHARD_ENTRY_BITS)));
+                uint256 prepaidAmountCap =
+                    STORAGE_COST * ((1 << SHARD_ENTRY_BITS) - kvEntryCount % (1 << SHARD_ENTRY_BITS));
                 if (prepaidAmountCap > prepaidAmount) {
                     prepaidAmountCap = prepaidAmount;
                 }
