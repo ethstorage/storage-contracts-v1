@@ -174,7 +174,7 @@ abstract contract StorageContract is DecentralizedKV {
             // Open a new shard if the KV is the first one of the shard
             // and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
-            return _upfrontPayment(block.timestamp);
+            return _upfrontPayment(blockTs());
         } else {
             return _upfrontPayment(infos[shardId].lastMineTime);
         }
@@ -182,7 +182,7 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @inheritdoc DecentralizedKV
     function _prepareAppend(uint256 _batchSize) internal virtual override {
-        return _prepareAppendWithTimestamp(block.timestamp, _batchSize);
+        return _prepareAppendWithTimestamp(blockTs(), _batchSize);
     }
 
     /// @notice Verify the samples of the BLOBs by the miner (storage provider) including
@@ -281,7 +281,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param _blockNumber The block number.
     /// @return The mining reward.
     function miningReward(uint256 _shardId, uint256 _blockNumber) public view returns (uint256) {
-        uint256 minedTs = block.timestamp - (block.number - _blockNumber) * 12;
+        uint256 minedTs = getMinedTs(_blockNumber);
         (,, uint256 minerReward) = _miningReward(_shardId, minedTs);
         return minerReward;
     }
@@ -359,13 +359,12 @@ abstract contract StorageContract is DecentralizedKV {
         bytes calldata _randaoProof,
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
-    ) internal virtual {
-        // Obtain the blockhash of the block number of recent blocks
-        require(block.number - _blockNumber <= MAX_L1_MINING_DRIFT, "StorageContract: block number too old");
+    ) internal virtual {        
+        require(blockNumber() - _blockNumber <= MAX_L1_MINING_DRIFT, "StorageContract: block number too old");
         // To avoid stack too deep, we resue the hash0 instead of using randao
-        bytes32 hash0 = RandaoLib.verifyHistoricalRandao(_blockNumber, _randaoProof);
+        bytes32 hash0 = getRandao(_blockNumber, _randaoProof);
         // Estimate block timestamp
-        uint256 mineTs = block.timestamp - (block.number - _blockNumber) * 12;
+        uint256 mineTs = getMinedTs(_blockNumber);
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
         require(_nonce < nonceLimit, "StorageContract: nonce too big");
@@ -380,6 +379,28 @@ abstract contract StorageContract is DecentralizedKV {
         require(uint256(hash0) <= required, "StorageContract: diff not match");
 
         _rewardMiner(_shardId, _miner, mineTs, diff);
+    }
+
+    /// @notice Get the current block number
+    function blockNumber() internal view virtual returns (uint256) {
+        return block.number;
+    }
+
+    /// @notice Get the current block timestamp
+    function blockTs() internal view virtual returns (uint256) {
+        return block.timestamp;
+    }
+
+    /// @notice Get the randao value by block number.
+    function getRandao(uint256 _blockNumber, bytes calldata _headerRlpBytes) internal view virtual returns (bytes32) {
+        bytes32 bh = blockhash(_blockNumber);
+        require(bh != bytes32(0), "StorageContract: failed to obtain blockhash");
+        return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
+    }
+
+    /// @notice Get the mined timestamp
+    function getMinedTs(uint256 _blockNumber) internal view returns (uint256) {
+        return blockTs() - (blockNumber() - _blockNumber) * 12;
     }
 
     /// @notice Return the sample size bits.

@@ -58,8 +58,8 @@ describe("Randao Test", function () {
       const Randao = await ethers.getContractFactory("TestRandao");
       const rd = await Randao.deploy();
       await rd.deployed();
-
-      let randao = await rd.verifyHistoricalRandao(bn, encodedHeader);
+      
+      let randao = await rd.verifyHeaderAndGetRandao(hash, encodedHeader);
       expect(randao).to.equal(block.mixHash);
     });
 });
