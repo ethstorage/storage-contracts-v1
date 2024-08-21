@@ -166,7 +166,7 @@ abstract contract StorageContract is DecentralizedKV {
         if ((totalEntries % (1 << SHARD_ENTRY_BITS)) == 1 && shardId != 0) {
             // Open a new shard if the KV is the first one of the shard
             // (TODO): Setup shard difficulty as current difficulty / factor?
-            return _upfrontPayment(blockTs());
+            return _upfrontPayment(_blockTs());
         } else {
             return _upfrontPayment(infos[shardId].lastMineTime);
         }
@@ -186,7 +186,7 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 totalPayment = 0;
         if ((totalEntries >> SHARD_ENTRY_BITS) > shardId) {
             uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
-            totalPayment += _upfrontPayment(blockTs()) * kvCountNew;
+            totalPayment += _upfrontPayment(_blockTs()) * kvCountNew;
             totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
         } else {
             totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * _batchSize;
@@ -196,7 +196,7 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @inheritdoc DecentralizedKV
     function _prepareAppend(uint256 _batchSize) internal virtual override {
-        return _prepareAppendWithTimestamp(blockTs(), _batchSize);
+        return _prepareAppendWithTimestamp(_blockTs(), _batchSize);
     }
 
     /// @notice Verify the samples of the BLOBs by the miner (storage provider) including
@@ -292,16 +292,16 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Get the mining reward.
     /// @param _shardId     The shard id.
-    /// @param _blockNumber The block number.
+    /// @param _blockNum The block number.
     /// @return The mining reward.
-    function miningReward(uint256 _shardId, uint256 _blockNumber) public view returns (uint256) {
-        uint256 minedTs = getMinedTs(_blockNumber);
+    function miningReward(uint256 _shardId, uint256 _blockNum) public view returns (uint256) {
+        uint256 minedTs = getMinedTs(_blockNum);
         (,, uint256 minerReward) = _miningReward(_shardId, minedTs);
         return minerReward;
     }
 
     /// @notice Mine a block.
-    /// @param _blockNumber     The block number.
+    /// @param _blockNum     The block number.
     /// @param _shardId         The shard id.
     /// @param _miner           The miner address.
     /// @param _nonce           The nonce.
@@ -311,7 +311,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param _inclusiveProofs The inclusive proofs.
     /// @param _decodeProof     The decode proof.
     function mine(
-        uint256 _blockNumber,
+        uint256 _blockNum,
         uint256 _shardId,
         address _miner,
         uint256 _nonce,
@@ -322,15 +322,7 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata _decodeProof
     ) public virtual {
         _mine(
-            _blockNumber,
-            _shardId,
-            _miner,
-            _nonce,
-            _encodedSamples,
-            _masks,
-            _randaoProof,
-            _inclusiveProofs,
-            _decodeProof
+            _blockNum, _shardId, _miner, _nonce, _encodedSamples, _masks, _randaoProof, _inclusiveProofs, _decodeProof
         );
     }
 
@@ -354,7 +346,7 @@ abstract contract StorageContract is DecentralizedKV {
     ///         to decoded one. The decoded samples will be used to perform inclusive check with on-chain datahashes.
     ///         The encoded samples will be used to calculate the solution hash, and if the hash passes the difficulty check,
     ///         the miner, or say the storage provider, shall be rewarded by the token number from out economic models
-    /// @param _blockNumber     The block number.
+    /// @param _blockNum     The block number.
     /// @param _shardId         The shard id.
     /// @param _miner           The miner address.
     /// @param _nonce           The nonce.
@@ -364,7 +356,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param _inclusiveProofs The inclusive proofs.
     /// @param _decodeProof     The decode proof.
     function _mine(
-        uint256 _blockNumber,
+        uint256 _blockNum,
         uint256 _shardId,
         address _miner,
         uint256 _nonce,
@@ -374,11 +366,11 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) internal virtual {
-        require(blockNumber() - _blockNumber <= MAX_L1_MINING_DRIFT, "StorageContract: block number too old");
+        require(_blockNumber() - _blockNum <= MAX_L1_MINING_DRIFT, "StorageContract: block number too old");
         // To avoid stack too deep, we resue the hash0 instead of using randao
-        bytes32 hash0 = getRandao(_blockNumber, _randaoProof);
+        bytes32 hash0 = _getRandao(_blockNum, _randaoProof);
         // Estimate block timestamp
-        uint256 mineTs = getMinedTs(_blockNumber);
+        uint256 mineTs = getMinedTs(_blockNum);
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
         require(_nonce < nonceLimit, "StorageContract: nonce too big");
@@ -396,25 +388,25 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @notice Get the current block number
-    function blockNumber() internal view virtual returns (uint256) {
+    function _blockNumber() internal view virtual returns (uint256) {
         return block.number;
     }
 
     /// @notice Get the current block timestamp
-    function blockTs() internal view virtual returns (uint256) {
+    function _blockTs() internal view virtual returns (uint256) {
         return block.timestamp;
     }
 
     /// @notice Get the randao value by block number.
-    function getRandao(uint256 _blockNumber, bytes calldata _headerRlpBytes) internal view virtual returns (bytes32) {
-        bytes32 bh = blockhash(_blockNumber);
+    function _getRandao(uint256 _blockNum, bytes calldata _headerRlpBytes) internal view virtual returns (bytes32) {
+        bytes32 bh = blockhash(_blockNum);
         require(bh != bytes32(0), "StorageContract: failed to obtain blockhash");
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
     }
 
     /// @notice Get the mined timestamp
-    function getMinedTs(uint256 _blockNumber) internal view returns (uint256) {
-        return blockTs() - (blockNumber() - _blockNumber) * 12;
+    function getMinedTs(uint256 _blockNum) internal view returns (uint256) {
+        return _blockTs() - (_blockNumber() - _blockNum) * 12;
     }
 
     /// @notice Return the sample size bits.

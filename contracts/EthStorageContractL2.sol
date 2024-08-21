@@ -33,17 +33,17 @@ contract EthStorageContractL2 is EthStorageContract2 {
     {}
 
     /// @notice Get the current block number
-    function blockNumber() internal view override returns (uint256) {
+    function _blockNumber() internal view override returns (uint256) {
         return L1_BLOCK.number();
     }
 
     /// @notice Get the current block timestamp
-    function blockTs() internal view override returns (uint256) {
+    function _blockTs() internal view override returns (uint256) {
         return L1_BLOCK.timestamp();
     }
 
     /// @notice Get the randao value from the L1 blockhash.
-    function getRandao(uint256 _l1BlockNumber, bytes calldata _headerRlpBytes)
+    function _getRandao(uint256 _l1BlockNumber, bytes calldata _headerRlpBytes)
         internal
         view
         override
