@@ -33,12 +33,12 @@ library MiningLib {
         uint256 interval = _mineTime - _info.lastMineTime;
         uint256 diff = _info.difficulty;
         if (interval < _cutoff) {
-            diff = diff + ((1 - interval / _cutoff) * diff) / _diffAdjDivisor;
+            diff = diff + (diff - interval * diff / _cutoff) / _diffAdjDivisor;
             if (diff < _minDiff) {
                 diff = _minDiff;
             }
         } else {
-            uint256 dec = ((interval / _cutoff - 1) * diff) / _diffAdjDivisor;
+            uint256 dec = (interval * diff / _cutoff - diff) / _diffAdjDivisor;
             if (dec + _minDiff > diff) {
                 diff = _minDiff;
             } else {
