@@ -147,7 +147,7 @@ contract TestEthStorageContract is EthStorageContract {
     ) internal {
         require(_blockNumber() - blockNumber <= MAX_L1_MINING_DRIFT, "block number too old");
         bytes32 hash0 = _getRandao(blockNumber, randaoProof);
-        uint256 mineTs = getMinedTs(blockNumber);
+        uint256 mineTs = _getMinedTs(blockNumber);
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
         require(nonce < nonceLimit, "nonce too big");

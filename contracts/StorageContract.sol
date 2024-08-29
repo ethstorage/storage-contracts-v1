@@ -282,7 +282,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param _blockNum The block number.
     /// @return The mining reward.
     function miningReward(uint256 _shardId, uint256 _blockNum) public view returns (uint256) {
-        uint256 minedTs = getMinedTs(_blockNum);
+        uint256 minedTs = _getMinedTs(_blockNum);
         (,, uint256 minerReward) = _miningReward(_shardId, minedTs);
         return minerReward;
     }
@@ -357,7 +357,7 @@ abstract contract StorageContract is DecentralizedKV {
         // To avoid stack too deep, we resue the hash0 instead of using randao
         bytes32 hash0 = _getRandao(_blockNum, _randaoProof);
         // Estimate block timestamp
-        uint256 mineTs = getMinedTs(_blockNum);
+        uint256 mineTs = _getMinedTs(_blockNum);
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
         require(_nonce < nonceLimit, "StorageContract: nonce too big");
@@ -392,7 +392,7 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @notice Get the mined timestamp
-    function getMinedTs(uint256 _blockNum) internal view returns (uint256) {
+    function _getMinedTs(uint256 _blockNum) internal view returns (uint256) {
         return _blockTs() - (_blockNumber() - _blockNum) * 12;
     }
 
