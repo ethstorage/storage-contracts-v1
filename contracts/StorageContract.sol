@@ -145,31 +145,9 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice People can sent ETH to the contract.
     function sendValue() public payable {}
 
-    /// @notice Checks the payment using the last mine time.
-    function _prepareAppendWithTimestamp(uint256 _timestamp, uint256 _batchSize) internal {
-        uint256 kvEntryCountOld = kvEntryCount - _batchSize; // kvEntryCount already increased
-        uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountOld, _batchSize);
-        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
-        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id after the batch
-        if (shardId > (kvEntryCountOld >> SHARD_ENTRY_BITS)) {
-            // Open a new shard and mark the shard is ready to mine.
-            // (TODO): Setup shard difficulty as current difficulty / factor?
-            infos[shardId].lastMineTime = _timestamp;
-        }
-    }
-
     /// @notice Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
-        uint256 totalEntries = kvEntryCount + 1; // include the one to be put
-        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS;
-        // shard0 is already opened in constructor
-        if ((totalEntries % (1 << SHARD_ENTRY_BITS)) == 1 && shardId != 0) {
-            // Open a new shard if the KV is the first one of the shard
-            // (TODO): Setup shard difficulty as current difficulty / factor?
-            return _upfrontPayment(block.timestamp);
-        } else {
-            return _upfrontPayment(infos[shardId].lastMineTime);
-        }
+        return _upfrontPaymentInBatch(kvEntryCount, 1);
     }
 
     /// @notice Upfront payment for a batch insertion
@@ -195,8 +173,17 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @inheritdoc DecentralizedKV
-    function _prepareAppend(uint256 _batchSize) internal virtual override {
-        return _prepareAppendWithTimestamp(block.timestamp, _batchSize);
+    function _checkAppend(uint256 _batchSize) internal virtual override {
+        uint256 kvEntryCountPrev = kvEntryCount - _batchSize; // kvEntryCount already increased
+        uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
+        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
+
+        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id after the batch
+        if (shardId > (kvEntryCountPrev >> SHARD_ENTRY_BITS)) {
+            // Open a new shard and mark the shard is ready to mine.
+            // (TODO): Setup shard difficulty as current difficulty / factor?
+            infos[shardId].lastMineTime = block.timestamp;
+        }
     }
 
     /// @notice Verify the samples of the BLOBs by the miner (storage provider) including
