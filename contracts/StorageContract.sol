@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./DecentralizedKV.sol";
 import "./libraries/MiningLib.sol";
 import "./libraries/RandaoLib.sol";
@@ -8,7 +9,7 @@ import "./libraries/RandaoLib.sol";
 /// @custom:upgradeable
 /// @title StorageContract
 /// @notice EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification
-abstract contract StorageContract is DecentralizedKV {
+abstract contract StorageContract is DecentralizedKV, ReentrancyGuard {
     /// @notice Represents the configuration of the storage contract.
     /// @custom:field maxKvSizeBits  Maximum size of a single key-value pair.
     /// @custom:field shardSizeBits  Storage shard size.
@@ -80,17 +81,6 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Prepaid timestamp of last mined
     uint256 public prepaidLastMineTime;
-
-    /// @notice Locker to prevent from reentrancy
-    bool private locked;
-
-    /// @notice Prevent from reentrancy
-    modifier noReentrant() {
-        require(!locked, "StorageContract: No reentrancy allowed!");
-        locked = true;
-        _;
-        locked = false;
-    }
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
@@ -317,7 +307,7 @@ abstract contract StorageContract is DecentralizedKV {
         bytes calldata _randaoProof,
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
-    ) public virtual noReentrant {
+    ) public virtual nonReentrant {
         _mine(
             _blockNum, _shardId, _miner, _nonce, _encodedSamples, _masks, _randaoProof, _inclusiveProofs, _decodeProof
         );

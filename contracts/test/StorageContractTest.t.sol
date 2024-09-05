@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./TestStorageContract.sol";
 import "../StorageContract.sol";
 import "forge-std/Test.sol";
@@ -81,7 +82,7 @@ contract StorageContractTest is Test {
         bytes[] memory _inclusiveProofs = new bytes[](0);
         bytes[] memory _decodeProof = new bytes[](0);
 
-        vm.expectRevert("StorageContract: No reentrancy allowed!");
+        vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
         storageContract.mine(
             _blockNum,
             _shardId,
@@ -109,7 +110,6 @@ contract Attacker {
     }
 
     fallback() external payable {
-        vm.pauseGasMetering();
         uint256 _shardId = 0;
         uint256 _nonce = 0;
         bytes32[] memory _encodedSamples = new bytes32[](0);
