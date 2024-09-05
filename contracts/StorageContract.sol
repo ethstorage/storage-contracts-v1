@@ -78,8 +78,19 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Treasury address
     address public treasury;
 
-    /// @notice
+    /// @notice Prepaid timestamp of last mined
     uint256 public prepaidLastMineTime;
+
+    /// @notice Locker to prevent from reentrancy
+    bool private locked;
+
+    /// @notice Prevent from reentrancy
+    modifier noReentrant() {
+        require(!locked, "StorageContract: No reentrancy allowed!");
+        locked = true;
+        _;
+        locked = false;
+    }
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
@@ -239,7 +250,6 @@ abstract contract StorageContract is DecentralizedKV {
         MiningLib.update(infos[_shardId], _minedTs, _diff);
 
         require(treasuryReward + minerReward <= address(this).balance, "StorageContract: not enough balance");
-        // TODO: avoid reentrancy attack
         payable(treasury).transfer(treasuryReward);
         payable(_miner).transfer(minerReward);
         emit MinedBlock(_shardId, _diff, infos[_shardId].blockMined, _minedTs, _miner, minerReward);
@@ -307,7 +317,7 @@ abstract contract StorageContract is DecentralizedKV {
         bytes calldata _randaoProof,
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
-    ) public virtual {
+    ) public virtual noReentrant {
         _mine(
             _blockNum, _shardId, _miner, _nonce, _encodedSamples, _masks, _randaoProof, _inclusiveProofs, _decodeProof
         );
