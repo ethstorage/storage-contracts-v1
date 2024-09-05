@@ -109,6 +109,7 @@ contract Attacker {
     }
 
     fallback() external payable {
+        vm.pauseGasMetering();
         uint256 _shardId = 0;
         uint256 _nonce = 0;
         bytes32[] memory _encodedSamples = new bytes32[](0);
