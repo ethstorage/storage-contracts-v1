@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// TODO: upgrade OpenZeppelin to next release and import "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol"
 import "./libraries/ReentrancyGuardTransient.sol";
 import "./DecentralizedKV.sol";
 import "./libraries/MiningLib.sol";
