@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./libraries/ReentrancyGuardTransient.sol";
 import "./DecentralizedKV.sol";
 import "./libraries/MiningLib.sol";
 import "./libraries/RandaoLib.sol";
@@ -9,7 +9,7 @@ import "./libraries/RandaoLib.sol";
 /// @custom:upgradeable
 /// @title StorageContract
 /// @notice EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification
-abstract contract StorageContract is DecentralizedKV, ReentrancyGuard {
+abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     /// @notice Represents the configuration of the storage contract.
     /// @custom:field maxKvSizeBits  Maximum size of a single key-value pair.
     /// @custom:field shardSizeBits  Storage shard size.
