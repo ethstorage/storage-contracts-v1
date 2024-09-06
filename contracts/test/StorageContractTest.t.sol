@@ -64,8 +64,7 @@ contract StorageContractTest is Test {
         assertEq(miner.balance, reward);
     }
 
-    function testReentrancy() public {
-        vm.pauseGasMetering();
+    function testReentrancy() public noGasMetering {
         uint256 prefund = 1000;
         // Without reentrancy protection, the fund could be drained by 29 times re-entrances given current params.
         vm.deal(address(storageContract), prefund);
@@ -97,10 +96,7 @@ contract StorageContractTest is Test {
     }
 }
 
-contract Attacker {
-    // cannot access imported vm directly
-    address internal constant VM_ADDRESS = address(uint160(uint256(keccak256("hevm cheat code"))));
-    Vm vm = Vm(VM_ADDRESS);
+contract Attacker is Test {
     TestStorageContract storageContract;
     uint256 blockNumber = 1;
     uint256 count = 0;
