@@ -22,22 +22,22 @@ contract StorageContractTest is Test {
 
     function testMiningReward() public {
         // no key-value stored on EthStorage, only use prepaid amount as the reward
-        (,, uint256 reward) = storageContract.miningRewards(0, 1);
+        (,,, uint256 reward) = storageContract.miningRewards(0, 1);
         assertEq(reward, storageContract.paymentIn(PREPAID_AMOUNT, 0, 1));
 
         // 1 key-value stored on EthStorage
         storageContract.setKvEntryCount(1);
-        (,, reward) = storageContract.miningRewards(0, 1);
+        (,,, reward) = storageContract.miningRewards(0, 1);
         assertEq(reward, storageContract.paymentIn(PREPAID_AMOUNT + STORAGE_COST * 1, 0, 1));
 
         // 2 key-value stored on EthStorage
         storageContract.setKvEntryCount(2);
-        (,, reward) = storageContract.miningRewards(0, 1);
+        (,,, reward) = storageContract.miningRewards(0, 1);
         assertEq(reward, storageContract.paymentIn(PREPAID_AMOUNT + STORAGE_COST * 2, 0, 1));
 
         // 3 key-value stored on EthStorage, but the reward is capped with 4 * STORAGE_COST
         storageContract.setKvEntryCount(3);
-        (,, reward) = storageContract.miningRewards(0, 1);
+        (,,, reward) = storageContract.miningRewards(0, 1);
         assertEq(reward, storageContract.paymentIn(PREPAID_AMOUNT + STORAGE_COST * 2, 0, 1));
     }
 }

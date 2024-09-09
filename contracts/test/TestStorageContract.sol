@@ -38,7 +38,7 @@ contract TestStorageContract is StorageContract {
         return _paymentIn(_x, _fromTs, _toTs);
     }
 
-    function miningRewards(uint256 _shardId, uint256 _minedTs) public view returns (bool, uint256, uint256) {
+    function miningRewards(uint256 _shardId, uint256 _minedTs) public view returns (bool, uint256, uint256, uint256) {
         return _miningReward(_shardId, _minedTs);
     }
 }

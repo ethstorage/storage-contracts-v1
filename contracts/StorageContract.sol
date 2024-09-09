@@ -81,6 +81,9 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice
     uint256 public prepaidLastMineTime;
 
+    /// @notice Fund tracker for prepaid
+    uint256 public totalPrepaidAmount;
+
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     /// @notice Emitted when a block is mined.
@@ -143,7 +146,9 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @notice People can sent ETH to the contract.
-    function sendValue() public payable {}
+    function sendValue() public payable {
+        totalPrepaidAmount += msg.value;
+    }
 
     /// @notice Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
@@ -230,17 +235,19 @@ abstract contract StorageContract is DecentralizedKV {
     function _rewardMiner(uint256 _shardId, address _miner, uint256 _minedTs, uint256 _diff) internal {
         // Mining is successful.
         // Send reward to coinbase and miner.
-        (bool updatePrepaidTime, uint256 treasuryReward, uint256 minerReward) = _miningReward(_shardId, _minedTs);
+        (bool updatePrepaidTime, uint256 prepaidAmountSaved, uint256 treasuryReward, uint256 minerReward) =
+            _miningReward(_shardId, _minedTs);
         if (updatePrepaidTime) {
             prepaidLastMineTime = _minedTs;
         }
-
+        if (prepaidAmountSaved > 0) {
+            totalPrepaidAmount += prepaidAmountSaved;
+        }
+        totalPrepaidAmount += treasuryReward;
         // Update mining info.
         MiningLib.update(infos[_shardId], _minedTs, _diff);
 
-        require(treasuryReward + minerReward <= address(this).balance, "StorageContract: not enough balance");
-        // TODO: avoid reentrancy attack
-        payable(treasury).transfer(treasuryReward);
+        require(minerReward <= address(this).balance, "StorageContract: not enough balance");
         payable(_miner).transfer(minerReward);
         emit MinedBlock(_shardId, _diff, infos[_shardId].blockMined, _minedTs, _miner, minerReward);
     }
@@ -251,11 +258,16 @@ abstract contract StorageContract is DecentralizedKV {
     /// @return updatePrepaidTime Whether to update the prepaid time.
     /// @return treasuryReward    The treasury reward.
     /// @return minerReward       The miner reward.
-    function _miningReward(uint256 _shardId, uint256 _minedTs) internal view returns (bool, uint256, uint256) {
+    function _miningReward(uint256 _shardId, uint256 _minedTs)
+        internal
+        view
+        returns (bool, uint256, uint256, uint256)
+    {
         MiningLib.MiningInfo storage info = infos[_shardId];
         uint256 lastShardIdx = kvEntryCount > 0 ? (kvEntryCount - 1) >> SHARD_ENTRY_BITS : 0;
-        uint256 reward = 0;
         bool updatePrepaidTime = false;
+        uint256 prepaidAmountSaved = 0;
+        uint256 reward = 0;
         if (_shardId < lastShardIdx) {
             reward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
         } else if (_shardId == lastShardIdx) {
@@ -265,6 +277,8 @@ abstract contract StorageContract is DecentralizedKV {
                 uint256 prepaidAmountCap =
                     STORAGE_COST * ((1 << SHARD_ENTRY_BITS) - kvEntryCount % (1 << SHARD_ENTRY_BITS));
                 if (prepaidAmountCap > prepaidAmount) {
+                    prepaidAmountSaved = _paymentIn(prepaidAmountCap, prepaidLastMineTime, _minedTs)
+                        - _paymentIn(prepaidAmount, prepaidLastMineTime, _minedTs);
                     prepaidAmountCap = prepaidAmount;
                 }
                 reward += _paymentIn(prepaidAmountCap, prepaidLastMineTime, _minedTs);
@@ -274,7 +288,7 @@ abstract contract StorageContract is DecentralizedKV {
 
         uint256 treasuryReward = (reward * TREASURY_SHARE) / 10000;
         uint256 minerReward = reward - treasuryReward;
-        return (updatePrepaidTime, treasuryReward, minerReward);
+        return (updatePrepaidTime, prepaidAmountSaved, treasuryReward, minerReward);
     }
 
     /// @notice Get the mining reward.
@@ -283,7 +297,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @return The mining reward.
     function miningReward(uint256 _shardId, uint256 _blockNum) public view returns (uint256) {
         uint256 minedTs = _getMinedTs(_blockNum);
-        (,, uint256 minerReward) = _miningReward(_shardId, minedTs);
+        (,,, uint256 minerReward) = _miningReward(_shardId, minedTs);
         return minerReward;
     }
 
@@ -372,6 +386,13 @@ abstract contract StorageContract is DecentralizedKV {
         require(uint256(hash0) <= required, "StorageContract: diff not match");
 
         _rewardMiner(_shardId, _miner, mineTs, diff);
+    }
+
+    /// @notice Withdraw treasury fund
+    function withdraw(uint256 _amount) public {
+        require(totalPrepaidAmount + _amount >= prepaidAmount, "Not enough prepaid amount");
+        totalPrepaidAmount -= _amount;
+        payable(treasury).transfer(_amount);
     }
 
     /// @notice Get the current block number
