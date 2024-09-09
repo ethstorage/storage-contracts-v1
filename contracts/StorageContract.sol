@@ -390,7 +390,7 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Withdraw treasury fund
     function withdraw(uint256 _amount) public {
-        require(totalPrepaidAmount + _amount >= prepaidAmount, "Not enough prepaid amount");
+        require(totalPrepaidAmount >= prepaidAmount + _amount, "Not enough prepaid amount");
         totalPrepaidAmount -= _amount;
         payable(treasury).transfer(_amount);
     }

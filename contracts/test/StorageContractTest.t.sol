@@ -40,4 +40,64 @@ contract StorageContractTest is Test {
         (,,, reward) = storageContract.miningRewards(0, 1);
         assertEq(reward, storageContract.paymentIn(PREPAID_AMOUNT + STORAGE_COST * 2, 0, 1));
     }
+
+    function setUp1() public {
+        storageContract = new TestStorageContract(
+            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 100), 0, STORAGE_COST, 0
+        );
+        storageContract.initialize(0, PREPAID_AMOUNT, 0, vm.addr(1), address(0x1));
+    }
+
+    function testWithdraw() public {
+        setUp1();
+
+        uint256 valueToSent = 3000;
+        uint256 withdrawAmount = 800;
+
+        storageContract.sendValue{value: valueToSent}();
+        assertEq(storageContract.totalPrepaidAmount(), valueToSent);
+
+        storageContract.withdraw(withdrawAmount);
+        assertEq(storageContract.totalPrepaidAmount(), valueToSent - withdrawAmount);
+        assertEq(storageContract.treasury().balance, withdrawAmount);
+    }
+
+    function testWithdrawRewardMiner() public {
+        setUp1();
+
+        uint256 valueToSent = 5000;
+        uint256 withdrawAmount = 800;
+        uint256 mineTs = 10000;
+        uint40 kvEntryCount = 1;
+        uint256 shardEntry = 1 << (SHARD_SIZE_BITS - MAX_KV_SIZE);
+
+        storageContract.sendValue{value: valueToSent}();
+        storageContract.setKvEntryCount(kvEntryCount);
+        uint256 reward = storageContract.paymentIn(STORAGE_COST * kvEntryCount, 0, mineTs);
+        uint256 prepaidReward = storageContract.paymentIn(PREPAID_AMOUNT, 0, mineTs);
+        reward += prepaidReward;
+        uint256 treasureReward = (reward * storageContract.treasuryShare()) / 10000;
+        uint256 minerReward = reward - treasureReward;
+        uint256 prepaidAmountCap = STORAGE_COST * (shardEntry - kvEntryCount);
+        uint256 prepaidAmountSaved = storageContract.paymentIn(prepaidAmountCap, 0, mineTs) - prepaidReward;
+
+        storageContract.rewardMiner(0, vm.addr(2), mineTs, 1);
+        uint256 totalPrepaid = valueToSent + treasureReward + prepaidAmountSaved;
+        assertEq(storageContract.totalPrepaidAmount(), totalPrepaid);
+
+        storageContract.withdraw(withdrawAmount);
+        assertEq(storageContract.totalPrepaidAmount(), totalPrepaid - withdrawAmount);
+        assertEq(storageContract.treasury().balance, withdrawAmount);
+        assertEq(address(storageContract).balance, valueToSent - minerReward - withdrawAmount);
+    }
+
+    function testWithdrawInsufficientFunds() public {
+        uint256 valueToSent = 3000;
+        uint256 withdrawAmount = 1500;
+
+        storageContract.sendValue{value: valueToSent}();
+
+        vm.expectRevert("Not enough prepaid amount");
+        storageContract.withdraw(withdrawAmount);
+    }
 }
