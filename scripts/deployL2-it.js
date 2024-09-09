@@ -12,7 +12,7 @@ const gasPrice = null;
 
 const config = [
   17, // maxKvSizeBits, 131072
-  32, // shardSizeBits ~ 4G
+  30, // shardSizeBits ~ 1G
   2, // randomChecks
   7200, // cutoff = 2/3 * target internal (3 hours), 3 * 3600 * 2/3
   32, // diffAdjDivisor
