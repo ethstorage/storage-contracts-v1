@@ -256,6 +256,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param _shardId  The shard id.
     /// @param _minedTs  The mined timestamp.
     /// @return updatePrepaidTime Whether to update the prepaid time.
+    /// @return prepaidAmountSaved The capped part of prepaid amount.
     /// @return treasuryReward    The treasury reward.
     /// @return minerReward       The miner reward.
     function _miningReward(uint256 _shardId, uint256 _minedTs)
