@@ -97,7 +97,7 @@ contract StorageContractTest is Test {
 
         storageContract.sendValue{value: valueToSent}();
 
-        vm.expectRevert("Not enough prepaid amount");
+        vm.expectRevert("StorageContract: not enough prepaid amount");
         storageContract.withdraw(withdrawAmount);
     }
 }
