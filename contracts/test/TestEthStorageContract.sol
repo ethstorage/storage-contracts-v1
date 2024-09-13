@@ -214,4 +214,8 @@ contract TestEthStorageContract is EthStorageContract {
         return
             _mineWithFixedHash0(initHash0, shardId, miner, nonce, encodedSamples, masks, inclusiveProofs, decodeProof);
     }
+
+    function updateCost() public view returns (uint256) {
+        return UPDATE_COST;
+    }
 }

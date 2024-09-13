@@ -89,7 +89,7 @@ contract EthStorageContractTest is Test {
         keys[1] = bytes32(uint256(2));
         lengths[1] = 30;
 
-        sufficientCost = storageContract.upfrontPayment();
+        sufficientCost = storageContract.upfrontPayment() + 2 * storageContract.updateCost();
         storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
         assertEq(storageContract.kvEntryCount(), 3);
         assertEq(storageContract.hash(bytes32(uint256(0))), bytes32(uint256(1 << 8 * 8)));
