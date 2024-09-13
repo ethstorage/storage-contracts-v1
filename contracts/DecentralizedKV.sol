@@ -34,6 +34,9 @@ contract DecentralizedKV is OwnableUpgradeable {
     /// https://github.com/ethereum-optimism/optimism/blob/develop/op-service/eth/blob.go#L16
     uint256 internal constant MAX_OPTIMISM_BLOB_DATA_SIZE = (4 * 31 + 3) * 1024 - 4;
 
+    /// @notice Cost to update the value of an entry (TODO: change to immutable)
+    uint256 internal constant UPDATE_COST = 150000000000000;
+
     /// @notice Upfront storage cost (pre-dcf)
     uint256 internal immutable STORAGE_COST;
 
@@ -115,8 +118,8 @@ contract DecentralizedKV is OwnableUpgradeable {
     }
 
     /// @notice Checks while appending the key-value.
-    function _checkAppend(uint256 _batchSize) internal virtual {
-        require(msg.value >= upfrontPayment() * _batchSize, "DecentralizedKV: not enough batch payment");
+    function _checkBatch(uint256 _batchSize, uint256 _updateSize) internal virtual {
+        require(msg.value >= upfrontPayment() + UPDATE_COST * _updateSize, "DecentralizedKV: not enough batch payment");
     }
 
     /// @notice Called by public putBlob and putBlobs methods.
@@ -152,7 +155,7 @@ contract DecentralizedKV is OwnableUpgradeable {
             res[i] = paddr.kvIdx;
         }
 
-        _checkAppend(batchPaymentSize);
+        _checkBatch(batchPaymentSize, _keys.length - batchPaymentSize);
 
         return res;
     }

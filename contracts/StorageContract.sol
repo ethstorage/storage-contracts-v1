@@ -173,10 +173,10 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @inheritdoc DecentralizedKV
-    function _checkAppend(uint256 _batchSize) internal virtual override {
+    function _checkBatch(uint256 _batchSize, uint256 _updateSize) internal virtual override {
         uint256 kvEntryCountPrev = kvEntryCount - _batchSize; // kvEntryCount already increased
         uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
-        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
+        require(msg.value >= totalPayment + _updateSize * UPDATE_COST, "StorageContract: not enough batch payment");
 
         uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id after the batch
         if (shardId > (kvEntryCountPrev >> SHARD_ENTRY_BITS)) {
@@ -326,6 +326,11 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Set the treasury address.
     function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
         minimumDiff = _minimumDiff;
+    }
+
+    /// @notice Set the cost to update a kv.
+    function setUpdateCost(uint256 _updateCost) public onlyOwner {
+        UPDATE_COST = _updateCost;
     }
 
     /// @notice On-chain verification of storage proof of sufficient sampling.
