@@ -328,11 +328,6 @@ abstract contract StorageContract is DecentralizedKV {
         minimumDiff = _minimumDiff;
     }
 
-    /// @notice Set the cost to update a kv.
-    function setUpdateCost(uint256 _updateCost) public onlyOwner {
-        UPDATE_COST = _updateCost;
-    }
-
     /// @notice On-chain verification of storage proof of sufficient sampling.
     ///         On-chain verifier will go same routine as off-chain data host, will check the encoded samples by decoding
     ///         to decoded one. The decoded samples will be used to perform inclusive check with on-chain datahashes.
