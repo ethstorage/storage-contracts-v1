@@ -33,14 +33,16 @@ describe("DecentralizedKV Test", function () {
     await kv.put(key1, "0x11223344");
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x11223344");
 
-    await kv.put(key1, "0x772233445566");
+    await expect(kv.put(key1, "0x772233445566")).to.be.revertedWith("DecentralizedKV: not enough batch payment");
+
+    await kv.put(key1, "0x772233445566", { value: 150000000000000 });
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x77223344");
     expect(await kv.get(key1, 0, 0, 6)).to.equal("0x772233445566");
 
-    await kv.put(key1, "0x8899");
+    await kv.put(key1, "0x8899", { value: 150000000000000 });
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x8899");
 
-    await kv.put(key1, "0x");
+    await kv.put(key1, "0x", { value: 150000000000000 });
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x");
   });
 
