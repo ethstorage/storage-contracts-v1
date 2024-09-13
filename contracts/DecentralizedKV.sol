@@ -283,4 +283,9 @@ contract DecentralizedKV is OwnableUpgradeable {
     function maxKvSize() public view returns (uint256) {
         return MAX_KV_SIZE;
     }
+
+    /// @notice Getter for UPDATE_COST
+    function updateCost() public view returns (uint256) {
+        return UPDATE_COST;
+    }
 }
