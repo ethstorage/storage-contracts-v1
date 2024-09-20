@@ -39,6 +39,22 @@ contract TestDecentralizedKV is DecentralizedKV {
         dataMap[kvIndices[0]] = data;
     }
 
+    function putBatch(bytes32[] memory _keys, bytes[] memory _data) public payable virtual {
+        require(_keys.length == _data.length, "TestDecentralizedKV: input length mismatch");
+
+        bytes32[] memory dataHashes = new bytes32[](_data.length);
+        uint256[] memory lengths = new uint256[](_data.length);
+        for (uint256 i = 0; i < _data.length; i++) {
+            dataHashes[i] = keccak256(_data[i]);
+            lengths[i] = _data[i].length;
+        }
+
+        uint256[] memory kvIndices = _putBatchInternal(_keys, dataHashes, lengths);
+        for (uint256 i = 0; i < kvIndices.length; i++) {
+            dataMap[kvIndices[i]] = _data[i];
+        }
+    }
+
     function get(bytes32 key, DecodeType decodeType, uint256 off, uint256 len)
         public
         view

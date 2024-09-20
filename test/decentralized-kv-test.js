@@ -87,6 +87,30 @@ describe("DecentralizedKV Test", function () {
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x");
   });
 
+  it("put in batch with payment", async function () {
+    const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
+    // 1e18 cost with 0.5 discount rate per second
+    const kv = await DecentralizedKV.deploy(1024, 0, "1000000000000000000", "170141183460469231731687303715884105728");
+    await kv.deployed();
+    await kv.initialize(ownerAddr);
+
+    expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
+    await expect(kv.putBatch([key1, key2], ["0x11223344", "0x22334455"], {
+      value: ethers.utils.parseEther("1.0"),
+    })).to.be.revertedWith("DecentralizedKV: not enough batch payment");
+    await kv.putBatch([key1, key2], ["0x11223344", "0x22334455"], {
+      value: ethers.utils.parseEther("2.0"),
+    });
+
+    const updateCost = await kv.updateCost();
+    await expect(kv.putBatch([key2, key3], ["0x11223344", "0x22334455"], {
+      value: ethers.utils.parseEther("1.0").add(updateCost).sub(1),
+    })).to.be.revertedWith("DecentralizedKV: not enough batch payment");
+    await kv.putBatch([key2, key3], ["0x11223344", "0x22334455"], {
+      value: ethers.utils.parseEther("1.0").add(updateCost),
+    });
+  });
+
   it("put with payment and yearly 0.9 dcf", async function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     // 1e18 cost with 0.90 discount rate per year
