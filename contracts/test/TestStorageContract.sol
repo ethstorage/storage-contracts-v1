@@ -41,4 +41,23 @@ contract TestStorageContract is StorageContract {
     function miningRewards(uint256 _shardId, uint256 _minedTs) public view returns (bool, uint256, uint256) {
         return _miningReward(_shardId, _minedTs);
     }
+
+    function rewardMiner(uint256 _shardId, address _miner, uint256 _minedTs, uint256 _diff) public {
+        return _rewardMiner(_shardId, _miner, _minedTs, _diff);
+    }
+
+    function _mine(
+        uint256 _blockNum,
+        uint256 _shardId,
+        address _miner,
+        uint256 _nonce,
+        bytes32[] memory _encodedSamples,
+        uint256[] memory _masks,
+        bytes calldata _randaoProof,
+        bytes[] calldata _inclusiveProofs,
+        bytes[] calldata _decodeProof
+    ) internal override {
+        uint256 mineTs = _getMinedTs(_blockNum);
+        _rewardMiner(_shardId, _miner, mineTs, 1);
+    }
 }

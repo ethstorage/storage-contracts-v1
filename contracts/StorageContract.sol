@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// TODO: upgrade OpenZeppelin to next release and import "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol"
+import "./libraries/ReentrancyGuardTransient.sol";
 import "./DecentralizedKV.sol";
 import "./libraries/MiningLib.sol";
 import "./libraries/RandaoLib.sol";
@@ -8,7 +10,7 @@ import "./libraries/RandaoLib.sol";
 /// @custom:upgradeable
 /// @title StorageContract
 /// @notice EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification
-abstract contract StorageContract is DecentralizedKV {
+abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     /// @notice Represents the configuration of the storage contract.
     /// @custom:field maxKvSizeBits  Maximum size of a single key-value pair.
     /// @custom:field shardSizeBits  Storage shard size.
@@ -78,7 +80,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Treasury address
     address public treasury;
 
-    /// @notice
+    /// @notice Prepaid timestamp of last mined
     uint256 public prepaidLastMineTime;
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
@@ -239,7 +241,10 @@ abstract contract StorageContract is DecentralizedKV {
         MiningLib.update(infos[_shardId], _minedTs, _diff);
 
         require(treasuryReward + minerReward <= address(this).balance, "StorageContract: not enough balance");
-        // TODO: avoid reentrancy attack
+        // Actually `transfer` is limited by the amount of gas allocated, which is not sufficient to enable reentrancy attacks.
+        // However, this behavior may restrict the extensibility of scenarios where the receiver is a contract that requires
+        // additional gas for its fallback functions of proper operations.
+        // Therefore, we use `ReentrancyGuard` in case `call` replaces `transfer` in the future.
         payable(treasury).transfer(treasuryReward);
         payable(_miner).transfer(minerReward);
         emit MinedBlock(_shardId, _diff, infos[_shardId].blockMined, _minedTs, _miner, minerReward);
@@ -307,7 +312,7 @@ abstract contract StorageContract is DecentralizedKV {
         bytes calldata _randaoProof,
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
-    ) public virtual {
+    ) public virtual nonReentrant {
         _mine(
             _blockNum, _shardId, _miner, _nonce, _encodedSamples, _masks, _randaoProof, _inclusiveProofs, _decodeProof
         );
