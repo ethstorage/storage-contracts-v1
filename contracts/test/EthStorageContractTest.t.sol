@@ -100,6 +100,30 @@ contract EthStorageContractTest is Test {
         assertEq(storageContract.size(bytes32(uint256(2))), 30);
     }
 
+    function testUpdateBlobs() public {
+        bytes32[] memory keys = new bytes32[](2);
+        keys[0] = bytes32(uint256(0));
+        keys[1] = bytes32(uint256(0));
+        uint256[] memory blobIdxs = new uint256[](2);
+        blobIdxs[0] = 0;
+        blobIdxs[1] = 0;
+        uint256[] memory lengths = new uint256[](2);
+        lengths[0] = 10;
+        lengths[1] = 10;
+
+        // 1 new + 1 update
+        uint256 sufficientCost = storageContract.upfrontPayment() + storageContract.updateCost();
+        vm.expectRevert("StorageContract: not enough batch payment");
+        storageContract.putBlobs{value: sufficientCost - 1}(keys, blobIdxs, lengths);
+        storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
+        assertEq(storageContract.kvEntryCount(), 1);
+        assertEq(storageContract.size(keys[0]), 10);
+        // 2 updates
+        sufficientCost = 2 * storageContract.updateCost();
+        storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
+        assertEq(storageContract.kvEntryCount(), 1);
+    }
+
     function testPutBlobsXshard() public {
         uint256 size = 6;
         bytes32[] memory keys = new bytes32[](size);
