@@ -55,10 +55,10 @@ contract StorageContractTest is Test {
         uint256 withdrawAmount = 800;
 
         storageContract.sendValue{value: valueToSent}();
-        assertEq(storageContract.totalPrepaidAmount(), valueToSent);
+        assertEq(storageContract.accPrepaidAmount(), valueToSent);
 
         storageContract.withdraw(withdrawAmount);
-        assertEq(storageContract.totalPrepaidAmount(), valueToSent - withdrawAmount);
+        assertEq(storageContract.accPrepaidAmount(), valueToSent - withdrawAmount);
         assertEq(storageContract.treasury().balance, withdrawAmount);
     }
 
@@ -83,10 +83,10 @@ contract StorageContractTest is Test {
 
         storageContract.rewardMiner(0, vm.addr(2), mineTs, 1);
         uint256 totalPrepaid = valueToSent + treasureReward + prepaidAmountSaved;
-        assertEq(storageContract.totalPrepaidAmount(), totalPrepaid);
+        assertEq(storageContract.accPrepaidAmount(), totalPrepaid);
 
         storageContract.withdraw(withdrawAmount);
-        assertEq(storageContract.totalPrepaidAmount(), totalPrepaid - withdrawAmount);
+        assertEq(storageContract.accPrepaidAmount(), totalPrepaid - withdrawAmount);
         assertEq(storageContract.treasury().balance, withdrawAmount);
         assertEq(address(storageContract).balance, valueToSent - minerReward - withdrawAmount);
     }

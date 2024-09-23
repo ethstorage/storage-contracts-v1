@@ -82,7 +82,7 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 public prepaidLastMineTime;
 
     /// @notice Fund tracker for prepaid
-    uint256 public totalPrepaidAmount;
+    uint256 public accPrepaidAmount;
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
@@ -147,7 +147,7 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice People can sent ETH to the contract.
     function sendValue() public payable {
-        totalPrepaidAmount += msg.value;
+        accPrepaidAmount += msg.value;
     }
 
     /// @notice Upfront payment for the next insertion
@@ -241,9 +241,9 @@ abstract contract StorageContract is DecentralizedKV {
             prepaidLastMineTime = _minedTs;
         }
         if (prepaidAmountSaved > 0) {
-            totalPrepaidAmount += prepaidAmountSaved;
+            accPrepaidAmount += prepaidAmountSaved;
         }
-        totalPrepaidAmount += treasuryReward;
+        accPrepaidAmount += treasuryReward;
         // Update mining info.
         MiningLib.update(infos[_shardId], _minedTs, _diff);
 
@@ -391,8 +391,8 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Withdraw treasury fund
     function withdraw(uint256 _amount) public {
-        require(totalPrepaidAmount >= prepaidAmount + _amount, "StorageContract: not enough prepaid amount");
-        totalPrepaidAmount -= _amount;
+        require(accPrepaidAmount >= prepaidAmount + _amount, "StorageContract: not enough prepaid amount");
+        accPrepaidAmount -= _amount;
         require(address(this).balance >= _amount, "StorageContract: not enough balance");
         payable(treasury).transfer(_amount);
     }
