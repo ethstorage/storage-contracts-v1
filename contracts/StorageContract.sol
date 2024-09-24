@@ -284,7 +284,13 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
                 uint256 prepaidAmountCap =
                     STORAGE_COST * ((1 << SHARD_ENTRY_BITS) - kvEntryCount % (1 << SHARD_ENTRY_BITS));
                 if (prepaidAmountCap > prepaidAmount) {
-                    prepaidAmountSaved = _paymentIn(prepaidAmountCap, prepaidLastMineTime, _minedTs)
+if (prepaidLastMineTime < _minedTs) {
+    fullReward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
+    prepaidAmountIn = _paymentIn(prepaidAmount, prepaidLastMineTime, _minedTs);
+    if (prepaidAmountIn > fullReward - reward) {
+        prepaidAmountIn = fullReward - reward;
+    }
+}
                         - _paymentIn(prepaidAmount, prepaidLastMineTime, _minedTs);
                     prepaidAmountCap = prepaidAmount;
                 }
