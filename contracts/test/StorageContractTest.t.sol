@@ -65,25 +65,23 @@ contract StorageContractTest is Test {
         uint256 valueToSent = 50000000;
         uint256 withdrawAmount = 8000000;
         uint256 mineTs = 10000;
-        uint40 kvEntryCount = 1;
         uint256 shardEntry = 1 << (SHARD_SIZE_BITS - MAX_KV_SIZE);
-
+        address miner = vm.addr(2);
         storageContract.sendValue{value: valueToSent}();
-        storageContract.setKvEntryCount(kvEntryCount);
-        uint256 reward = storageContract.paymentIn(STORAGE_COST * kvEntryCount, 0, mineTs);
+
+        // a little half
+        storageContract.setKvEntryCount(1);
+        uint256 reward = storageContract.paymentIn(STORAGE_COST, 0, mineTs);
         uint256 prepaidReward = storageContract.paymentIn(PREPAID_AMOUNT, 0, mineTs);
         reward += prepaidReward;
+        storageContract.rewardMiner(0, miner, mineTs, 1);
         uint256 treasureReward = (reward * storageContract.treasuryShare()) / 10000;
         uint256 minerReward = reward - treasureReward;
-        uint256 prepaidAmountCap = STORAGE_COST * (shardEntry - kvEntryCount);
-        uint256 prepaidAmountSaved = storageContract.paymentIn(prepaidAmountCap, 0, mineTs) - prepaidReward;
-
-        storageContract.rewardMiner(0, vm.addr(2), mineTs, 1);
-        uint256 totalPrepaid = valueToSent + treasureReward + prepaidAmountSaved;
-        assertEq(storageContract.accPrepaidAmount(), totalPrepaid);
+        assertEq(miner.balance, minerReward);
+        assertEq(storageContract.accPrepaidAmount(), valueToSent + treasureReward);
 
         storageContract.withdraw(withdrawAmount);
-        assertEq(storageContract.accPrepaidAmount(), totalPrepaid - withdrawAmount);
+        assertEq(storageContract.accPrepaidAmount(), valueToSent + treasureReward - withdrawAmount);
         assertEq(storageContract.treasury().balance, withdrawAmount);
         assertEq(address(storageContract).balance, valueToSent - minerReward - withdrawAmount);
     }
