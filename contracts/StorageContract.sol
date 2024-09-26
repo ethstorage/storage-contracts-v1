@@ -242,14 +242,11 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
         if (updatePrepaidTime) {
             prepaidLastMineTime = _minedTs;
         }
-        if (prepaidAmountSaved > 0) {
-            accPrepaidAmount += prepaidAmountSaved;
-        }
-        accPrepaidAmount += treasuryReward;
+        accPrepaidAmount += prepaidAmountSaved + treasuryReward;
         // Update mining info.
         MiningLib.update(infos[_shardId], _minedTs, _diff);
 
-        require(treasuryReward + minerReward <= address(this).balance, "StorageContract: not enough balance");
+        require(minerReward <= address(this).balance, "StorageContract: not enough balance");
         // Actually `transfer` is limited by the amount of gas allocated, which is not sufficient to enable reentrancy attacks.
         // However, this behavior may restrict the extensibility of scenarios where the receiver is a contract that requires
         // additional gas for its fallback functions of proper operations.
