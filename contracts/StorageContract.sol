@@ -83,6 +83,9 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     /// @notice Prepaid timestamp of last mined
     uint256 public prepaidLastMineTime;
 
+    /// @notice Fund tracker for prepaid
+    uint256 public accPrepaidAmount;
+
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     /// @notice Emitted when a block is mined.
@@ -145,7 +148,9 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     }
 
     /// @notice People can sent ETH to the contract.
-    function sendValue() public payable {}
+    function sendValue() public payable {
+        accPrepaidAmount += msg.value;
+    }
 
     /// @notice Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
@@ -232,20 +237,20 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     function _rewardMiner(uint256 _shardId, address _miner, uint256 _minedTs, uint256 _diff) internal {
         // Mining is successful.
         // Send reward to coinbase and miner.
-        (bool updatePrepaidTime, uint256 treasuryReward, uint256 minerReward) = _miningReward(_shardId, _minedTs);
+        (bool updatePrepaidTime, uint256 prepaidAmountSaved, uint256 treasuryReward, uint256 minerReward) =
+            _miningReward(_shardId, _minedTs);
         if (updatePrepaidTime) {
             prepaidLastMineTime = _minedTs;
         }
-
+        accPrepaidAmount += prepaidAmountSaved + treasuryReward;
         // Update mining info.
         MiningLib.update(infos[_shardId], _minedTs, _diff);
 
-        require(treasuryReward + minerReward <= address(this).balance, "StorageContract: not enough balance");
+        require(minerReward <= address(this).balance, "StorageContract: not enough balance");
         // Actually `transfer` is limited by the amount of gas allocated, which is not sufficient to enable reentrancy attacks.
         // However, this behavior may restrict the extensibility of scenarios where the receiver is a contract that requires
         // additional gas for its fallback functions of proper operations.
         // Therefore, we use `ReentrancyGuard` in case `call` replaces `transfer` in the future.
-        payable(treasury).transfer(treasuryReward);
         payable(_miner).transfer(minerReward);
         emit MinedBlock(_shardId, _diff, infos[_shardId].blockMined, _minedTs, _miner, minerReward);
     }
@@ -254,32 +259,40 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     /// @param _shardId  The shard id.
     /// @param _minedTs  The mined timestamp.
     /// @return updatePrepaidTime Whether to update the prepaid time.
+    /// @return prepaidAmountSaved The capped part of prepaid amount.
     /// @return treasuryReward    The treasury reward.
     /// @return minerReward       The miner reward.
-    function _miningReward(uint256 _shardId, uint256 _minedTs) internal view returns (bool, uint256, uint256) {
+    function _miningReward(uint256 _shardId, uint256 _minedTs)
+        internal
+        view
+        returns (bool, uint256, uint256, uint256)
+    {
         MiningLib.MiningInfo storage info = infos[_shardId];
         uint256 lastShardIdx = kvEntryCount > 0 ? (kvEntryCount - 1) >> SHARD_ENTRY_BITS : 0;
-        uint256 reward = 0;
         bool updatePrepaidTime = false;
+        uint256 prepaidAmountSaved = 0;
+        uint256 reward = 0;
         if (_shardId < lastShardIdx) {
             reward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
         } else if (_shardId == lastShardIdx) {
             reward = _paymentIn(STORAGE_COST * (kvEntryCount % (1 << SHARD_ENTRY_BITS)), info.lastMineTime, _minedTs);
             // Additional prepaid for the last shard
             if (prepaidLastMineTime < _minedTs) {
-                uint256 prepaidAmountCap =
-                    STORAGE_COST * ((1 << SHARD_ENTRY_BITS) - kvEntryCount % (1 << SHARD_ENTRY_BITS));
-                if (prepaidAmountCap > prepaidAmount) {
-                    prepaidAmountCap = prepaidAmount;
+                uint256 fullReward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
+                uint256 prepaidAmountIn = _paymentIn(prepaidAmount, prepaidLastMineTime, _minedTs);
+                uint256 rewardCap = fullReward - reward;
+                if (prepaidAmountIn > rewardCap) {
+                    prepaidAmountSaved = prepaidAmountIn - rewardCap;
+                    prepaidAmountIn = rewardCap;
                 }
-                reward += _paymentIn(prepaidAmountCap, prepaidLastMineTime, _minedTs);
+                reward += prepaidAmountIn;
                 updatePrepaidTime = true;
             }
         }
 
         uint256 treasuryReward = (reward * TREASURY_SHARE) / 10000;
         uint256 minerReward = reward - treasuryReward;
-        return (updatePrepaidTime, treasuryReward, minerReward);
+        return (updatePrepaidTime, prepaidAmountSaved, treasuryReward, minerReward);
     }
 
     /// @notice Get the mining reward.
@@ -288,7 +301,7 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     /// @return The mining reward.
     function miningReward(uint256 _shardId, uint256 _blockNum) public view returns (uint256) {
         uint256 minedTs = _getMinedTs(_blockNum);
-        (,, uint256 minerReward) = _miningReward(_shardId, minedTs);
+        (,,, uint256 minerReward) = _miningReward(_shardId, minedTs);
         return minerReward;
     }
 
@@ -377,6 +390,14 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
         require(uint256(hash0) <= required, "StorageContract: diff not match");
 
         _rewardMiner(_shardId, _miner, mineTs, diff);
+    }
+
+    /// @notice Withdraw treasury fund
+    function withdraw(uint256 _amount) public {
+        require(accPrepaidAmount >= prepaidAmount + _amount, "StorageContract: not enough prepaid amount");
+        accPrepaidAmount -= _amount;
+        require(address(this).balance >= _amount, "StorageContract: not enough balance");
+        payable(treasury).transfer(_amount);
     }
 
     /// @notice Get the current block number
