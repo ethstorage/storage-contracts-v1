@@ -19,6 +19,7 @@ const config = [
 ];
 const storageCost = 1500000000000000; // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
 const dcfFactor = 340282366367469178095360967382638002176n; // dcfFactor, it mean 0.95 for yearly discount
+const updateLimit = 512;
 
 async function verifyContract(contract, args) {
   // if (!process.env.ETHERSCAN_API_KEY) {
@@ -44,6 +45,7 @@ async function deployContract() {
     startTime, // startTime
     storageCost,
     dcfFactor,
+    updateLimit,
     { gasPrice: gasPrice }
   );
   await implContract.deployed();
@@ -75,7 +77,7 @@ async function deployContract() {
 
   // fund 50 qkc into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("50") });
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("1") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 
