@@ -10,7 +10,7 @@ contract EthStorageContractL2Test is Test {
     uint256 constant SHARD_SIZE_BITS = 19;
     uint256 constant MAX_KV_SIZE = 17;
     uint256 constant PREPAID_AMOUNT = 0;
-    uint256 constant UPDATE_LIMIT = 12;
+    uint256 constant UPDATE_LIMIT = 16;
 
     TestEthStorageContractL2 storageContract;
     address owner = address(0x1);
@@ -27,7 +27,7 @@ contract EthStorageContractL2Test is Test {
         storageContract = TestEthStorageContractL2(address(proxy));
     }
 
-    function testCheckUpdateLimitWithinSameBlock() public {
+    function testUpdateLimit() public {
         uint256 size = 6;
         bytes32[] memory hashes = new bytes32[](size);
         bytes32[] memory keys = new bytes32[](size);
@@ -52,12 +52,28 @@ contract EthStorageContractL2Test is Test {
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlobsUpdated(), 5);
         assertEq(storageContract.getBlockLastUpdate(), 10000);
+
         // Update all 6
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlobsUpdated(), 11);
-        // Update all 6 again, exceeds 12
+
+        // Update all 6 again, exceeds UPDATE_LIMIT = 16
         vm.expectRevert("EthStorageContractL2: exceeds update rate limit");
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlockLastUpdate(), 10000);
+
+        vm.roll(block.number + 1);
+
+        // Update all 6
+        storageContract.putBlobs(keys, blobIdxs, lengths);
+        assertEq(storageContract.getBlobsUpdated(), 6);
+        assertEq(storageContract.getBlockLastUpdate(), 10001);
+
+        // Update till exceeds UPDATE_LIMIT = 16
+        storageContract.putBlobs(keys, blobIdxs, lengths);
+        assertEq(storageContract.getBlobsUpdated(), 12);
+        assertEq(storageContract.getBlockLastUpdate(), 10001);
+        vm.expectRevert("EthStorageContractL2: exceeds update rate limit");
+        storageContract.putBlobs(keys, blobIdxs, lengths);
     }
 }

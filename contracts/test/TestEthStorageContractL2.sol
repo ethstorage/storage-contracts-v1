@@ -12,12 +12,14 @@ contract TestEthStorageContractL2 is EthStorageContractL2 {
         uint256 _updateLimit
     ) EthStorageContractL2(_config, _startTime, _storageCost, _dcfFactor, _updateLimit) {}
 
+    /// @notice Get the number of blobs updated within the current block.
     function getBlobsUpdated() public view returns (uint256) {
-        return blobsUpdated;
+        return updateStateBitmap >> 128;
     }
 
+    /// @notice Get the block number of the last update.
     function getBlockLastUpdate() public view returns (uint256) {
-        return blockLastUpdate;
+        return updateStateBitmap & type(uint128).max;
     }
 
     function _blockNumber() internal view virtual override returns (uint256) {

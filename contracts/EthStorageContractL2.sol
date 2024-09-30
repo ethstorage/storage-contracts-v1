@@ -28,10 +28,9 @@ contract EthStorageContractL2 is EthStorageContract2 {
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
     /// @notice The rate limit to update blobs per block
     uint256 internal immutable UPDATE_LIMIT;
-    /// @notice The blobs updated within current block
-    uint256 internal blobsUpdated;
-    /// @notice The block last update happens
-    uint256 internal blockLastUpdate;
+
+    /// @notice Bitmap to store blobsUpdated and blockLastUpdate
+    uint256 internal updateStateBitmap;
 
     /// @notice Constructs the EthStorageContractL2 contract.
     constructor(
@@ -68,13 +67,17 @@ contract EthStorageContractL2 is EthStorageContract2 {
 
     /// @notice Check the update rate limit of blobs put.
     function _checkUpdateLimit(uint256 _blobs) internal override {
-        if (blockLastUpdate == _blockNumber()) {
-            blobsUpdated = blobsUpdated + _blobs;
+        uint256 currentBlock = _blockNumber();
+        uint256 blockLastUpdate = updateStateBitmap & type(uint128).max;
+        if (blockLastUpdate == currentBlock) {
+            uint256 blobsUpdated = updateStateBitmap >> 128;
+            blobsUpdated += _blobs;
+            require(blobsUpdated <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
+            updateStateBitmap = (blobsUpdated << 128) | currentBlock;
         } else {
-            blockLastUpdate = _blockNumber();
-            blobsUpdated = _blobs;
+            require(_blobs <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
+            updateStateBitmap = (_blobs << 128) | currentBlock;
         }
-        require(blobsUpdated <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
     }
 
     /// @notice Getter for UPDATE_LIMIT
