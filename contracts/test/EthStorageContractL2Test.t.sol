@@ -10,13 +10,14 @@ contract EthStorageContractL2Test is Test {
     uint256 constant SHARD_SIZE_BITS = 19;
     uint256 constant MAX_KV_SIZE = 17;
     uint256 constant PREPAID_AMOUNT = 0;
+    uint256 constant UPDATE_LIMIT = 12;
 
     TestEthStorageContractL2 storageContract;
     address owner = address(0x1);
 
     function setUp() public {
         TestEthStorageContractL2 imp = new TestEthStorageContractL2(
-            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0
+            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0, UPDATE_LIMIT
         );
         bytes memory data = abi.encodeWithSelector(
             storageContract.initialize.selector, 0, PREPAID_AMOUNT, 0, address(0x1), address(0x1)
@@ -46,11 +47,17 @@ contract EthStorageContractL2Test is Test {
         assertEq(storageContract.getBlobsUpdated(), 0);
         assertEq(storageContract.getBlockLastUpdate(), 10000);
 
-        // Append 2 new key-values, leaving 4 as updating
+        // Append 1 new key-values, leaving 5 as updating
         keys[0] = bytes32(uint256(10));
-        keys[1] = bytes32(uint256(11));
         storageContract.putBlobs(keys, blobIdxs, lengths);
-        assertEq(storageContract.getBlobsUpdated(), 4);
+        assertEq(storageContract.getBlobsUpdated(), 5);
+        assertEq(storageContract.getBlockLastUpdate(), 10000);
+        // Update all 6
+        storageContract.putBlobs(keys, blobIdxs, lengths);
+        assertEq(storageContract.getBlobsUpdated(), 11);
+        // Update all 6 again, exceeds 12
+        vm.expectRevert("EthStorageContractL2: exceeds update rate limit");
+        storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlockLastUpdate(), 10000);
     }
 }

@@ -27,16 +27,22 @@ contract EthStorageContractL2 is EthStorageContract2 {
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
     /// @notice The rate limit to update blobs per block
-    uint256 internal constant UPDATE_LIMIT = 512;
+    uint256 internal immutable UPDATE_LIMIT;
     /// @notice The blobs updated within current block
     uint256 internal blobsUpdated;
     /// @notice The block last update happens
     uint256 internal blockLastUpdate;
 
     /// @notice Constructs the EthStorageContractL2 contract.
-    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor)
-    {}
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _updateLimit
+    ) EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor) {
+        UPDATE_LIMIT = _updateLimit;
+    }
 
     /// @notice Get the current block number
     function _blockNumber() internal view virtual override returns (uint256) {
@@ -69,5 +75,10 @@ contract EthStorageContractL2 is EthStorageContract2 {
             blobsUpdated = _blobs;
         }
         require(blobsUpdated <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
+    }
+
+    /// @notice Getter for UPDATE_LIMIT
+    function getUpdateLimit() public view returns (uint256) {
+        return UPDATE_LIMIT;
     }
 }

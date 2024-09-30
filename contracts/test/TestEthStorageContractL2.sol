@@ -4,9 +4,13 @@ pragma solidity ^0.8.0;
 import "../EthStorageContractL2.sol";
 
 contract TestEthStorageContractL2 is EthStorageContractL2 {
-    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        EthStorageContractL2(_config, _startTime, _storageCost, _dcfFactor)
-    {}
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _updateLimit
+    ) EthStorageContractL2(_config, _startTime, _storageCost, _dcfFactor, _updateLimit) {}
 
     function getBlobsUpdated() public view returns (uint256) {
         return blobsUpdated;
