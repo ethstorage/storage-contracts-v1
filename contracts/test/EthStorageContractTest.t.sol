@@ -63,7 +63,7 @@ contract EthStorageContractTest is Test {
         keys[1] = bytes32(uint256(1));
         uint256[] memory blobIdxs = new uint256[](2);
         blobIdxs[0] = 0;
-        blobIdxs[1] = 0;
+        blobIdxs[1] = 1;
         uint256[] memory lengths = new uint256[](2);
         lengths[0] = 10;
         lengths[1] = 20;

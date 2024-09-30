@@ -26,6 +26,12 @@ interface IL1Block {
 contract EthStorageContractL2 is EthStorageContract2 {
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
+    /// @notice The rate limit to update blobs per block
+    uint256 internal constant UPDATE_LIMIT = 512;
+    /// @notice The blobs updated within current block
+    uint256 internal blobsUpdated;
+    /// @notice The block last update happens
+    uint256 internal blockLastUpdate;
 
     /// @notice Constructs the EthStorageContractL2 contract.
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
@@ -33,12 +39,12 @@ contract EthStorageContractL2 is EthStorageContract2 {
     {}
 
     /// @notice Get the current block number
-    function _blockNumber() internal view override returns (uint256) {
+    function _blockNumber() internal view virtual override returns (uint256) {
         return L1_BLOCK.number();
     }
 
     /// @notice Get the current block timestamp
-    function _blockTs() internal view override returns (uint256) {
+    function _blockTs() internal view virtual override returns (uint256) {
         return L1_BLOCK.timestamp();
     }
 
@@ -52,5 +58,16 @@ contract EthStorageContractL2 is EthStorageContract2 {
         bytes32 bh = L1_BLOCK.blockHash(_l1BlockNumber);
         require(bh != bytes32(0), "EthStorageContractL2: failed to obtain blockhash");
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
+    }
+
+    /// @notice Check the update rate limit of blobs put.
+    function _checkUpdateLimit(uint256 _blobs) internal override {
+        if (blockLastUpdate == _blockNumber()) {
+            blobsUpdated = blobsUpdated + _blobs;
+        } else {
+            blockLastUpdate = _blockNumber();
+            blobsUpdated = _blobs;
+        }
+        require(blobsUpdated <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
     }
 }
