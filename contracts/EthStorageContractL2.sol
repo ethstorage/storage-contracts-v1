@@ -29,7 +29,7 @@ contract EthStorageContractL2 is EthStorageContract2 {
     /// @notice The rate limit to update blobs per block
     uint256 internal immutable UPDATE_LIMIT;
 
-    /// @notice A slot to store both `blobsUpdated` (left 32) and `blockLastUpdate` (right 224)
+    /// @notice A slot to store both `blockLastUpdate` (left 224) and `blobsUpdated` (right 32)
     uint256 internal updateState;
 
     /// @notice Constructs the EthStorageContractL2 contract.
@@ -67,15 +67,15 @@ contract EthStorageContractL2 is EthStorageContract2 {
 
     /// @notice Check the update rate limit of blobs put.
     function _checkUpdateLimit(uint256 _blobs) internal override {
-        uint256 blockLastUpdate = updateState & type(uint224).max;
+        uint256 blockLastUpdate = updateState >> 32;
         if (blockLastUpdate == block.number) {
-            uint256 blobsUpdated = updateState >> 224;
+            uint256 blobsUpdated = updateState & type(uint32).max;
             blobsUpdated += _blobs;
             require(blobsUpdated <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
-            updateState = (blobsUpdated << 224) | block.number;
+            updateState = block.number << 32 | blobsUpdated;
         } else {
             require(_blobs <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
-            updateState = (_blobs << 224) | block.number;
+            updateState = block.number << 32 | _blobs;
         }
     }
 
