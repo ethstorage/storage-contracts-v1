@@ -156,7 +156,9 @@ contract DecentralizedKV is OwnableUpgradeable {
         }
 
         _checkAppend(batchPaymentSize);
-        _checkUpdateLimit(_keys.length - batchPaymentSize);
+        if (_keys.length > batchPaymentSize) {
+            _checkUpdateLimit(_keys.length - batchPaymentSize);
+        }
 
         return res;
     }

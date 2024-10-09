@@ -45,7 +45,7 @@ contract EthStorageContractL2Test is Test {
         // No updates
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlobsUpdated(), 0);
-        assertEq(storageContract.getBlockLastUpdate(), 10000);
+        assertEq(storageContract.getBlockLastUpdate(), 0);
 
         // Append 1 new key-values, leaving 5 as updating
         keys[0] = bytes32(uint256(10));

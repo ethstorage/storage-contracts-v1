@@ -26,6 +26,10 @@ interface IL1Block {
 contract EthStorageContractL2 is EthStorageContract2 {
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
+
+    /// @notice The mask to extract `blockLastUpdate`
+    uint256 internal constant MASK = ~uint256(0) ^ type(uint32).max;
+
     /// @notice The rate limit to update blobs per block
     uint256 internal immutable UPDATE_LIMIT;
 
@@ -67,8 +71,7 @@ contract EthStorageContractL2 is EthStorageContract2 {
 
     /// @notice Check the update rate limit of blobs put.
     function _checkUpdateLimit(uint256 _blobs) internal override {
-        uint256 blockLastUpdate = updateState >> 32;
-        uint256 blobsUpdated = blockLastUpdate == block.number ? updateState & type(uint32).max : 0;
+        uint256 blobsUpdated = updateState & MASK == block.number << 32 ? updateState & type(uint32).max : 0;
         require(blobsUpdated + _blobs <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
         updateState = block.number << 32 | (blobsUpdated + _blobs);
     }
