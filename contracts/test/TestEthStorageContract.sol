@@ -36,7 +36,7 @@ contract TestEthStorageContract is EthStorageContract {
         _putBatchInternal(keys, dataHashes, lengths);
     }
 
-    function putBlob(bytes32 _key, uint256 _blobIdx, uint256 _length) public payable override {
+    function putBlob(bytes32 _key, uint256, /* _blobIdx */ uint256 _length) public payable override {
         bytes32 dataHash = bytes32(uint256(1 << 8 * 8));
         require(dataHash != 0, "EthStorageContract: failed to get blob hash");
 
@@ -194,7 +194,7 @@ contract TestEthStorageContract is EthStorageContract {
         require(nonce < nonceLimit, "nonce too big");
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
-        bytes32 hash0 = verifySamples(shardId, initHash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
+        verifySamples(shardId, initHash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
 
         uint256 diff = _calculateDiffAndInitHashSingleShard(shardId, mineTs);
 

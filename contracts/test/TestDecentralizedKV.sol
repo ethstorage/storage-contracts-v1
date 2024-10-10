@@ -39,7 +39,7 @@ contract TestDecentralizedKV is DecentralizedKV {
         dataMap[kvIndices[0]] = data;
     }
 
-    function get(bytes32 key, DecodeType decodeType, uint256 off, uint256 len)
+    function get(bytes32 key, DecodeType, /* decodeType */ uint256 off, uint256 len)
         public
         view
         override

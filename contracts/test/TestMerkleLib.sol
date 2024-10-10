@@ -12,29 +12,27 @@ contract TestMerkleLib {
         return MerkleLib.merkleRootWithMinTree(data, chunkSize);
     }
 
-    function merkleRootNoView(bytes memory data, uint256 chunkSize, uint256 nChunkBits) public returns (bytes32) {
+    function merkleRootNoView(bytes memory data, uint256 chunkSize, uint256 nChunkBits) public pure returns (bytes32) {
         return MerkleLib.merkleRoot(data, chunkSize, nChunkBits);
     }
 
-    function keccak256NoView(bytes memory data) public returns (bytes32) {
+    function keccak256NoView(bytes memory data) public pure returns (bytes32) {
         return keccak256(data);
     }
 
-    function verify(
-        bytes memory chunkData,
-        uint256 chunkIdx,
-        bytes32 root,
-        bytes32[] memory proofs
-    ) public pure returns (bool) {
+    function verify(bytes memory chunkData, uint256 chunkIdx, bytes32 root, bytes32[] memory proofs)
+        public
+        pure
+        returns (bool)
+    {
         return MerkleLib.verify(keccak256(chunkData), chunkIdx, root, proofs);
     }
 
-    function getProof(
-        bytes memory data,
-        uint256 chunkSize,
-        uint256 nChunkBits,
-        uint256 chunkIdx
-    ) public pure returns (bytes32[] memory) {
+    function getProof(bytes memory data, uint256 chunkSize, uint256 nChunkBits, uint256 chunkIdx)
+        public
+        pure
+        returns (bytes32[] memory)
+    {
         return MerkleLib.getProof(data, chunkSize, nChunkBits, chunkIdx);
     }
 
