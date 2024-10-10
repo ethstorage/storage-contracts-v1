@@ -69,11 +69,11 @@ contract EthStorageContractL2 is EthStorageContract2 {
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
     }
 
-    /// @notice Check the update rate limit of blobs put.
-    function _checkUpdateLimit(uint256 _blobs) internal override {
+    /// @notice Check if the key-values being updated exceed the limit per block.
+    function _checkUpdateLimit(uint256 _updateSize) internal override {
         uint256 blobsUpdated = updateState & MASK == block.number << 32 ? updateState & type(uint32).max : 0;
-        require(blobsUpdated + _blobs <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
-        updateState = block.number << 32 | (blobsUpdated + _blobs);
+        require(blobsUpdated + _updateSize <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
+        updateState = block.number << 32 | (blobsUpdated + _updateSize);
     }
 
     /// @notice Getter for UPDATE_LIMIT

@@ -119,8 +119,8 @@ contract DecentralizedKV is OwnableUpgradeable {
         require(msg.value >= upfrontPayment() * _batchSize, "DecentralizedKV: not enough batch payment");
     }
 
-    /// @notice Check the update rate limit of blobs put (L2 only).
-    function _checkUpdateLimit(uint256 _blobs) internal virtual {}
+    /// @notice Check if the key-values being updated exceed the limit per block (L2 only).
+    function _checkUpdateLimit(uint256 _updateSize) internal virtual {}
 
     /// @notice Called by public putBlob and putBlobs methods.
     /// @param _keys       Keys of the data.
