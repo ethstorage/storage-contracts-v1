@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./TestStorageContract.sol";
 import "../StorageContract.sol";
 import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
 
 contract StorageContractTest is Test {
     uint256 constant STORAGE_COST = 10000000;
@@ -172,7 +170,7 @@ contract Attacker is Test {
         storageContract = _storageContract;
     }
 
-    fallback() external payable {
+    receive() external payable {
         uint256 _shardId = 0;
         uint256 _nonce = 0;
         bytes32[] memory _encodedSamples = new bytes32[](0);

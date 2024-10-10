@@ -3,8 +3,6 @@ pragma solidity ^0.8.19;
 
 import "./TestEthStorageContract.sol";
 import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
-import "forge-std/console.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract EthStorageContractTest is Test {
