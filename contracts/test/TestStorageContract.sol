@@ -55,7 +55,7 @@ contract TestStorageContract is StorageContract {
         uint256[] memory, /* _masks */
         bytes calldata, /* _randaoProof */
         bytes[] calldata, /* _inclusiveProofs */
-        bytes[] calldata /* å */
+        bytes[] calldata /* _decodeProof */
     ) internal override {
         uint256 mineTs = _getMinedTs(_blockNum);
         _rewardMiner(_shardId, _miner, mineTs, 1);
