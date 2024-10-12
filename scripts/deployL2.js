@@ -19,6 +19,7 @@ const config = [
 ];
 const storageCost = 1500000000000000; // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
 const dcfFactor = 340282366367469178095360967382638002176n; // dcfFactor, it mean 0.95 for yearly discount
+const updateLimit = 90; // 45 blobs/s according to sync/encoding test, times block interval of L2
 
 async function verifyContract(contract, args) {
   // if (!process.env.ETHERSCAN_API_KEY) {
@@ -44,6 +45,7 @@ async function deployContract() {
     startTime, // startTime
     storageCost,
     dcfFactor,
+    updateLimit,
     { gasPrice: gasPrice }
   );
   await implContract.deployed();

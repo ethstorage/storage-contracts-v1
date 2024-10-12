@@ -3,8 +3,6 @@ pragma solidity ^0.8.19;
 
 import "./TestEthStorageContract.sol";
 import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
-import "forge-std/console.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract EthStorageContractTest is Test {
@@ -63,7 +61,7 @@ contract EthStorageContractTest is Test {
         keys[1] = bytes32(uint256(1));
         uint256[] memory blobIdxs = new uint256[](2);
         blobIdxs[0] = 0;
-        blobIdxs[1] = 0;
+        blobIdxs[1] = 1;
         uint256[] memory lengths = new uint256[](2);
         lengths[0] = 10;
         lengths[1] = 20;

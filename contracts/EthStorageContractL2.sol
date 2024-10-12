@@ -27,18 +27,33 @@ contract EthStorageContractL2 is EthStorageContract2 {
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
 
+    /// @notice The mask to extract `blockLastUpdate`
+    uint256 internal constant MASK = ~uint256(0) ^ type(uint32).max;
+
+    /// @notice The rate limit to update blobs per block
+    uint256 internal immutable UPDATE_LIMIT;
+
+    /// @notice A slot to store both `blockLastUpdate` (left 224) and `blobsUpdated` (right 32)
+    uint256 internal updateState;
+
     /// @notice Constructs the EthStorageContractL2 contract.
-    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor)
-    {}
+    constructor(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _updateLimit
+    ) EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor) {
+        UPDATE_LIMIT = _updateLimit;
+    }
 
     /// @notice Get the current block number
-    function _blockNumber() internal view override returns (uint256) {
+    function _blockNumber() internal view virtual override returns (uint256) {
         return L1_BLOCK.number();
     }
 
     /// @notice Get the current block timestamp
-    function _blockTs() internal view override returns (uint256) {
+    function _blockTs() internal view virtual override returns (uint256) {
         return L1_BLOCK.timestamp();
     }
 
@@ -52,5 +67,17 @@ contract EthStorageContractL2 is EthStorageContract2 {
         bytes32 bh = L1_BLOCK.blockHash(_l1BlockNumber);
         require(bh != bytes32(0), "EthStorageContractL2: failed to obtain blockhash");
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
+    }
+
+    /// @notice Check if the key-values being updated exceed the limit per block.
+    function _checkUpdateLimit(uint256 _updateSize) internal override {
+        uint256 blobsUpdated = updateState & MASK == block.number << 32 ? updateState & type(uint32).max : 0;
+        require(blobsUpdated + _updateSize <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
+        updateState = block.number << 32 | (blobsUpdated + _updateSize);
+    }
+
+    /// @notice Getter for UPDATE_LIMIT
+    function getUpdateLimit() public view returns (uint256) {
+        return UPDATE_LIMIT;
     }
 }
