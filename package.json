@@ -25,6 +25,7 @@
     "prettier-plugin-solidity": "^1.0.0-beta.18",
     "rlp": "^3.0.0",
     "snarkjs": "^0.6.11",
+    "solhint": "^5.0.3",
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.8.2",
     "solidity-rlp": "^2.0.5"

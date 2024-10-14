@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.28;
 
-// TODO: upgrade OpenZeppelin to next release and import "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol"
-import "./libraries/ReentrancyGuardTransient.sol";
 import "./DecentralizedKV.sol";
 import "./libraries/MiningLib.sol";
 import "./libraries/RandaoLib.sol";
@@ -10,7 +8,7 @@ import "./libraries/RandaoLib.sol";
 /// @custom:upgradeable
 /// @title StorageContract
 /// @notice EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification
-abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
+abstract contract StorageContract is DecentralizedKV {
     /// @notice Represents the configuration of the storage contract.
     /// @custom:field maxKvSizeBits  Maximum size of a single key-value pair.
     /// @custom:field shardSizeBits  Storage shard size.
@@ -86,6 +84,9 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     /// @notice Fund tracker for prepaid
     uint256 public accPrepaidAmount;
 
+    /// @notice Reentrancy lock 
+    bool private transient locked;
+
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     /// @notice Emitted when a block is mined.
@@ -103,6 +104,15 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
         address miner,
         uint256 minerReward
     );
+
+    modifier nonReentrant() {
+        require(!locked, "Reentrancy attempt");
+        locked = true;
+        _;
+        // Unlocks the guard, making the pattern composable.
+        // After the function exits, it can be called again, even in the same transaction.
+        locked = false;
+    }
 
     /// @notice Constructs the StorageContract contract. Initializes the storage config.
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
