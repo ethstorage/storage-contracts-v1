@@ -260,7 +260,7 @@ abstract contract StorageContract is DecentralizedKV {
         // Actually `transfer` is limited by the amount of gas allocated, which is not sufficient to enable reentrancy attacks.
         // However, this behavior may restrict the extensibility of scenarios where the receiver is a contract that requires
         // additional gas for its fallback functions of proper operations.
-        // Therefore, we use `ReentrancyGuard` in case `call` replaces `transfer` in the future.
+        // Therefore, we still use a reentrancy guard (`nonReentrant`) in case `call` replaces `transfer` in the future.
         payable(_miner).transfer(minerReward);
         emit MinedBlock(_shardId, _diff, infos[_shardId].blockMined, _minedTs, _miner, minerReward);
     }
