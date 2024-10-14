@@ -106,7 +106,7 @@ abstract contract StorageContract is DecentralizedKV {
     );
 
     modifier nonReentrant() {
-        require(!locked, "Reentrancy attempt");
+        require(!locked, "StorageContract: reentrancy attempt!");
         locked = true;
         _;
         // Unlocks the guard, making the pattern composable.

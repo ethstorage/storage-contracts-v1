@@ -144,9 +144,7 @@ contract StorageContractTest is Test {
         bytes memory _randaoProof = "0x01";
         bytes[] memory _inclusiveProofs = new bytes[](0);
         bytes[] memory _decodeProof = new bytes[](0);
-        // currently this error is not reachable on github server
-        // vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-        vm.expectRevert();
+        vm.expectRevert("StorageContract: reentrancy attempt!");
         storageContract.mine(
             _blockNum,
             _shardId,
