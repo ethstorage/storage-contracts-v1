@@ -1,7 +1,6 @@
 const hre = require("hardhat");
-const dotenv = require("dotenv")
-dotenv.config()
-
+const dotenv = require("dotenv");
+dotenv.config();
 
 let ownerAddress = null;
 let treasuryAddress = null;
@@ -40,11 +39,11 @@ async function deployContract() {
   const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
   const implContract = await StorageContract.deploy(
-      config,
-      startTime, // startTime
-      storageCost,
-      dcfFactor,
-      { gasPrice: gasPrice }
+    config,
+    startTime, // startTime
+    storageCost,
+    dcfFactor,
+    { gasPrice: gasPrice }
   );
   await implContract.deployed();
   const impl = implContract.address;
@@ -93,11 +92,11 @@ async function updateContract() {
 
   // deploy
   const implContract = await StorageContract.deploy(
-      config,
-      startTime, // startTime
-      storageCost,
-      dcfFactor,
-      { gasPrice: gasPrice }
+    config,
+    startTime, // startTime
+    storageCost,
+    dcfFactor,
+    { gasPrice: gasPrice }
   );
   await implContract.deployed();
   const impl = implContract.address;

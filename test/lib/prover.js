@@ -1,5 +1,5 @@
 const snarkjs = require("snarkjs");
-const RLP = require('rlp');
+const RLP = require("rlp");
 
 require("dotenv").config();
 
@@ -43,7 +43,7 @@ async function generateRandaoProof(block) {
     BigInt(block.timestamp),
     block.extraData,
     block.mixHash,
-    '0x0000000000000000',
+    "0x0000000000000000",
     BigInt(block.baseFeePerGas),
     block.withdrawalsRoot,
     BigInt(block.blobGasUsed),

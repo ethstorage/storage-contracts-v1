@@ -1,7 +1,6 @@
 const hre = require("hardhat");
-const dotenv = require("dotenv")
-dotenv.config()
-
+const dotenv = require("dotenv");
+dotenv.config();
 
 let ownerAddress = null;
 let treasuryAddress = null;

@@ -4,9 +4,7 @@ pragma solidity ^0.8.20;
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 interface IProxyAdmin {
-    function upgradeAndCall(
-        ITransparentUpgradeableProxy proxy,
-        address implementation,
-        bytes memory data
-    ) external payable;
+    function upgradeAndCall(ITransparentUpgradeableProxy proxy, address implementation, bytes memory data)
+        external
+        payable;
 }

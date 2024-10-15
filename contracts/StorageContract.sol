@@ -84,7 +84,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Fund tracker for prepaid
     uint256 public accPrepaidAmount;
 
-    /// @notice Reentrancy lock 
+    /// @notice Reentrancy lock
     bool private transient locked;
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades

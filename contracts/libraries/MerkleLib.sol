@@ -74,12 +74,11 @@ library MerkleLib {
     }
 
     // Verify the if the hash of a chunk data is in the chunks
-    function verify(
-        bytes32 dataHash,
-        uint256 chunkIdx,
-        bytes32 root,
-        bytes32[] memory proofs
-    ) internal pure returns (bool) {
+    function verify(bytes32 dataHash, uint256 chunkIdx, bytes32 root, bytes32[] memory proofs)
+        internal
+        pure
+        returns (bool)
+    {
         bytes32 hash = dataHash;
         uint256 nChunkBits = proofs.length;
         require(chunkIdx < (1 << nChunkBits), "chunkId overflows");
@@ -95,11 +94,11 @@ library MerkleLib {
         return hash == root;
     }
 
-    function calculateRootWithProof(
-        bytes32 dataHash,
-        uint256 chunkIdx,
-        bytes32[] memory proofs
-    ) internal pure returns (bytes32) {
+    function calculateRootWithProof(bytes32 dataHash, uint256 chunkIdx, bytes32[] memory proofs)
+        internal
+        pure
+        returns (bytes32)
+    {
         bytes32 hash = dataHash;
         uint256 nChunkBits = proofs.length;
         require(chunkIdx < (1 << nChunkBits), "chunkId overflows");
@@ -115,12 +114,11 @@ library MerkleLib {
         return hash;
     }
 
-    function getProof(
-        bytes memory data,
-        uint256 chunkSize,
-        uint256 nChunkBits,
-        uint256 chunkIdx
-    ) internal pure returns (bytes32[] memory) {
+    function getProof(bytes memory data, uint256 chunkSize, uint256 nChunkBits, uint256 chunkIdx)
+        internal
+        pure
+        returns (bytes32[] memory)
+    {
         uint256 nChunks = 1 << nChunkBits;
         require(chunkIdx < nChunks, "index out of scope");
         bytes32[] memory nodes = new bytes32[](nChunks);
