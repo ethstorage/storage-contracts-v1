@@ -1,7 +1,7 @@
 # EthStorage Storage Contract
 
 ## Overview
-EthStorage is a modular and decentralized storage Layer 2 (L2) offering programmable key-value storage powered by data availability (DA).  It enables long-term DA solutions for Rollups and opens new possibilities for fully on-chain applications, such as games, social networks, and AI.
+EthStorage is a modular and decentralized storage layer 2 (L2) that offers programmable key-value storage powered by data availability (DA).  It enables long-term DA solutions for Rollups and opens new possibilities for fully on-chain applications, such as games, social networks, and AI.
 
 The EthStorage network consists of two main components:
  - **Storage contract on Ethereum L1**: Responsible for on-chain fee distribution and proof of storage verification.
@@ -46,7 +46,7 @@ To reduce gas costs, EthStorageContract2 performs a single verification, regardl
 ### EthStorageContractL2
 EthStorageContractL2 inherits from EthStorageContract2 and is designed for deployment on L2. While L1 BLOBs are currently inexpensive, Ethereum L1 execution costs remain high for many non-financial applications. Deploying the storage contract on L2 allows EthStorage to serve as a storage L3, offering lower storage costs for applications built on it. The L2 environment differs from L1, requiring two key modifications:
  - **Randomness source**: L2 doesn’t have a reliable random generator like L1’s RANDAO. To address this, L1 [blockhash](https://github.com/ethstorage/optimism/blob/cd66e3ab6fab1b736d07677e80d5b3f3e1401228/packages/contracts-bedrock/src/L2/L1Block.sol#L182) is bridged to L2 for verification.
- - **Rate limiting**: With lower execution costs, it becomes feasible to perform numerous key-value updates at minimal cost. To prevent potential DoS attacks, rate limiting is implemented.
+ - **Rate limiting**: With lower execution costs, it becomes feasible to perform numerous key-value updates at a reasonable cost. To prevent potential DoS attacks, rate limiting is implemented.
 
 ## Setup
  - Install foundry by following the [link](https://book.getfoundry.sh/getting-started/installation)
