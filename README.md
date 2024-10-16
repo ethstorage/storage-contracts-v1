@@ -29,7 +29,7 @@ DecentralizedKV is the top-level parent contract and provides the following core
 StorageContract inherits from DecentralizedKV and focuses on two main features:
  - Multiple storage [shards](https://docs.ethstorage.io/readme/key-terms#shard).
  - **A fair and efficient on-chain fee distribution system** for storage providers:
-    - **Fair**: Each replica is expected to receive 1/m fees.
+    - **Fair**: Each replica is expected to receive 1/m of the fees, where m is the total number of physical replicas.
     - **Efficient communication**: The protocol cost is O(1) within a target interval (e.g., 6 hours).
 More details on the fee distribution algorithm can be found in our [ESP report](https://docs.google.com/presentation/d/1zxbSTlIwe8ylifeS9bK0lKDRl5ALJfCm8lKCGbB98H0/edit#slide=id.g239a7f93be4_0_40)
 
