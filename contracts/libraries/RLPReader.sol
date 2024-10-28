@@ -2,9 +2,9 @@
 /*
  * @author Hamdi Allam hamdi.allam97@gmail.com
  * Please reach out with any questions or concerns
- * https://github.com/hamdiallam/Solidity-RLP/blob/e681e25a376dbd5426b509380bc03446f05d0f97/contracts/RLPReader.sol
+ * https://github.com/hamdiallam/Solidity-RLP/blob/0212f8e754471da67fc5387df7855f47f944f925/contracts/RLPReader.sol
  */
-pragma solidity ^0.8.0;
+pragma solidity >=0.5.10 <0.9.0;
 
 library RLPReader {
     uint8 constant STRING_SHORT_START = 0x80;
@@ -24,10 +24,10 @@ library RLPReader {
     }
 
     /*
-    * @dev Returns the next element in the iteration. Reverts if it has not next element.
-    * @param self The iterator.
-    * @return The next element in the iteration.
-    */
+     * @dev Returns the next element in the iteration. Reverts if it has not next element.
+     * @param self The iterator.
+     * @return The next element in the iteration.
+     */
     function next(Iterator memory self) internal pure returns (RLPItem memory) {
         require(hasNext(self));
 
@@ -39,18 +39,18 @@ library RLPReader {
     }
 
     /*
-    * @dev Returns true if the iteration has more elements.
-    * @param self The iterator.
-    * @return true if the iteration has more elements.
-    */
+     * @dev Returns true if the iteration has more elements.
+     * @param self The iterator.
+     * @return true if the iteration has more elements.
+     */
     function hasNext(Iterator memory self) internal pure returns (bool) {
         RLPItem memory item = self.item;
         return self.nextPtr < item.memPtr + item.len;
     }
 
     /*
-    * @param item RLP encoded bytes
-    */
+     * @param item RLP encoded bytes
+     */
     function toRlpItem(bytes memory item) internal pure returns (RLPItem memory) {
         uint256 memPtr;
         assembly {
@@ -61,10 +61,10 @@ library RLPReader {
     }
 
     /*
-    * @dev Create an iterator. Reverts if item is not a list.
-    * @param self The RLP item.
-    * @return An 'Iterator' over the item.
-    */
+     * @dev Create an iterator. Reverts if item is not a list.
+     * @param self The RLP item.
+     * @return An 'Iterator' over the item.
+     */
     function iterator(RLPItem memory self) internal pure returns (Iterator memory) {
         require(isList(self));
 
@@ -73,8 +73,8 @@ library RLPReader {
     }
 
     /*
-    * @param the RLP item.
-    */
+     * @param the RLP item.
+     */
     function rlpLen(RLPItem memory item) internal pure returns (uint256) {
         return item.len;
     }
@@ -91,16 +91,16 @@ library RLPReader {
     }
 
     /*
-    * @param the RLP item.
-    */
+     * @param the RLP item.
+     */
     function payloadLen(RLPItem memory item) internal pure returns (uint256) {
         (, uint256 len) = payloadLocation(item);
         return len;
     }
 
     /*
-    * @param the RLP item containing the encoded list.
-    */
+     * @param the RLP item containing the encoded list.
+     */
     function toList(RLPItem memory item) internal pure returns (RLPItem[] memory) {
         require(isList(item));
 
@@ -128,9 +128,7 @@ library RLPReader {
             byte0 := byte(0, mload(memPtr))
         }
 
-        if (byte0 < LIST_SHORT_START) {
-            return false;
-        }
+        if (byte0 < LIST_SHORT_START) return false;
         return true;
     }
 
@@ -215,7 +213,7 @@ library RLPReader {
         assembly {
             result := mload(memPtr)
 
-            // shift to the correct location if necessary
+            // shift to the correct location if neccesary
             if lt(len, 32) { result := div(result, exp(256, sub(32, len))) }
         }
 
@@ -252,8 +250,8 @@ library RLPReader {
     }
 
     /*
-    * Private Helpers
-    */
+     * Private Helpers
+     */
 
     // @return number of payload items inside an encoded list.
     function numItems(RLPItem memory item) private pure returns (uint256) {
@@ -317,9 +315,8 @@ library RLPReader {
             return 0;
         } else if (byte0 < STRING_LONG_START || (byte0 >= LIST_SHORT_START && byte0 < LIST_LONG_START)) {
             return 1;
-        } else if (
-            byte0 < LIST_SHORT_START // being explicit
-        ) {
+        } else if (byte0 < LIST_SHORT_START) {
+            // being explicit
             return byte0 - (STRING_LONG_START - 1) + 1;
         } else {
             return byte0 - (LIST_LONG_START - 1) + 1;
@@ -327,10 +324,10 @@ library RLPReader {
     }
 
     /*
-    * @param src Pointer to source
-    * @param dest Pointer to destination
-    * @param len Amount of memory to copy from the source
-    */
+     * @param src Pointer to source
+     * @param dest Pointer to destination
+     * @param len Amount of memory to copy from the source
+     */
     function copy(uint256 src, uint256 dest, uint256 len) private pure {
         if (len == 0) return;
 
