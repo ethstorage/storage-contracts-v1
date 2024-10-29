@@ -18,7 +18,7 @@
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity 0.8.28;
 
 contract Decoder2 {
     // Scalar field size
