@@ -118,6 +118,7 @@ async function updateContract() {
     startTime, // startTime
     storageCost,
     dcfFactor,
+    updateLimit,
     { gasPrice: gasPrice }
   );
   await implContract.deployed();
