@@ -13,7 +13,7 @@ jobs:
           pkg-manager: npm
       - run:
           name: Run tests
-          command: npm run test
+          command: npx hardhat test
   deploy:
     # This is an example deploy job, not actually used by the workflow
     docker:
