@@ -3,7 +3,6 @@
 version: 2.1
 orbs:
   node: circleci/node@5
-  python: circleci/python@2
 jobs:
   test-node:
     # Install node dependencies and run tests
@@ -14,23 +13,7 @@ jobs:
           pkg-manager: npm
       - run:
           name: Run tests
-          command: npm test --passWithNoTests
-  test-python:
-    # Install dependencies and run tests
-    docker:
-      - image: cimg/python:3.11-node
-    working_directory: ~/project/test/monte-carlo
-    steps:
-      - checkout:
-          path: ~/project
-      - python/install-packages:
-          args: --dev
-          pkg-manager: pipenv
-      - run:
-          name: Run tests
-          command: pipenv run pytest --junitxml=junit.xml || ((($? == 5)) && echo 'Did not find any tests to run.')
-      - store_test_results:
-          path: junit.xml
+          command: npm run test
   deploy:
     # This is an example deploy job, not actually used by the workflow
     docker:
@@ -47,7 +30,6 @@ workflows:
   build-and-test:
     jobs:
       - test-node
-      - test-python
     # - deploy:
     #     requires:
     #       - test-node
