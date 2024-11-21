@@ -5,6 +5,12 @@ import "forge-std/Test.sol";
 import "./TestEthStorageContractL2.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
+contract SoulGasToken {
+    function chargeFromOrigin(uint256 _amount) external pure returns (uint256) {
+        return _amount;
+    }
+}
+
 contract EthStorageContractL2Test is Test {
     uint256 constant STORAGE_COST = 0;
     uint256 constant SHARD_SIZE_BITS = 19;
@@ -75,5 +81,52 @@ contract EthStorageContractL2Test is Test {
         assertEq(storageContract.getBlockLastUpdate(), 10001);
         vm.expectRevert("EthStorageContractL2: exceeds update rate limit");
         storageContract.putBlobs(keys, blobIdxs, lengths);
+    }
+
+    function testSGTPayment() public {
+        TestEthStorageContractL2 imp = new TestEthStorageContractL2(
+            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0),
+            block.timestamp,
+            1500000000000000,
+            0,
+            UPDATE_LIMIT
+        );
+        bytes memory data = abi.encodeWithSelector(
+            storageContract.initialize.selector, 0, PREPAID_AMOUNT, 0, address(0x1), address(0x1)
+        );
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
+
+        TestEthStorageContractL2 l2Contract = TestEthStorageContractL2(address(proxy));
+
+        uint256 size = 6;
+        bytes32[] memory hashes = new bytes32[](size);
+        bytes32[] memory keys = new bytes32[](size);
+        uint256[] memory blobIdxs = new uint256[](size);
+        uint256[] memory lengths = new uint256[](size);
+        for (uint256 i = 0; i < size; i++) {
+            keys[i] = bytes32(uint256(i));
+            hashes[i] = bytes32(uint256((i + 1) << 64));
+            blobIdxs[i] = i;
+            lengths[i] = 10 + i * 10;
+        }
+        vm.blobhashes(hashes);
+
+        vm.expectRevert("StorageContract: not enough batch payment");
+        l2Contract.putBlobs{value: 1500000000000000 * 5}(keys, blobIdxs, lengths);
+
+        l2Contract.putBlobs{value: 1500000000000000 * 6}(keys, blobIdxs, lengths);
+
+        SoulGasToken sgt = new SoulGasToken();
+        vm.prank(owner);
+        l2Contract.setSoulGasToken(address(sgt));
+
+        for (uint256 i = 0; i < size; i++) {
+            keys[i] = bytes32(uint256(i + 6));
+            hashes[i] = bytes32(uint256((i + 1) << 64));
+            blobIdxs[i] = i;
+            lengths[i] = 10 + i * 10;
+        }
+        vm.blobhashes(hashes);
+        l2Contract.putBlobs(keys, blobIdxs, lengths);
     }
 }
