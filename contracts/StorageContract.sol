@@ -175,7 +175,7 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @notice Upfront payment for a batch insertion
-    function _upfrontPaymentInBatch(uint256 _kvEntryCount, uint256 _batchSize) private view returns (uint256) {
+    function _upfrontPaymentInBatch(uint256 _kvEntryCount, uint256 _batchSize) internal view returns (uint256) {
         uint256 shardId = _kvEntryCount >> SHARD_ENTRY_BITS;
         uint256 totalEntries = _kvEntryCount + _batchSize; // include the batch to be put
         uint256 totalPayment = 0;
