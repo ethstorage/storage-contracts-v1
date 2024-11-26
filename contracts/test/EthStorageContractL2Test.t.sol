@@ -111,7 +111,7 @@ contract EthStorageContractL2Test is Test {
         }
         vm.blobhashes(hashes);
 
-        vm.expectRevert("StorageContract: not enough batch payment");
+        vm.expectRevert("EthStorageContractL2: not enough batch payment");
         l2Contract.putBlobs{value: 1500000000000000 * 5}(keys, blobIdxs, lengths);
 
         l2Contract.putBlobs{value: 1500000000000000 * 6}(keys, blobIdxs, lengths);

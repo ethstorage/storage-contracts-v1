@@ -69,7 +69,7 @@ contract EthStorageContractL2 is EthStorageContract2 {
         if (soulGasToken != address(0)) {
             sgtCharged = ISoulGasToken(soulGasToken).chargeFromOrigin(totalPayment);
         }
-        require(msg.value >= totalPayment - sgtCharged, "StorageContract: not enough batch payment");
+        require(msg.value >= totalPayment - sgtCharged, "EthStorageContractL2: not enough batch payment");
 
         uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id after the batch
         if (shardId > (kvEntryCountPrev >> SHARD_ENTRY_BITS)) {
