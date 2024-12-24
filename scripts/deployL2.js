@@ -16,7 +16,7 @@ const config = [
   32, // diffAdjDivisor
   100, // treasuryShare, means 1%
 ];
-const storageCost = 1500000000000000; // storageCost - 1,500,000Gwei forever per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
+const storageCost = 570000000000000000n; // storage cost per blob - https://ethresear.ch/t/ethstorage-scaling-ethereum-storage-via-l2-and-da/14223/6#incentivization-for-storing-m-physical-replicas-1
 const dcfFactor = 340282366367469178095360967382638002176n; // dcfFactor, it mean 0.95 for yearly discount
 const updateLimit = 90; // 45 blobs/s according to sync/encoding test, times block interval of L2
 
@@ -53,7 +53,7 @@ async function deployContract() {
 
   const data = implContract.interface.encodeFunctionData("initialize", [
     94371840, // minimumDiff 0.1 * 3 * 3600 * 1024 * 1024 / 12 = 94371840 for 0.1 replicas that can have 1M IOs in one epoch
-    3145728000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 1500000Gwei, it also means 3145 ETH for half of the shard
+    1195376640000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 570000000000000000, it also means around 1,2000,000 QKC for half of the shard
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
     treasuryAddress, // treasury
     ownerAddress,
@@ -74,9 +74,9 @@ async function deployContract() {
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
   );
 
-  // fund 50 qkc into the storage contract to give reward for empty mining
+  // fund 5000 qkc into the storage contract to give reward for empty mining
   const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("50") });
+  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("5000") });
   await tx.wait();
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 
