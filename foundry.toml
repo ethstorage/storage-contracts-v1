@@ -5,3 +5,4 @@ libs = ['node_modules', 'lib']
 test = 'test'
 cache_path = 'cache_forge'
 evm_version = 'cancun'
+solc_version = "0.8.28"

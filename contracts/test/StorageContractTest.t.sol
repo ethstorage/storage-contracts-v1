@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity 0.8.28;
 
 import "./TestStorageContract.sol";
 import "../StorageContract.sol";
@@ -145,7 +145,7 @@ contract StorageContractTest is Test {
         bytes[] memory _inclusiveProofs = new bytes[](0);
         bytes[] memory _decodeProof = new bytes[](0);
         // currently this error is not reachable on github server
-        // vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
+        // vm.expectRevert("StorageContract: reentrancy attempt!");
         vm.expectRevert();
         storageContract.mine(
             _blockNum,

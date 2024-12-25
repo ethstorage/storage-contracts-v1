@@ -166,16 +166,16 @@ class TestState {
 
     const abiCoder = new ethers.utils.AbiCoder();
     const decodeProofData = abiCoder.encode(
-        ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
-        [decodeProof]
+      ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
+      [decodeProof]
     );
     const inclusiveProofData = abiCoder.encode(
-        ["tuple(bytes32, bytes32, bytes32[])"],
-        [[decodedSampleData, root, merkleProof]]
+      ["tuple(bytes32, bytes32, bytes32[])"],
+      [[decodedSampleData, root, merkleProof]]
     );
     return {
       decodeProof: decodeProofData,
-      inclusiveProof: inclusiveProofData
+      inclusiveProof: inclusiveProofData,
     };
   }
 

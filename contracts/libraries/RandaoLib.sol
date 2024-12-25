@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 import "./RLPReader.sol";
 
@@ -27,10 +27,11 @@ library RandaoLib {
     /// @param _headerHash The hash of the header
     /// @param _headerRlpBytes The RLP data of the header
     /// @return The Randao mixDigest
-    function verifyHeaderAndGetRandao(
-        bytes32 _headerHash,
-        bytes memory _headerRlpBytes
-    ) internal pure returns (bytes32) {
+    function verifyHeaderAndGetRandao(bytes32 _headerHash, bytes memory _headerRlpBytes)
+        internal
+        pure
+        returns (bytes32)
+    {
         RLPReader.RLPItem memory item = _headerRlpBytes.toRlpItem();
         require(_headerHash == item.rlpBytesKeccak256(), "RandaoLib: header hash mismatch");
         return getRandaoFromHeader(item);

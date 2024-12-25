@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "./libraries/MerkleLib.sol";
 import "./libraries/BinaryRelated.sol";
 
@@ -9,7 +9,7 @@ import "./libraries/BinaryRelated.sol";
 /// @title DecentralizedKV
 /// @notice The DecentralizedKV is a top base contract for the EthStorage contract. It provides the
 ///         basic key-value store functionalities.
-contract DecentralizedKV is OwnableUpgradeable {
+contract DecentralizedKV is Ownable2StepUpgradeable {
     /// @notice Represents the metadata of the key-value .
     /// @custom:field kvIdx  Internal address seeking.
     /// @custom:field kvSize BLOB size.

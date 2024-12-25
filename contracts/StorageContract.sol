@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
-// TODO: upgrade OpenZeppelin to next release and import "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol"
-import "./libraries/ReentrancyGuardTransient.sol";
 import "./DecentralizedKV.sol";
 import "./libraries/MiningLib.sol";
 import "./libraries/RandaoLib.sol";
@@ -10,7 +8,7 @@ import "./libraries/RandaoLib.sol";
 /// @custom:upgradeable
 /// @title StorageContract
 /// @notice EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification
-abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
+abstract contract StorageContract is DecentralizedKV {
     /// @notice Represents the configuration of the storage contract.
     /// @custom:field maxKvSizeBits  Maximum size of a single key-value pair.
     /// @custom:field shardSizeBits  Storage shard size.
@@ -86,6 +84,9 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     /// @notice Fund tracker for prepaid
     uint256 public accPrepaidAmount;
 
+    /// @notice Reentrancy lock
+    bool private transient locked;
+
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     /// @notice Emitted when a block is mined.
@@ -103,6 +104,15 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
         address miner,
         uint256 minerReward
     );
+
+    modifier nonReentrant() {
+        require(!locked, "StorageContract: reentrancy attempt!");
+        locked = true;
+        _;
+        // Unlocks the guard, making the pattern composable.
+        // After the function exits, it can be called again, even in the same transaction.
+        locked = false;
+    }
 
     /// @notice Constructs the StorageContract contract. Initializes the storage config.
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
@@ -165,7 +175,7 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
     }
 
     /// @notice Upfront payment for a batch insertion
-    function _upfrontPaymentInBatch(uint256 _kvEntryCount, uint256 _batchSize) private view returns (uint256) {
+    function _upfrontPaymentInBatch(uint256 _kvEntryCount, uint256 _batchSize) internal view returns (uint256) {
         uint256 shardId = _kvEntryCount >> SHARD_ENTRY_BITS;
         uint256 totalEntries = _kvEntryCount + _batchSize; // include the batch to be put
         uint256 totalPayment = 0;
@@ -250,7 +260,7 @@ abstract contract StorageContract is DecentralizedKV, ReentrancyGuardTransient {
         // Actually `transfer` is limited by the amount of gas allocated, which is not sufficient to enable reentrancy attacks.
         // However, this behavior may restrict the extensibility of scenarios where the receiver is a contract that requires
         // additional gas for its fallback functions of proper operations.
-        // Therefore, we use `ReentrancyGuard` in case `call` replaces `transfer` in the future.
+        // Therefore, we still use a reentrancy guard (`nonReentrant`) in case `call` replaces `transfer` in the future.
         payable(_miner).transfer(minerReward);
         emit MinedBlock(_shardId, _diff, infos[_shardId].blockMined, _minedTs, _miner, minerReward);
     }

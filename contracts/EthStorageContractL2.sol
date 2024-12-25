@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 import "./EthStorageContract2.sol";
 
@@ -20,6 +20,12 @@ interface IL1Block {
     function timestamp() external view returns (uint64);
 }
 
+/// @title ISoulGasToken
+/// @notice Interface for the SoulGasToken contract.
+interface ISoulGasToken {
+    function chargeFromOrigin(uint256 _amount) external returns (uint256);
+}
+
 /// @custom:proxied
 /// @title EthStorageContractL2
 /// @notice EthStorage contract that will be deployed on L2, and uses L1Block contract to mine.
@@ -36,6 +42,9 @@ contract EthStorageContractL2 is EthStorageContract2 {
     /// @notice A slot to store both `blockLastUpdate` (left 224) and `blobsUpdated` (right 32)
     uint256 internal updateState;
 
+    /// @notice The address of the soul gas token.
+    address public soulGasToken;
+
     /// @notice Constructs the EthStorageContractL2 contract.
     constructor(
         Config memory _config,
@@ -45,6 +54,28 @@ contract EthStorageContractL2 is EthStorageContract2 {
         uint256 _updateLimit
     ) EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor) {
         UPDATE_LIMIT = _updateLimit;
+    }
+
+    /// @notice Set the soul gas token address for the contract.
+    function setSoulGasToken(address _soulGasToken) external onlyOwner {
+        soulGasToken = _soulGasToken;
+    }
+
+    /// @inheritdoc StorageContract
+    function _checkAppend(uint256 _batchSize) internal virtual override {
+        uint256 kvEntryCountPrev = kvEntryCount - _batchSize; // kvEntryCount already increased
+        uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
+        uint256 sgtCharged = 0;
+        if (soulGasToken != address(0)) {
+            sgtCharged = ISoulGasToken(soulGasToken).chargeFromOrigin(totalPayment);
+        }
+        require(msg.value >= totalPayment - sgtCharged, "EthStorageContractL2: not enough batch payment");
+
+        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id after the batch
+        if (shardId > (kvEntryCountPrev >> SHARD_ENTRY_BITS)) {
+            // Open a new shard and mark the shard is ready to mine.
+            infos[shardId].lastMineTime = _blockTs();
+        }
     }
 
     /// @notice Get the current block number
