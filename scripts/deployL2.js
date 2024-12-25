@@ -53,7 +53,7 @@ async function deployContract() {
 
   const data = implContract.interface.encodeFunctionData("initialize", [
     94371840, // minimumDiff 0.1 * 3 * 3600 * 1024 * 1024 / 12 = 94371840 for 0.1 replicas that can have 1M IOs in one epoch
-    1195376640000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 570000000000000000, it also means around 1,2000,000 QKC for half of the shard
+    1195376640000000000000000n, // prepaidAmount - 50% * 2^39 / 131072 * 570000000000000000, it also means around 1,200,000 QKC for half of the shard
     1048576, // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
     treasuryAddress, // treasury
     ownerAddress,
