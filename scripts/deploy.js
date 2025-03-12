@@ -79,7 +79,7 @@ async function deployContract() {
   console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
 
   // verify contract
-  await verifyContract(ethStorageProxy.address);
+  await verifyContract(ethStorageProxy.address, [impl, ownerAddress, data]);
   await verifyContract(impl, [config, startTime, storageCost, dcfFactor]);
 }
 
