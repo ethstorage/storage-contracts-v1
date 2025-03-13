@@ -1,5 +1,5 @@
 name: UT
-run-name: ${{ github.actor }} is push code to main 🚀
+run-name: ${{ github.actor }} is pushing code to ${{ github.repository }} 🚀
 on:
   pull_request:
     branches:
@@ -14,7 +14,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: 18
 
       - name: Install dependencies
         run: npm install
