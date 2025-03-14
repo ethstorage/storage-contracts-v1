@@ -1,5 +1,5 @@
 name: UT
-run-name: ${{ github.actor }} is push code to main 🚀
+run-name: ${{ github.actor }} is pushing code to ${{ github.repository }} 🚀
 on:
   pull_request:
     branches:
@@ -9,12 +9,12 @@ jobs:
     name: unit test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: 18
 
       - name: Install dependencies
         run: npm install
@@ -22,7 +22,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: stable
 
       - name: Install forge-std
         run: git submodule init && git submodule update
