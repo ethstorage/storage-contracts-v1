@@ -176,10 +176,10 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Upfront payment for a batch insertion
     function _upfrontPaymentInBatch(uint256 _kvEntryCount, uint256 _batchSize) internal view returns (uint256) {
-        uint256 shardId = _kvEntryCount >> SHARD_ENTRY_BITS;
+        uint256 shardId = getShardId(_kvEntryCount);
         uint256 totalEntries = _kvEntryCount + _batchSize; // include the batch to be put
         uint256 totalPayment = 0;
-        if ((totalEntries >> SHARD_ENTRY_BITS) > shardId) {
+        if (getShardId(totalEntries) > shardId) {
             uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
             totalPayment += _upfrontPayment(_blockTs()) * kvCountNew;
             totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
@@ -195,8 +195,8 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
         require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
 
-        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id after the batch
-        if (shardId > (kvEntryCountPrev >> SHARD_ENTRY_BITS)) {
+        uint256 shardId = getShardId(kvEntryCount); // shard id after the batch
+        if (shardId > getShardId(kvEntryCountPrev)) {
             // Open a new shard and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
             infos[shardId].lastMineTime = _blockTs();
@@ -278,7 +278,7 @@ abstract contract StorageContract is DecentralizedKV {
         returns (bool, uint256, uint256, uint256)
     {
         MiningLib.MiningInfo storage info = infos[_shardId];
-        uint256 lastShardIdx = kvEntryCount > 0 ? (kvEntryCount - 1) >> SHARD_ENTRY_BITS : 0;
+        uint256 lastShardIdx = getShardId(kvEntryCount);
         bool updatePrepaidTime = false;
         uint256 prepaidAmountSaved = 0;
         uint256 reward = 0;
@@ -480,5 +480,9 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Return the treasury share.
     function treasuryShare() public view returns (uint256) {
         return TREASURY_SHARE;
+    }
+
+    function getShardId(uint256 _kvEntryCount) internal view returns (uint256) {
+        return _kvEntryCount > 0 ? (_kvEntryCount - 1) >> SHARD_ENTRY_BITS : 0;
     }
 }

@@ -71,8 +71,8 @@ contract EthStorageContractL2 is EthStorageContract2 {
         }
         require(msg.value >= totalPayment - sgtCharged, "EthStorageContractL2: not enough batch payment");
 
-        uint256 shardId = kvEntryCount >> SHARD_ENTRY_BITS; // shard id after the batch
-        if (shardId > (kvEntryCountPrev >> SHARD_ENTRY_BITS)) {
+        uint256 shardId = getShardId(kvEntryCount); // shard id after the batch
+        if (shardId > getShardId(kvEntryCountPrev)) {
             // Open a new shard and mark the shard is ready to mine.
             infos[shardId].lastMineTime = _blockTs();
         }
