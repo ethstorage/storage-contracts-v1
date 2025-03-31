@@ -10,13 +10,14 @@ contract EthStorageContractTest is Test {
     uint256 constant SHARD_SIZE_BITS = 19;
     uint256 constant MAX_KV_SIZE = 17;
     uint256 constant PREPAID_AMOUNT = 2 * STORAGE_COST;
+    uint256 constant START_TIME = 123;
 
     TestEthStorageContract storageContract;
     address owner = address(0x1);
 
     function setUp() public {
         TestEthStorageContract imp = new TestEthStorageContract(
-            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0
+            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), START_TIME, STORAGE_COST, 0
         );
         bytes memory data = abi.encodeWithSelector(
             storageContract.initialize.selector, 0, PREPAID_AMOUNT, 0, address(0x1), address(0x1)
@@ -108,6 +109,8 @@ contract EthStorageContractTest is Test {
             blobIdxs[i] = i;
             lengths[i] = 10 + i * 10;
         }
+        // Increase block height
+        vm.warp(START_TIME + 12);
 
         uint256 sufficientCost = storageContract.upfrontPaymentInBatch(size);
         uint256 insufficientCost = sufficientCost - 1;
@@ -119,5 +122,69 @@ contract EthStorageContractTest is Test {
         // Enough storage cost
         storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
         assertEq(storageContract.kvEntryCount(), size);
+    }
+
+    function testPutBlobNewShard() public {
+        // Shard 0 is initialized once deployed
+        (uint256 lastMined,,) = storageContract.infos(0);
+        assertEq(lastMined, START_TIME);
+
+        // Increase block
+        vm.warp(START_TIME + 12);
+
+        // Put 3 blobs
+        uint256 size = 3;
+        bytes32[] memory keys = new bytes32[](size);
+        uint256[] memory blobIdxs = new uint256[](size);
+        uint256[] memory lengths = new uint256[](size);
+        for (uint256 i = 0; i < size; i++) {
+            keys[i] = bytes32(uint256(i));
+            blobIdxs[i] = i;
+            lengths[i] = 10 + i * 10;
+        }
+        uint256 sufficientCost = storageContract.upfrontPaymentInBatch(size);
+        storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
+        assertEq(storageContract.kvEntryCount(), size);
+
+        // Shard 1 is not initialized yet after 3 blobs put
+        (lastMined,,) = storageContract.infos(1);
+        assertEq(lastMined, 0);
+
+        // Put one more blob will increase shard
+        storageContract.putBlob{value: storageContract.upfrontPayment()}(bytes32(uint256(3)), 3, 30);
+        assertEq(storageContract.kvEntryCount(), 4);
+        (lastMined,,) = storageContract.infos(1);
+        assertEq(lastMined, START_TIME + 12);
+
+        // Increase block
+        vm.warp(START_TIME + 12 + 12);
+
+        // Put one more blob will not change the timestamp
+        storageContract.putBlob{value: storageContract.upfrontPayment()}(bytes32(uint256(4)), 4, 40);
+        assertEq(storageContract.kvEntryCount(), 5);
+        (lastMined,,) = storageContract.infos(1);
+        assertEq(lastMined, START_TIME + 12);
+    }
+
+    // // Put 4 blobs into shard0 will init shard1
+    function testPutBlobsNewShard() public {
+        vm.warp(START_TIME + 12);
+
+        uint256 size = 4;
+        bytes32[] memory keys = new bytes32[](size);
+        uint256[] memory blobIdxs = new uint256[](size);
+        uint256[] memory lengths = new uint256[](size);
+        for (uint256 i = 0; i < size; i++) {
+            keys[i] = bytes32(uint256(i));
+            blobIdxs[i] = i;
+            lengths[i] = 10 + i * 10;
+        }
+        uint256 sufficientCost = storageContract.upfrontPaymentInBatch(size);
+        storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
+        assertEq(storageContract.kvEntryCount(), size);
+
+        // Shard 1 is initialized yet after 4 blobs put
+        (uint256 lastMined,,) = storageContract.infos(1);
+        assertEq(lastMined, START_TIME + 12);
     }
 }
