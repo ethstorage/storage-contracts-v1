@@ -1,5 +1,5 @@
 require("dotenv").config();
-require("@nomiclabs/hardhat-etherscan");
+require("@nomicfoundation/hardhat-verify");
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
 require("@nomicfoundation/hardhat-foundry");
@@ -83,7 +83,20 @@ module.exports = {
     currency: "USD",
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: {
+      "sepolia": process.env.ETHERSCAN_API_KEY,
+      "qkc_testnet": "empty",
+    },
+    customChains: [
+      {
+        network: "qkc_testnet",
+        chainId: 3335,
+        urls: {
+          apiURL: "https://explorer.beta.testnet.l2.quarkchain.io/api",
+          browserURL: "https://explorer.beta.testnet.l2.quarkchain.io"
+        }
+      }
+    ]
   },
   mocha: {
     grep: process.env.MOCHA_GREP || "",
@@ -99,4 +112,7 @@ module.exports = {
       evmVersion: "cancun",
     },
   },
+  sourcify: {
+    enabled: false
+  }
 };
