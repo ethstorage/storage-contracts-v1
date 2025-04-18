@@ -59,5 +59,6 @@ Smart contracts should be written according to this [STYLE_GUIDE.md](https://git
 
 ## How to verify the contract
 
-- Implementation: npx hardhat verify --network sepolia <contract address>
-- Proxy: npx hardhat verify --network sepolia --constructor-args arguments.js <contract address>
+For QuarkChain Layer 2 which is using the blockscout, we will use the following command to verify:
+- Implementation: npx hardhat verify --network qkc_testnet <impl-addr> --constructor-args args.js
+- Proxy: npx hardhat verify --force --network qkc_testnet <proxy-addr> <impl-addr> <owner-addr> <data>
