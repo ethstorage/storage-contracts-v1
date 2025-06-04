@@ -31,6 +31,9 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice 64 blocks
     uint8 internal constant MAX_L1_MINING_DRIFT = 64;
 
+    /// @dev Role for whitelisted miners
+    bytes32 public constant MINER_ROLE = keccak256("MINER_ROLE");
+
     /// @notice Maximum size of a single key-value pair
     uint256 internal immutable MAX_KV_SIZE_BITS;
 
@@ -316,6 +319,7 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @notice Mine a block.
+    /// @dev Only addresses with MINER_ROLE can call this function.
     /// @param _blockNum     The block number.
     /// @param _shardId         The shard id.
     /// @param _miner           The miner address.
@@ -336,6 +340,7 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public virtual nonReentrant {
+        require(hasRole(MINER_ROLE, _miner), "StorageContract: miner not whitelisted");
         _mine(
             _blockNum, _shardId, _miner, _nonce, _encodedSamples, _masks, _randaoProof, _inclusiveProofs, _decodeProof
         );

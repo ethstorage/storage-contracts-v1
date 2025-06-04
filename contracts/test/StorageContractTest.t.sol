@@ -19,7 +19,7 @@ contract StorageContractTest is Test {
             STORAGE_COST,
             340282366367469178095360967382638002176
         );
-        storageContract.initialize(0, PREPAID_AMOUNT, 0, vm.addr(1), address(0x1));
+        storageContract.initialize(0, PREPAID_AMOUNT, 0, vm.addr(1), address(this));
     }
 
     function testMiningReward() public {
@@ -158,6 +158,37 @@ contract StorageContractTest is Test {
             _inclusiveProofs,
             _decodeProof
         );
+    }
+
+    function testMineWhitelisted() public {
+        address miner = address(0x2);
+        // MINER_ROLE is not granted to miner, so it should revert
+        vm.expectRevert("StorageContract: miner not whitelisted");
+        storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
+
+        // MINER_ROLE's admin role is DEFAULT_ADMIN_ROLE
+        bytes32 adminRole = storageContract.getRoleAdmin(storageContract.MINER_ROLE());
+        assertEq(adminRole, storageContract.DEFAULT_ADMIN_ROLE());
+
+        // Owner has DEFAULT_ADMIN_ROLE
+        address owner = storageContract.owner();
+        console.log("Owner address:", owner);
+        assertTrue(storageContract.hasRole(storageContract.DEFAULT_ADMIN_ROLE(), owner));
+
+        // So owner can grant MINER_ROLE to other address
+        vm.prank(owner);
+        storageContract.grantRole(storageContract.MINER_ROLE(), miner);
+
+        // Now miner has MINER_ROLE, so it can call mine function
+        storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
+
+        // revoking MINER_ROLE from miner
+        vm.prank(owner);
+        storageContract.revokeRole(storageContract.MINER_ROLE(), miner);
+
+        // Now miner doesn't have MINER_ROLE, so it should revert again
+        vm.expectRevert("StorageContract: miner not whitelisted");
+        storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
     }
 }
 
