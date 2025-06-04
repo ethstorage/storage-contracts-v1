@@ -190,6 +190,41 @@ contract StorageContractTest is Test {
         vm.expectRevert("StorageContract: miner not whitelisted");
         storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
     }
+
+    function testEnforceMinerRole() public {
+        address miner = vm.addr(2);
+
+        // EnforceMinerRole is enabled by default
+        vm.expectRevert("StorageContract: miner not whitelisted");
+        storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
+
+        // Grant MINER_ROLE to the miner
+        vm.prank(storageContract.owner());
+        storageContract.grantRole(storageContract.MINER_ROLE(), miner);
+
+        // Now miner can call mine without reverting
+        storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
+
+        // Disable enforceMinerRole
+        storageContract.setEnforceMinerRole(false);
+
+        // Even without MINER_ROLE, any random miner should now be able to mine
+        storageContract.mine(
+            1, 0, address(0x3), 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0)
+        );
+
+        // Re-enable enforceMinerRole
+        storageContract.setEnforceMinerRole(true);
+
+        // Now the random address without MINER_ROLE should revert
+        vm.expectRevert("StorageContract: miner not whitelisted");
+        storageContract.mine(
+            1, 0, address(0x3), 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0)
+        );
+
+        // But miner who has whitelisted before can still mine without reverting
+        storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
+    }
 }
 
 contract Attacker is Test {
