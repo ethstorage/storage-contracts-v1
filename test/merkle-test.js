@@ -3,17 +3,18 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const crypto = require("crypto");
 
-var hexlify4 = (x) => ethers.utils.hexZeroPad(ethers.utils.hexlify(x), 4);
+var hexlify4 = (x) => ethers.hexZeroPad(ethers.toBeHex(x), 4);
 describe("MerkleLib Test", function () {
   it("full zero data verify", async function () {
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let data = new Array(64 * 8).fill(0);
     let root = await ml.merkleRoot(data, 64, 3);
     for (let i = 0; i < 8; i++) {
-      let proof = await ml.getProof(data, 64, 3, i);
+      let proofImmutable = await ml.getProof(data, 64, 3, i);
+      let proof = [...proofImmutable];
       let chunkData = data.slice(i * 64, (i + 1) * 64);
       expect(await ml.verify(chunkData, i, root, proof)).to.equal(true);
     }
@@ -22,12 +23,13 @@ describe("MerkleLib Test", function () {
   it("full random data verify", async function () {
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let data = crypto.randomBytes(64 * 8);
     let root = await ml.merkleRoot(data, 64, 3);
     for (let i = 0; i < 8; i++) {
-      let proof = await ml.getProof(data, 64, 3, i);
+      let proofImmutable = await ml.getProof(data, 64, 3, i);
+      let proof = [...proofImmutable];
       let chunkData = data.slice(i * 64, (i + 1) * 64);
       expect(await ml.verify(chunkData, i, root, proof)).to.equal(true);
     }
@@ -37,25 +39,28 @@ describe("MerkleLib Test", function () {
     // 4K as chunk
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     const d = crypto.randomBytes(4096 * 2);
     const root = await ml.merkleRoot(d, 4096, 1);
-    const leftSliceProof = await ml.getProof(d, 4096, 1, 0);
+    const leftSliceProofImmutable = await ml.getProof(d, 4096, 1, 0);
+    let leftSliceProof = [...leftSliceProofImmutable];
     expect(await ml.verify(d.slice(0, 4096), 0, root, leftSliceProof)).to.be.true;
-    const rightSliceProof = await ml.getProof(d, 4096, 1, 1);
+    const rightSliceProofImmutable = await ml.getProof(d, 4096, 1, 1);
+    let rightSliceProof = [...rightSliceProofImmutable];
     expect(await ml.verify(d.slice(4096, 8192), 1, root, rightSliceProof)).to.be.true;
   });
 
   it("partial random data verify0", async function () {
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let data = crypto.randomBytes(8);
     let root = await ml.merkleRoot(data, 64, 3);
     for (let i = 0; i < 8; i++) {
-      let proof = await ml.getProof(data, 64, 3, i);
+      let proofImmutable = await ml.getProof(data, 64, 3, i);
+      let proof = [...proofImmutable];
       let chunkData = data.slice(i * 64, (i + 1) * 64);
       if (chunkData.length == 0) {
         break;
@@ -67,12 +72,13 @@ describe("MerkleLib Test", function () {
   it("partial random data verify1", async function () {
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let data = crypto.randomBytes(64 * 3 + 16);
     let root = await ml.merkleRoot(data, 64, 3);
     for (let i = 0; i < 8; i++) {
-      let proof = await ml.getProof(data, 64, 3, i);
+      let proofImmutable = await ml.getProof(data, 64, 3, i);
+      let proof = [...proofImmutable];
       let chunkData = data.slice(i * 64, (i + 1) * 64);
       if (chunkData.length == 0) {
         break;
@@ -84,12 +90,13 @@ describe("MerkleLib Test", function () {
   it("partial random data verify2", async function () {
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let data = crypto.randomBytes(64 * 6 + 48);
     let root = await ml.merkleRoot(data, 64, 3);
     for (let i = 0; i < 8; i++) {
-      let proof = await ml.getProof(data, 64, 3, i);
+      let proofImmutable = await ml.getProof(data, 64, 3, i);
+      let proof = [...proofImmutable];
       let chunkData = data.slice(i * 64, (i + 1) * 64);
       if (chunkData.length == 0) {
         break;
@@ -101,7 +108,7 @@ describe("MerkleLib Test", function () {
   it("gas for 4K chunk and 32K kv", async function () {
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     // await ml.merkleRootNoView(crypto.randomBytes(4096 * 8), 4096, 3);
     await ml.merkleRootNoView(crypto.randomBytes(4096), 4096, 3);
@@ -114,7 +121,7 @@ describe("MerkleLib Test", function () {
   it("should forbid illegal parameter", async function () {
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let data = crypto.randomBytes(64 * 6 + 48);
     let root = await ml.merkleRoot(data, 64, 3);
@@ -122,7 +129,8 @@ describe("MerkleLib Test", function () {
     // try to get a out-of-bound index proof
     await expect(ml.getProof(data, 64, 3, 10)).to.be.revertedWith("index out of scope");
 
-    let proof = await ml.getProof(data, 64, 3, 0);
+    let proofImmutable = await ml.getProof(data, 64, 3, 0);
+    let proof = [...proofImmutable];
     expect(await ml.verify(data.slice(0, 64), 0, root, proof)).to.equal(true);
     // out of bound index
     await expect(ml.verify(data.slice(0, 64), 8, root, proof)).to.be.revertedWith("chunkId overflows");
@@ -132,7 +140,7 @@ describe("MerkleLib Test", function () {
   it("check getMaxLeafsNum()", async function () {
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
-    await ml.deployed();
+    await ml.waitForDeployment();
 
     let leafsNum = await ml.getMaxLeafsNum(8192, 2048);
     expect(leafsNum).to.eq(4);
