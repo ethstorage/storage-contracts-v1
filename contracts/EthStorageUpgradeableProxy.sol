@@ -9,6 +9,10 @@ contract EthStorageUpgradeableProxy is TransparentUpgradeableProxy {
         TransparentUpgradeableProxy(_logic, initialOwner, _data)
     {}
 
+    receive() external payable virtual {
+        _fallback();
+    }
+
     function admin() public view virtual returns (address) {
         return ERC1967Utils.getAdmin();
     }
