@@ -308,9 +308,11 @@ describe("EthStorageContract Test", function () {
     let nextHash0 = await sc.getNextHash0(hash0, encodedSample);
     let nextMask = "0x2b089b15a828c57b3eb07108a7a36488f3430d1b478b499253d06e3367378342";
 
-    let [nextKvIdx, nextSampleIdxInKv, nextDecodedSample, nextEncodedSample] =
+    let [nextKvIdx, nextSampleIdxInKv, nextDecodedSampleBig, nextEncodedSampleBig] =
       await testState.getSampleIdxByHashWithMask(0, nextHash0, nextMask);
-    await testState.getMerkleProof(nextKvIdx, nextSampleIdxInKv, nextDecodedSample);
+    await testState.getMerkleProof(nextKvIdx, nextSampleIdxInKv, nextDecodedSampleBig);
+    let nextDecodedSample = ethers.toBeHex(nextDecodedSampleBig, 32);
+    let nextEncodedSample = ethers.toBeHex(nextEncodedSampleBig, 32);
     // calculate encoding key
     const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
     const nextDecodeProof = [

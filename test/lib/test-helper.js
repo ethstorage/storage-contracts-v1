@@ -76,7 +76,7 @@ class TestState {
       rootArray[i] = 0;
     }
     const encodingKey = ethers.keccak256(
-      abiCoder.encode(["bytes32", "address", "uint256"], [ethers.hexlify(rootArray), miner, kvIdx])
+      abiCoder.encode(["bytes32", "address", "uint256"], [ethers.hexlify(rootArray), miner, kvIdx]),
     );
     return encodingKey;
   }
@@ -118,7 +118,7 @@ class TestState {
     await callPythonToGenreateMask(
       encodingKey,
       sampleIdxInKvStr,
-      handlePyData(this.maskList, this.sampleIdxInKvRuList, this.encodingKeyModList)
+      handlePyData(this.maskList, this.sampleIdxInKvRuList, this.encodingKeyModList),
     );
     let Mask = this.getMask();
 
@@ -144,7 +144,7 @@ class TestState {
       let [encodingkey, sampleKvIdx, sampleIdxInKv, decodedSample, encodedSample] = await this.getSampleIdxByHash(
         startShardId,
         hash0,
-        miner
+        miner,
       );
       this.encodingKeyList.push(encodingkey);
       this.sampleKvIdxList.push(sampleKvIdx);
@@ -157,13 +157,26 @@ class TestState {
   }
 
   async getMerkleProof(sampleKvIdx, sampleIdxInKv, decodedSampleData) {
-    let blob = this.BlobMap.get(sampleKvIdx);
-    let chunkSize = 32;
-    let nChunkBits = 8; // 2^8 = 256  ==> 256 * 32 = 8096
-    let merkleProof = await this.MerkleLibContract.getProof(blob, chunkSize, nChunkBits, sampleIdxInKv);
-    const root = await this.MerkleLibContract.merkleRootMinTree(blob, 32);
-    expect(await this.MerkleLibContract.verify(decodedSampleData, sampleIdxInKv, root, merkleProof)).to.equal(true);
-    return [root, merkleProof];
+    let blob = this.BlobMap.get(Number(sampleKvIdx));
+    if (!blob) {
+      throw new Error(`No blob data found for kvIdx ${sampleKvIdx}`);
+    }
+    const chunkSize = 32;
+    const nChunkBits = 8; // 2^8 = 256  ==> 256 * 32 = 8096
+    try {
+      // Convert decodedSampleData to hex if it's a BigInt
+      const decodedSampleHex =
+        typeof decodedSampleData === "bigint" ? ethers.toBeHex(decodedSampleData, 32) : decodedSampleData;
+      const merkleProofImmutable = await this.MerkleLibContract.getProof(blob, chunkSize, nChunkBits, sampleIdxInKv);
+      let merkleProof = [...merkleProofImmutable];
+      const root = await this.MerkleLibContract.merkleRootMinTree(blob, chunkSize);
+      const verified = await this.MerkleLibContract.verify(decodedSampleHex, sampleIdxInKv, root, merkleProof);
+      expect(verified).to.equal(true);
+      return [root, merkleProof];
+    } catch (error) {
+      console.error("Error in getMerkleProof:", error);
+      throw error;
+    }
   }
 
   async getIntegrityProof(decodeProof, Mask, encodingKey, sampleKvIdx, sampleIdxInKv, decodedSampleData) {
@@ -173,11 +186,11 @@ class TestState {
     const abiCoder = new ethers.AbiCoder();
     const decodeProofData = abiCoder.encode(
       ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
-      [decodeProof]
+      [decodeProof],
     );
     const inclusiveProofData = abiCoder.encode(
       ["tuple(bytes32, bytes32, bytes32[])"],
-      [[decodedSampleData, root, merkleProof]]
+      [[decodedSampleData, root, merkleProof]],
     );
     return {
       decodeProof: decodeProofData,
@@ -221,7 +234,7 @@ class TestState {
         this.encodingKeyList[currentIndex],
         this.sampleKvIdxList[currentIndex],
         this.sampleIdxInKvList[currentIndex],
-        this.decodedSampleList[currentIndex]
+        this.decodedSampleList[currentIndex],
       );
       proofs.push(proof);
     }
