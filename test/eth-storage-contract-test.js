@@ -13,6 +13,7 @@ const key3 = "0x0000000000000000000000000000000000000000000000000000000000000003
 const ownerAddr = "0x0000000000000000000000000000000000000001";
 
 describe("EthStorageContract Test", function () {
+  this.timeout(300000);
 
   it("decode-8k-blob-test", async function () {
     const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
@@ -300,8 +301,8 @@ describe("EthStorageContract Test", function () {
     let decodedSampleBig = ethers.toBigInt(ethers.hexlify(sampleBytes));
     let decodedSample = ethers.toBeHex(decodedSampleBig);
 
-    let encodedSampleBig = ethers.toBigInt(mask) ^(decodedSampleBig);
-    let encodedSample = ethers.toBeHex(encodedSampleBig,32);
+    let encodedSampleBig = ethers.toBigInt(mask) ^ decodedSampleBig;
+    let encodedSample = ethers.toBeHex(encodedSampleBig, 32);
 
     // =================================== The Second Samples =================================
     let hash0 = "0x0000000000000000000000000000000000000000000000000000000000000054";
@@ -455,7 +456,7 @@ describe("EthStorageContract Test", function () {
     let bn = await ethers.provider.getBlockNumber();
     printlog("Mining at block height %d", bn);
 
-    const blockNumber = ethers.hexValue(bn);
+    const blockNumber = ethers.toBeHex(bn);
     const block = await ethers.provider.send('eth_getBlockByNumber', [blockNumber, false]);
     const randao = block.mixHash;
 
@@ -471,22 +472,25 @@ describe("EthStorageContract Test", function () {
       inclusiveProofs.push(proof.inclusiveProof);
       decodeProof.push(proof.decodeProof);
     }
-    let masks = testState.getMaskList();
+    const masks = testState.getMaskList();
+    const masksHex = masks.map((mask) => ethers.toBeHex(ethers.toBigInt(mask), 32));
+    const encoded = testState.getEncodedSampleList();
+    const encodedHex = encoded.map((sample) => ethers.toBeHex(ethers.toBigInt(sample), 32));
 
     expect(
       await sc.verifySamples(
         0, // shardIdx
         initHash0, // hash0
         miner,
-        testState.getEncodedSampleList(),
-        masks,
+        encodedHex,
+        masksHex,
         inclusiveProofs,
         decodeProof
       )
     ).to.equal(finalHash0);
 
     const encodedHeader = await generateRandaoProof(block);
-    const hash = keccak256(encodedHeader);
+    const hash = ethers.keccak256(encodedHeader);
     expect(hash).to.equal(block.hash);
 
     await sc.mine(
@@ -494,8 +498,8 @@ describe("EthStorageContract Test", function () {
       0,
       miner,
       0,
-      testState.getEncodedSampleList(),
-      masks,
+      encodedHex,
+      masksHex,
       encodedHeader,
       inclusiveProofs,
       decodeProof
