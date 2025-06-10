@@ -1,4 +1,3 @@
-const { web3 } = require("hardhat");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const crypto = require("crypto");
@@ -10,7 +9,7 @@ describe("MerkleLib Test", function () {
     const ml = await MerkleLib.deploy();
     await ml.waitForDeployment();
 
-    let data = new Array(64 * 8).fill(0);
+    let data = new Uint8Array(64 * 8).fill(0);
     let root = await ml.merkleRoot(data, 64, 3);
     for (let i = 0; i < 8; i++) {
       let proofImmutable = await ml.getProof(data, 64, 3, i);
