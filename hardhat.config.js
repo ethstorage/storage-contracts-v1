@@ -48,6 +48,7 @@ module.exports = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     qkc_testnet: {
+      timeout: 600000,
       url: process.env.QKC_TESTNET_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
@@ -68,10 +69,7 @@ module.exports = {
     currency: "USD",
   },
   etherscan: {
-    apiKey: {
-      "sepolia": process.env.ETHERSCAN_API_KEY,
-      "qkc_testnet": "empty",
-    },
+    apiKey: process.env.ETHERSCAN_API_KEY || "no-api-key-needed",
     customChains: [
       {
         network: "qkc_testnet",

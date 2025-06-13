@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e
+
+# Load environmental variables
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
+
+echo "Deploying contracts..."
+forge script script/DeployL2.s.sol \
+  --rpc-url "$QKC_TESTNET_URL" \
+  --private-key "$PRIVATE_KEY" \
+  --broadcast > deploy_output.txt
+
+START_TIME=$(grep "Start time:" deploy_output.txt | head -n1 | awk '{print $3}')
+IMPL_ADDRESS=$(grep "Implementation address:" deploy_output.txt | head -n1 | awk '{print $3}')
+PROXY_ADDRESS=$(grep "Proxy address:" deploy_output.txt | head -n1 | awk '{print $3}')
+
+echo "Implementation deployed at: $IMPL_ADDRESS"
+echo "Proxy deployed at: $PROXY_ADDRESS"
+
+echo "Verifying Implementation contract..."
+forge verify-contract "$IMPL_ADDRESS" contracts/EthStorageContractL2.sol:EthStorageContractL2 \
+  --constructor-args $(cast abi-encode "constructor(uint256[],uint256,uint256,uint256,uint256)" "[$MAX_KV_SIZE_BITS,$SHARD_SIZE_BITS,$RANDOM_CHECKS,$CUTOFF,$DIFF_ADJ_DIVISOR,$TREASURY_SHARE]" $START_TIME $STORAGE_COST $DCF_FACTOR $UPDATE_LIMIT) \
+  --rpc-url "$QKC_TESTNET_URL" \
+  --verifier-url "$BLOCKSCOUT_API_URL" \
+  --verifier blockscout \
+  --force \
+  --watch 
+
+echo "Verifying Proxy contract..."
+forge verify-contract "$PROXY_ADDRESS" contracts/EthStorageUpgradeableProxy.sol:EthStorageUpgradeableProxy \
+  --rpc-url "$QKC_TESTNET_URL" \
+  --verifier-url "$BLOCKSCOUT_API_URL" \
+  --verifier blockscout \
+  --force \
+  --watch 
+
+echo "Deployment and verification complete."
