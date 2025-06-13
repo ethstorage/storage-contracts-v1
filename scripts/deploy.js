@@ -39,6 +39,8 @@ async function deployContract() {
   treasuryAddress = deployerAddress;
 
   const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractKZG");
+  const bytecode = require('../artifacts/contracts/test/TestEthStorageContractKZG.sol/TestEthStorageContractKZG.json').deployedBytecode;
+  console.log('Runtime bytecode length (bytes):', bytecode.length / 2 - 1);
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
   const implContract = await StorageContract.deploy(
     config,

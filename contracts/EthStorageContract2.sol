@@ -42,7 +42,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
     /// @param _miner The miner address
     /// @param _decodeProof The zk proof for two sample decoding
     /// @return true if the proof is valid, false otherwise
-    function decodeSample(
+    function decodeSamples(
         uint256[] memory _masks,
         uint256[] memory _kvIdxs,
         uint256[] memory _sampleIdxs,
@@ -92,7 +92,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         return (_hash0, kvIdx, sampleIdxInKv);
     }
 
-    /// @inheritdoc EthStorageContract
+    /// @inheritdoc StorageContract
     function verifySamples(
         uint256 _startShardId,
         bytes32 _hash0,
@@ -116,7 +116,9 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
                 _checkSample(_startShardId, rows, _hash0, _encodedSamples[i], _masks[i], _inclusiveProofs[i]);
         }
 
-        require(decodeSample(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0]), "EthStorageContract2: decode failed");
+        require(
+            decodeSamples(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0]), "EthStorageContract2: decode failed"
+        );
         return _hash0;
     }
 }
