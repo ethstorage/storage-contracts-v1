@@ -27,7 +27,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
     /// @param _decodeProof The zk proof for multiple sample decoding
     /// @param _pubSignals The public signals for the zk proof
     /// @return true if the proof is valid, false otherwise
-    function _decodeSample(bytes calldata _decodeProof, uint256[6] memory _pubSignals) internal view returns (bool) {
+    function _decodeSamples(bytes calldata _decodeProof, uint256[6] memory _pubSignals) internal view returns (bool) {
         (uint256[2] memory pA, uint256[2][2] memory pB, uint256[2] memory pC) =
             abi.decode(_decodeProof, (uint256[2], uint256[2][2], uint256[2]));
         // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code'
@@ -49,7 +49,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         address _miner,
         bytes calldata _decodeProof
     ) public view returns (bool) {
-        return _decodeSample(
+        return _decodeSamples(
             _decodeProof,
             [
                 _getEncodingKey(_kvIdxs[0], _miner),
