@@ -1,6 +1,5 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { keccak256 } = ethers.utils;
 const { generateRandaoProof } = require("./lib/prover");
 
 
@@ -34,7 +33,7 @@ describe("Randao Test", function () {
     // Result = 0x84376d868db109d93e3062b04daa8a4f50e8ac872a0807eb740d306a395dc7d6
       const Randao = await ethers.getContractFactory("TestRandao");
       const rd = await Randao.deploy();
-      await rd.deployed();
+      await rd.waitForDeployment();
       let bh = "0x8576cd4900e56c1214e2f32fbb194c0ebddde8cffd243194187977583d712aa5"
       let proof = "0xf90232a00607c9891abee48a5d70948d61d41ef7cabe554a8dd1aec49c6322ba7e2fab25a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d493479495222290dd7278aa3ddd389cc1e1d165cc4bafe5a00f90554fb8e825ce12c6ad7f0d5564e0197d6b41b4d6cf2a65175373795ef1faa0ce8641939cdf1811521940f78609856d43a8eaf4e7b5c0a48e24c242cd57ec4ba052c2389675794511f8787f7a999019d9bfe9bfa9c6ec3b8544592241387d52aab9010010a1d45047215b70ca08a790aa40920729bb9280ea453316106f832056a109a0193404ed0c01026300305933a870495813258a488813a4b8669d4644c0682180910ab60909c48d0a6b83c04e022c34f06199085db4fe19811143e213c832cd7209850550260ec14204c22a0c64646f020a30a8c01e008400c61621d4420850566032045603891962784d03d201620734430308930fb9130804c201437b700c622f43b1da4c80600365c04c86f8800cc40602a42103bc00222131a90601ce040055044e035af412610422ba2310c80a4c2dc023729669081405df1546c10120130098e001394c0102286c50252810ad44dea07930211814440a009c3c80630c218084012212498401c9c38083b7c8408465a4bef38f6265617665726275696c642e6f7267a084376d868db109d93e3062b04daa8a4f50e8ac872a0807eb740d306a395dc7d68800000000000000008503e34e2411a03e72aaa4c11c1c04da24b4e2e40709b8a0795e877997921ab5806acd890c1054"
       let randao = await rd.verifyHeaderAndGetRandao(bh, proof);
@@ -43,7 +42,7 @@ describe("Randao Test", function () {
 
     it("blockNumber verify", async function () {
       let bn = await ethers.provider.getBlockNumber();
-      const blockNumber = ethers.utils.hexValue(bn);
+      const blockNumber = ethers.toBeHex(bn);
       const block = await ethers.provider.send('eth_getBlockByNumber', [blockNumber, false]);
       
       // assert it is a cancun block
@@ -52,12 +51,12 @@ describe("Randao Test", function () {
       expect(block.parentBeaconBlockRoot).to.exist;
  
       const encodedHeader = await generateRandaoProof(block);
-      const hash = keccak256(encodedHeader);
+      const hash = ethers.keccak256(encodedHeader);
       expect(hash).to.equal(block.hash);
 
       const Randao = await ethers.getContractFactory("TestRandao");
       const rd = await Randao.deploy();
-      await rd.deployed();
+      await rd.waitForDeployment();
       
       let randao = await rd.verifyHeaderAndGetRandao(hash, encodedHeader);
       expect(randao).to.equal(block.mixHash);

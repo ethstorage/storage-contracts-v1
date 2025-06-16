@@ -33,10 +33,12 @@ async function verifyContract(contract, args) {
 
 async function deployContract() {
   const startTime = Math.floor(new Date().getTime() / 1000);
-
+  console.log("Deploying contracts to network", hre.network.name);
   const [deployer] = await hre.ethers.getSigners();
-  ownerAddress = deployer.address;
-  treasuryAddress = deployer.address;
+  const deployerAddress = await deployer.getAddress();
+  console.log("Deploying contracts with account:", deployerAddress);
+  ownerAddress = deployerAddress;
+  treasuryAddress = deployerAddress;
 
   const StorageContract = await hre.ethers.getContractFactory("EthStorageContractL2");
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
@@ -46,10 +48,10 @@ async function deployContract() {
     storageCost,
     dcfFactor,
     updateLimit,
-    { gasPrice: gasPrice }
+    { gasPrice: gasPrice },
   );
-  await implContract.deployed();
-  const impl = implContract.address;
+  await implContract.waitForDeployment();
+  const impl = await implContract.getAddress();
   console.log("storage impl address is ", impl);
 
   const data = implContract.interface.encodeFunctionData("initialize", [
@@ -62,27 +64,30 @@ async function deployContract() {
   console.log(impl, ownerAddress, data);
   const EthStorageUpgradeableProxy = await hre.ethers.getContractFactory("EthStorageUpgradeableProxy");
   const ethStorageProxy = await EthStorageUpgradeableProxy.deploy(impl, ownerAddress, data, { gasPrice: gasPrice });
-  await ethStorageProxy.deployed();
+  await ethStorageProxy.waitForDeployment();
   const admin = await ethStorageProxy.admin();
-
+  const address = await ethStorageProxy.getAddress();
   console.log("storage admin address is ", admin);
-  console.log("storage contract address is ", ethStorageProxy.address);
-  const receipt = await hre.ethers.provider.getTransactionReceipt(ethStorageProxy.deployTransaction.hash);
+  console.log("storage contract address is ", address);
+  const receipt = await hre.ethers.provider.getTransactionReceipt(ethStorageProxy.deploymentTransaction().hash);
   console.log(
     "deployed in block number",
     receipt.blockNumber,
+    "on",
+    new Date().toLocaleDateString([], { year: "numeric", month: "long", day: "numeric" }),
     "at",
-    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
   );
 
   // fund 500 qkc into the storage contract to give reward for empty mining
-  const ethStorage = StorageContract.attach(ethStorageProxy.address);
-  const tx = await ethStorage.sendValue({ value: hre.ethers.utils.parseEther("500") });
+  const ethStorage = StorageContract.attach(address);
+  const tx = await ethStorage.sendValue({ value: hre.ethers.parseEther("500") });
   await tx.wait();
-  console.log("balance of " + ethStorage.address, await hre.ethers.provider.getBalance(ethStorage.address));
+  const balance = hre.ethers.formatEther(await hre.ethers.provider.getBalance(address));
+  console.log("balance of " + address + ": ", balance);
 
   // verify contract
-  await verifyContract(ethStorageProxy.address);
+  await verifyContract(address);
   await verifyContract(impl, [config, startTime, storageCost, dcfFactor]);
 
   // wait for contract finalized
@@ -93,10 +98,10 @@ async function deployContract() {
         "finalized block number is",
         block.number,
         "at",
-        new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
       );
       if (receipt.blockNumber < block.number) {
-        fs.writeFileSync(".caddr", ethStorageProxy.address);
+        fs.writeFileSync(".caddr", address);
         clearInterval(intervalId);
       }
     } catch (e) {
@@ -118,10 +123,10 @@ async function updateContract() {
     startTime, // startTime
     storageCost,
     dcfFactor,
-    { gasPrice: gasPrice }
+    { gasPrice: gasPrice },
   );
-  await implContract.deployed();
-  const impl = implContract.address;
+  await implContract.waitForDeployment();
+  const impl = await implContract.getAddress();
   console.log("storage impl address is ", impl);
 
   // set impl
