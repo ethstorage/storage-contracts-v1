@@ -2,7 +2,6 @@
 pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import "./libraries/MerkleLib.sol";
 import "./libraries/BinaryRelated.sol";
 
 /// @custom:upgradeable

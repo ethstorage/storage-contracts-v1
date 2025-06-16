@@ -27,7 +27,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
     /// @param _decodeProof The zk proof for multiple sample decoding
     /// @param _pubSignals The public signals for the zk proof
     /// @return true if the proof is valid, false otherwise
-    function _decodeSample(bytes calldata _decodeProof, uint256[6] memory _pubSignals) internal view returns (bool) {
+    function _decodeSamples(bytes calldata _decodeProof, uint256[6] memory _pubSignals) internal view returns (bool) {
         (uint256[2] memory pA, uint256[2][2] memory pB, uint256[2] memory pC) =
             abi.decode(_decodeProof, (uint256[2], uint256[2][2], uint256[2]));
         // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code'
@@ -42,14 +42,14 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
     /// @param _miner The miner address
     /// @param _decodeProof The zk proof for two sample decoding
     /// @return true if the proof is valid, false otherwise
-    function decodeSample(
+    function decodeSamples(
         uint256[] memory _masks,
         uint256[] memory _kvIdxs,
         uint256[] memory _sampleIdxs,
         address _miner,
         bytes calldata _decodeProof
     ) public view returns (bool) {
-        return _decodeSample(
+        return _decodeSamples(
             _decodeProof,
             [
                 _getEncodingKey(_kvIdxs[0], _miner),
@@ -92,7 +92,7 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         return (_hash0, kvIdx, sampleIdxInKv);
     }
 
-    /// @inheritdoc EthStorageContract
+    /// @inheritdoc StorageContract
     function verifySamples(
         uint256 _startShardId,
         bytes32 _hash0,
@@ -116,7 +116,9 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
                 _checkSample(_startShardId, rows, _hash0, _encodedSamples[i], _masks[i], _inclusiveProofs[i]);
         }
 
-        require(decodeSample(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0]), "EthStorageContract2: decode failed");
+        require(
+            decodeSamples(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0]), "EthStorageContract2: decode failed"
+        );
         return _hash0;
     }
 }
