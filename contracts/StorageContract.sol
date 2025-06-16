@@ -31,6 +31,9 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice 64 blocks
     uint8 internal constant MAX_L1_MINING_DRIFT = 64;
 
+    /// @notice Role for whitelisted miners
+    bytes32 public constant MINER_ROLE = keccak256("MINER_ROLE");
+
     /// @notice Maximum size of a single key-value pair
     uint256 internal immutable MAX_KV_SIZE_BITS;
 
@@ -83,6 +86,9 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Fund tracker for prepaid
     uint256 public accPrepaidAmount;
+
+    /// @notice a state variable to control the MINER_ROLE check
+    bool public enforceMinerRole = true;
 
     /// @notice Reentrancy lock
     bool private transient locked;
@@ -336,6 +342,9 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public virtual nonReentrant {
+        if (enforceMinerRole) {
+            require(hasRole(MINER_ROLE, _miner), "StorageContract: miner not whitelisted");
+        }
         _mine(
             _blockNum, _shardId, _miner, _nonce, _encodedSamples, _masks, _randaoProof, _inclusiveProofs, _decodeProof
         );
@@ -354,6 +363,12 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Set the treasury address.
     function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
         minimumDiff = _minimumDiff;
+    }
+
+    /// @notice Enable or disable the MINER_ROLE check.
+    /// @param _enforceMinerRole Boolean to enable or disable the check.
+    function setEnforceMinerRole(bool _enforceMinerRole) public onlyOwner {
+        enforceMinerRole = _enforceMinerRole;
     }
 
     /// @notice On-chain verification of storage proof of sufficient sampling.
