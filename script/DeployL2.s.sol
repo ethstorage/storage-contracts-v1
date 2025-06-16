@@ -50,7 +50,8 @@ contract DeployL2 is Script {
         EthStorageUpgradeableProxy proxy = new EthStorageUpgradeableProxy(address(impl), deployer, data);
 
         // Fund the proxy contract
-        payable(address(proxy)).transfer(5000 ether); // fund 5000 qkc into the storage contract to give reward for empty mining
+        uint256 balance = vm.envOr("INITIAL_BALANCE", uint256(5000)); // default to 5000 QKC
+        payable(address(proxy)).transfer(balance * 1 ether); // fund qkc into the storage contract to give reward for empty mining
 
         vm.stopBroadcast();
 

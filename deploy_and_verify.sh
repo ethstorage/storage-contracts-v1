@@ -6,15 +6,17 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
+output_file="deploy_output_l2.txt"
+
 echo "Deploying contracts..."
 forge script script/DeployL2.s.sol \
   --rpc-url "$QKC_TESTNET_URL" \
   --private-key "$PRIVATE_KEY" \
-  --broadcast > deploy_output.txt
+  --broadcast > "$output_file"
 
-START_TIME=$(grep "Start time:" deploy_output.txt | head -n1 | awk '{print $3}')
-IMPL_ADDRESS=$(grep "Implementation address:" deploy_output.txt | head -n1 | awk '{print $3}')
-PROXY_ADDRESS=$(grep "Proxy address:" deploy_output.txt | head -n1 | awk '{print $3}')
+START_TIME=$(grep "Start time:" "$output_file" | head -n1 | awk '{print $3}')
+IMPL_ADDRESS=$(grep "Implementation address:" "$output_file" | head -n1 | awk '{print $3}')
+PROXY_ADDRESS=$(grep "Proxy address:" "$output_file" | head -n1 | awk '{print $3}')
 
 echo "Implementation deployed at: $IMPL_ADDRESS"
 echo "Proxy deployed at: $PROXY_ADDRESS"
