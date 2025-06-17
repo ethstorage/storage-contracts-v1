@@ -1,6 +1,7 @@
 import enum
 import numpy as np
 import galois
+import math
 
 from math import log2, ceil
 from typing import Optional
@@ -42,7 +43,7 @@ class Poseidon:
         self.security_level = security_level
 
         # TODO: For now alpha is fixed parameter
-        if np.gcd(alpha, p - 1) == 1:
+        if math.gcd(alpha, p - 1) == 1:
             self.alpha = alpha
         else:
             print("Not available alpha")
@@ -192,7 +193,7 @@ class FastPoseidon:
         self.security_level = security_level
 
         # TODO: For now alpha is fixed parameter
-        if np.gcd(alpha, p - 1) == 1:
+        if math.gcd(alpha, p - 1) == 1:
             self.alpha = alpha
         else:
             print("Not available alpha")

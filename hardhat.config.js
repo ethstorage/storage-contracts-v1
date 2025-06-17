@@ -1,7 +1,6 @@
 require("dotenv").config();
+require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-verify");
-require("@nomiclabs/hardhat-waffle");
-require("@nomiclabs/hardhat-web3");
 require("@nomicfoundation/hardhat-foundry");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
@@ -25,15 +24,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 module.exports = {
   networks: {
     hardhat: {
+      hardfork: "cancun",
       initialBaseFeePerGas: 0, // workaround from https://github.com/sc-forks/solidity-coverage/issues/652#issuecomment-896330136 . Remove when that issue is closed.
     },
     devnet: {
-      url: process.env.EIP4844_DEVNET_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    rinkeby: {
-      url: process.env.RINKEBY_URL || "",
+      url: process.env.DEVNET_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
@@ -53,22 +48,13 @@ module.exports = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     qkc_testnet: {
+      timeout: 600000,
       url: process.env.QKC_TESTNET_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    kovan: {
-      url: process.env.KOVAN_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     arbitrum: {
       url: process.env.ARBITRUM_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    ropsten: {
-      url: process.env.ROPSTEN_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
@@ -83,10 +69,7 @@ module.exports = {
     currency: "USD",
   },
   etherscan: {
-    apiKey: {
-      "sepolia": process.env.ETHERSCAN_API_KEY,
-      "qkc_testnet": "empty",
-    },
+    apiKey: process.env.ETHERSCAN_API_KEY || "no-api-key-needed",
     customChains: [
       {
         network: "qkc_testnet",

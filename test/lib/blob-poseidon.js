@@ -16,7 +16,7 @@ function handlePyData(maskList, sampleIdxInKv_ru_list, encodingKey_mod_list) {
       " encodingKey_mod:",
       encodingKey_mod,
       " sampleIdxInKv_ru:",
-      sampleIdxInKv_ru
+      sampleIdxInKv_ru,
     );
     encodingKey_mod_list.push(encodingKey_mod);
     sampleIdxInKv_ru_list.push(sampleIdxInKv_ru);
