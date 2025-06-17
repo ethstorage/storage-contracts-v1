@@ -12,6 +12,11 @@ contract DeployL2 is Script {
     using Strings for uint256;
 
     function run() external {
+        uint256 prefund = vm.envOr("INITIAL_BALANCE", uint256(5000)); // default to 5000 QKC
+        address deployer = msg.sender;
+        console.log("Deployer address: %s", deployer);
+        // Ensure the deployer has enough balance
+        require(deployer.balance >= prefund + 1 ether, "Deployer does not have enough balance");
         // Read configuration parameters from environment variables (or use defaults)
         StorageContract.Config memory config = StorageContract.Config({
             maxKvSizeBits: vm.envOr("MAX_KV_SIZE_BITS", uint256(17)), // 131072
@@ -27,9 +32,26 @@ contract DeployL2 is Script {
 
         uint256 startTime = block.timestamp;
 
-        // Get deployer address
-        address deployer = msg.sender;
-        console.log("Deployer address: %s", deployer);
+        // print configuration parameters
+        console.log("Configuration parameters:");
+        console.log("maxKvSizeBits: %s", config.maxKvSizeBits.toString());
+        console.log("shardSizeBits: %s", config.shardSizeBits.toString());
+        console.log("randomChecks: %s", config.randomChecks.toString());
+        console.log("cutoff: %s", config.cutoff.toString());
+        console.log("diffAdjDivisor: %s", config.diffAdjDivisor.toString());
+        console.log("treasuryShare: %s", config.treasuryShare.toString());
+        console.log("storageCost: %s", storageCost.toString());
+        console.log("dcfFactor: %s", dcfFactor.toString());
+        console.log("updateLimit: %s", updateLimit.toString());
+        console.log("startTime: %s", startTime.toString());
+
+        uint256 minimumDiff = vm.envOr("MINIMUM_DIFF", uint256(94371840)); // minimumDiff 0.1 * 3 * 3600 * 1024 * 1024 / 12 = 94371840 for 0.1 replicas that can have 1M IOs in one epoch
+        uint256 prepaidAmount = vm.envOr("PREPAID_AMOUNT", uint256(1195376640000000000000000)); // prepaidAmount - 50% * 2^39 / 131072 * 570000000000000000, it also means around 1,200,000 QKC for half of the shard
+        uint256 nonceLimit = vm.envOr("NONCE_LIMIT", uint256(1048576)); // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
+
+        console.log("minimumDiff: %s", minimumDiff.toString());
+        console.log("prepaidAmount: %s", prepaidAmount.toString());
+        console.log("nonceLimit: %s", nonceLimit.toString());
 
         vm.startBroadcast();
 
@@ -39,9 +61,9 @@ contract DeployL2 is Script {
         // Prepare initialization data
         bytes memory data = abi.encodeWithSelector(
             impl.initialize.selector,
-            vm.envOr("MINIMUM_DIFF", uint256(94371840)), // minimumDiff 0.1 * 3 * 3600 * 1024 * 1024 / 12 = 94371840 for 0.1 replicas that can have 1M IOs in one epoch
-            vm.envOr("PREPAID_AMOUNT", uint256(1195376640000000000000000)), // prepaidAmount - 50% * 2^39 / 131072 * 570000000000000000, it also means around 1,200,000 QKC for half of the shard
-            vm.envOr("NONCE_LIMIT", uint256(1048576)), // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
+            minimumDiff,
+            prepaidAmount,
+            nonceLimit,
             deployer, // treasuryAddress
             deployer // ownerAddress
         );
@@ -50,14 +72,13 @@ contract DeployL2 is Script {
         EthStorageUpgradeableProxy proxy = new EthStorageUpgradeableProxy(address(impl), deployer, data);
 
         // Fund the proxy contract
-        uint256 balance = vm.envOr("INITIAL_BALANCE", uint256(5000)); // default to 5000 QKC
-        payable(address(proxy)).transfer(balance * 1 ether); // fund qkc into the storage contract to give reward for empty mining
-
+        payable(address(proxy)).transfer(prefund * 1 ether);
         vm.stopBroadcast();
 
         console.log("Start time: %s", startTime.toString());
         console.log("Block number: %s", block.number.toString());
         console.log("Implementation address: %s", address(impl));
+        console.log("Admin address: %s", proxy.admin());
         console.log("Proxy address: %s", address(proxy));
         console.log("Proxy contract balance: %s", address(proxy).balance.toString());
     }
