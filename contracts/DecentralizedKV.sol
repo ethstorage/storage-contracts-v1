@@ -231,10 +231,8 @@ contract DecentralizedKV is Ownable2StepUpgradeable {
         return output;
     }
 
-    /// @notice Remove an existing KV pair to a recipient.  Refund the cost accordingly.
-    /// @param _key Key of the data.
-    /// @param _to  The recipient address.
-    function removeTo(bytes32 _key, address _to) public virtual {
+    /// @notice Remove an existing KV pair with key `_key`.  Refund the cost accordingly to a recipient `_to`.
+    function removeTo(bytes32, /* _key */ address /* _to */ ) public virtual {
         revert("DecentralizedKV: removeTo() unimplemented");
     }
 
