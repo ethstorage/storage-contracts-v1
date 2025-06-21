@@ -192,7 +192,7 @@ contract StorageContractTest is Test {
     }
 
     function testEnforceMinerRole() public {
-        address miner = vm.addr(2);
+        address miner = address(0x2);
 
         // EnforceMinerRole is enabled by default
         vm.expectRevert("StorageContract: miner not whitelisted");
@@ -206,11 +206,12 @@ contract StorageContractTest is Test {
         storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
 
         // Disable enforceMinerRole
-        storageContract.setEnforceMinerRole(false);
+        storageContract.setEnforceMinerRole(false);44
 
         // Even without MINER_ROLE, any random miner should now be able to mine
+        address notWhiteListedMiner = address(0x3);
         storageContract.mine(
-            1, 0, address(0x3), 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0)
+            1, 0, notWhiteListedMiner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0)
         );
 
         // Re-enable enforceMinerRole
