@@ -220,7 +220,7 @@ contract StorageContractTest is Test {
         // Now the random address without MINER_ROLE should revert
         vm.expectRevert("StorageContract: miner not whitelisted");
         storageContract.mine(
-            1, 0, address(0x3), 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0)
+            1, 0, notWhiteListedMiner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0)
         );
 
         // But miner who has whitelisted before can still mine without reverting
