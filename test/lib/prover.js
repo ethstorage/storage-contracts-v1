@@ -49,6 +49,7 @@ async function generateRandaoProof(block) {
     BigInt(block.blobGasUsed),
     BigInt(block.excessBlobGas),
     block.parentBeaconBlockRoot,
+    block.requestsHash,
   ];
 
   return RLP.encode(header);

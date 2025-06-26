@@ -24,16 +24,10 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 module.exports = {
   networks: {
     hardhat: {
-      hardfork: "cancun",
       initialBaseFeePerGas: 0, // workaround from https://github.com/sc-forks/solidity-coverage/issues/652#issuecomment-896330136 . Remove when that issue is closed.
     },
     devnet: {
       url: process.env.DEVNET_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    goerli: {
-      url: process.env.GOERLI_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
