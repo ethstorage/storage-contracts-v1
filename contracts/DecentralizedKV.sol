@@ -80,7 +80,6 @@ contract DecentralizedKV is AccessControlUpgradeable {
     function __init_KV(address _owner) internal onlyInitializing {
         __Context_init();
         __AccessControl_init();
-        // grant admin role to the owner to manage MINER_ROLE
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
         kvEntryCount = 0;
     }
