@@ -88,7 +88,7 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 public accPrepaidAmount;
 
     /// @notice a state variable to control the MINER_ROLE check
-    bool public enforceMinerRole = true;
+    bool public enforceMinerRole;
 
     /// @notice Reentrancy lock
     bool private transient locked;
@@ -161,6 +161,7 @@ abstract contract StorageContract is DecentralizedKV {
         prepaidLastMineTime = START_TIME;
         // make sure shard0 is ready to mine and pay correctly
         infos[0].lastMineTime = START_TIME;
+        enforceMinerRole = true;
     }
 
     /// @notice People can sent ETH to the contract.
