@@ -511,4 +511,8 @@ abstract contract StorageContract is DecentralizedKV {
     function revokeMinerRole(address _miner) public {
         revokeRole(MINER_ROLE, _miner);
     }
+    /// @notice Check if a miner address has the MINER_ROLE.
+    function hasMinerRole(address _miner) public view returns (bool) {
+        return hasRole(MINER_ROLE, _miner);
+    }
 }

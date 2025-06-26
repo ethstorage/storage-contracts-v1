@@ -179,6 +179,7 @@ contract StorageContractTest is Test {
         storageContract.grantMinerRole(miner);
 
         // Now miner has MINER_ROLE, so it can call mine function
+        assertTrue(storageContract.hasMinerRole(miner));
         storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
 
         // revoking MINER_ROLE from miner
@@ -188,6 +189,13 @@ contract StorageContractTest is Test {
         // Now miner doesn't have MINER_ROLE, so it should revert again
         vm.expectRevert("StorageContract: miner not whitelisted");
         storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
+
+        // only owner can grant MINER_ROLE
+        vm.prank(miner);
+        vm.expectRevert(
+            "AccessControlUnauthorizedAccount(0x0000000000000000000000000000000000000002, 0x0000000000000000000000000000000000000000000000000000000000000000)"
+        );
+        storageContract.grantMinerRole(miner);
     }
 
     function testEnforceMinerRole() public {
