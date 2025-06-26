@@ -11,7 +11,7 @@ describe("DecentralizedKV Test", function () {
   it("put/get/remove", async function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     const kv = await DecentralizedKV.deploy(1024, 0, 0, 0);
-    await kv.deployed();
+    await kv.waitForDeployment();
     await kv.initialize(ownerAddr);
 
     await kv.put(key1, "0x11223344");
@@ -27,7 +27,7 @@ describe("DecentralizedKV Test", function () {
   it("put/get with replacement", async function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     const kv = await DecentralizedKV.deploy(1024, 0, 0, 0);
-    await kv.deployed();
+    await kv.waitForDeployment();
     await kv.initialize(ownerAddr);
 
     await kv.put(key1, "0x11223344");
@@ -51,7 +51,7 @@ describe("DecentralizedKV Test", function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     // 1e18 cost with 0.5 discount rate per second
     const kv = await DecentralizedKV.deploy(1024, 0, "1000000000000000000", "170141183460469231731687303715884105728");
-    await kv.deployed();
+    await kv.waitForDeployment();
     await kv.initialize(ownerAddr);
 
     expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
@@ -62,23 +62,23 @@ describe("DecentralizedKV Test", function () {
       })
     ).to.be.revertedWith("DecentralizedKV: not enough batch payment");
     await kv.put(key1, "0x11223344", {
-      value: ethers.utils.parseEther("1.0"),
+      value: ethers.parseEther("1.0"),
     });
 
     await kv.setTimestamp(1);
     expect(await kv.upfrontPayment()).to.equal("500000000000000000");
     await kv.put(key2, "0x33445566", {
-      value: ethers.utils.parseEther("0.5"),
+      value: ethers.parseEther("0.5"),
     });
 
     await kv.setTimestamp(4);
     expect(await kv.upfrontPayment()).to.equal("62500000000000000");
     await kv.put(key3, "0x778899", {
-      value: ethers.utils.parseEther("0.0625"),
+      value: ethers.parseEther("0.0625"),
     });
 
     await kv.removeTo(key1, wallet.address);
-    expect(await wallet.getBalance()).to.equal(ethers.utils.parseEther("0.0625"));
+    expect(await addr0.provider.getBalance(wallet.address)).to.equal(ethers.parseEther("0.0625"));
     expect(await kv.exist(key1)).to.equal(false);
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x");
   });
@@ -87,7 +87,7 @@ describe("DecentralizedKV Test", function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     // 1e18 cost with 0.90 discount rate per year
     const kv = await DecentralizedKV.deploy(1024, 0, "1000000000000000000", "340282365784068676928457747575078800565");
-    await kv.deployed();
+    await kv.waitForDeployment();
     await kv.initialize(ownerAddr);
 
     expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
@@ -98,7 +98,7 @@ describe("DecentralizedKV Test", function () {
       })
     ).to.be.revertedWith("DecentralizedKV: not enough batch payment");
     await kv.put(key1, "0x11223344", {
-      value: ethers.utils.parseEther("1.0"),
+      value: ethers.parseEther("1.0"),
     });
 
     await kv.setTimestamp(1);
@@ -113,54 +113,54 @@ describe("DecentralizedKV Test", function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     // 1e18 cost with 0.5 discount rate per second
     const kv = await DecentralizedKV.deploy(1024, 0, 0, 0);
-    await kv.deployed();
+    await kv.waitForDeployment();
     await kv.initialize(ownerAddr);
 
     // write random data
     for (let i = 0; i < 10; i++) {
-      await kv.connect(addr0).put(ethers.utils.formatBytes32String(i.toString()), ethers.utils.hexlify(i));
+      await kv.connect(addr0).put(ethers.encodeBytes32String(i.toString()), ethers.toBeHex(i, 32));
     }
 
     for (let i = 0; i < 5; i++) {
-      await kv.connect(addr1).put(ethers.utils.formatBytes32String(i.toString()), ethers.utils.hexlify(i + 100));
+      await kv.connect(addr1).put(ethers.encodeBytes32String(i.toString()), ethers.toBeHex(i + 100, 32));
     }
 
     // read random data and check
     for (let i = 0; i < 10; i++) {
-      expect(await kv.connect(addr0).get(ethers.utils.formatBytes32String(i.toString()), 0, 0, 1024)).to.equal(
-        ethers.utils.hexlify(i)
+      expect(await kv.connect(addr0).get(ethers.encodeBytes32String(i.toString()), 0, 0, 1024)).to.equal(
+        ethers.toBeHex(i, 32)
       );
     }
 
     for (let i = 0; i < 5; i++) {
-      expect(await kv.connect(addr1).get(ethers.utils.formatBytes32String(i.toString()), 0, 0, 1024)).to.equal(
-        ethers.utils.hexlify(i + 100)
+      expect(await kv.connect(addr1).get(ethers.encodeBytes32String(i.toString()), 0, 0, 1024)).to.equal(
+        ethers.toBeHex(i + 100, 32)
       );
     }
 
-    await kv.connect(addr0).remove(ethers.utils.formatBytes32String("5"));
-    await kv.connect(addr1).remove(ethers.utils.formatBytes32String("0"));
-    await kv.connect(addr0).remove(ethers.utils.formatBytes32String("1"));
-    await kv.connect(addr1).remove(ethers.utils.formatBytes32String("2"));
-    await kv.connect(addr0).remove(ethers.utils.formatBytes32String("6"));
+    await kv.connect(addr0).remove(ethers.encodeBytes32String("5"));
+    await kv.connect(addr1).remove(ethers.encodeBytes32String("0"));
+    await kv.connect(addr0).remove(ethers.encodeBytes32String("1"));
+    await kv.connect(addr1).remove(ethers.encodeBytes32String("2"));
+    await kv.connect(addr0).remove(ethers.encodeBytes32String("6"));
 
     // Read the data to see if the result is expected.
     for (let i = 0; i < 10; i++) {
       if (i == 1 || i == 5 || i == 6) {
-        expect(await kv.connect(addr0).get(ethers.utils.formatBytes32String(i.toString()), 0, 0, 1024)).to.equal("0x");
+        expect(await kv.connect(addr0).get(ethers.encodeBytes32String(i.toString()), 0, 0, 1024)).to.equal("0x");
       } else {
-        expect(await kv.connect(addr0).get(ethers.utils.formatBytes32String(i.toString()), 0, 0, 1024)).to.equal(
-          ethers.utils.hexlify(i)
+        expect(await kv.connect(addr0).get(ethers.encodeBytes32String(i.toString()), 0, 0, 1024)).to.equal(
+          ethers.toBeHex(i, 32)
         );
       }
     }
 
     for (let i = 0; i < 5; i++) {
       if (i == 0 || i == 2) {
-        expect(await kv.connect(addr1).get(ethers.utils.formatBytes32String(i.toString()), 0, 0, 1024)).to.equal("0x");
+        expect(await kv.connect(addr1).get(ethers.encodeBytes32String(i.toString()), 0, 0, 1024)).to.equal("0x");
       } else {
-        expect(await kv.connect(addr1).get(ethers.utils.formatBytes32String(i.toString()), 0, 0, 1024)).to.equal(
-          ethers.utils.hexlify(i + 100)
+        expect(await kv.connect(addr1).get(ethers.encodeBytes32String(i.toString()), 0, 0, 1024)).to.equal(
+          ethers.toBeHex(i + 100, 32)
         );
       }
     }
