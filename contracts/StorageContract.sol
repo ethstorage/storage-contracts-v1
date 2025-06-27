@@ -352,23 +352,23 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @notice Set the nonce limit.
-    function setNonceLimit(uint256 _nonceLimit) public onlyOwner {
+    function setNonceLimit(uint256 _nonceLimit) public onlyRole(DEFAULT_ADMIN_ROLE) {
         nonceLimit = _nonceLimit;
     }
 
     /// @notice Set the prepaid amount.
-    function setPrepaidAmount(uint256 _prepaidAmount) public onlyOwner {
+    function setPrepaidAmount(uint256 _prepaidAmount) public onlyRole(DEFAULT_ADMIN_ROLE) {
         prepaidAmount = _prepaidAmount;
     }
 
     /// @notice Set the treasury address.
-    function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
+    function setMinimumDiff(uint256 _minimumDiff) public onlyRole(DEFAULT_ADMIN_ROLE) {
         minimumDiff = _minimumDiff;
     }
 
     /// @notice Enable or disable the MINER_ROLE check.
     /// @param _enforceMinerRole Boolean to enable or disable the check.
-    function setEnforceMinerRole(bool _enforceMinerRole) public onlyOwner {
+    function setEnforceMinerRole(bool _enforceMinerRole) public onlyRole(DEFAULT_ADMIN_ROLE) {
         enforceMinerRole = _enforceMinerRole;
     }
 
