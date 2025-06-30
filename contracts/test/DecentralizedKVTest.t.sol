@@ -17,16 +17,18 @@ contract DecentralizedKVTest is Test {
     }
 
     function testTransferOwnership() public {
+        bytes32 adminRole = decentralizedKV.DEFAULT_ADMIN_ROLE();
+
         vm.expectRevert();
-        vm.prank(address(vm.addr(2)));
-        decentralizedKV.transferOwnership(vm.addr(2));
+        vm.prank(vm.addr(2));
+        decentralizedKV.grantRole(adminRole, vm.addr(2));
 
-        vm.prank(address(vm.addr(1)));
-        decentralizedKV.transferOwnership(vm.addr(2));
-        assertEq(decentralizedKV.owner(), vm.addr(1));
+        vm.prank(vm.addr(1));
+        decentralizedKV.grantRole(adminRole, vm.addr(2));
+        assertTrue(decentralizedKV.hasRole(adminRole, vm.addr(2)));
 
-        vm.prank(address(vm.addr(2)));
-        decentralizedKV.acceptOwnership();
-        assertEq(decentralizedKV.owner(), vm.addr(2));
+        vm.prank(vm.addr(2));
+        decentralizedKV.revokeRole(adminRole, vm.addr(1));
+        assertFalse(decentralizedKV.hasRole(adminRole, vm.addr(1)));
     }
 }

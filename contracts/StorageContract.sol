@@ -31,6 +31,9 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice 64 blocks
     uint8 internal constant MAX_L1_MINING_DRIFT = 64;
 
+    /// @notice Role for whitelisted miners
+    bytes32 public constant MINER_ROLE = keccak256("MINER_ROLE");
+
     /// @notice Maximum size of a single key-value pair
     uint256 internal immutable MAX_KV_SIZE_BITS;
 
@@ -83,6 +86,9 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Fund tracker for prepaid
     uint256 public accPrepaidAmount;
+
+    /// @notice a state variable to control the MINER_ROLE check
+    bool public enforceMinerRole;
 
     /// @notice Reentrancy lock
     bool private transient locked;
@@ -155,6 +161,7 @@ abstract contract StorageContract is DecentralizedKV {
         prepaidLastMineTime = START_TIME;
         // make sure shard0 is ready to mine and pay correctly
         infos[0].lastMineTime = START_TIME;
+        enforceMinerRole = true;
     }
 
     /// @notice People can sent ETH to the contract.
@@ -176,10 +183,10 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Upfront payment for a batch insertion
     function _upfrontPaymentInBatch(uint256 _kvEntryCount, uint256 _batchSize) internal view returns (uint256) {
-        uint256 shardId = getShardId(_kvEntryCount);
+        uint256 shardId = _getShardId(_kvEntryCount);
         uint256 totalEntries = _kvEntryCount + _batchSize; // include the batch to be put
         uint256 totalPayment = 0;
-        if (getShardId(totalEntries) > shardId) {
+        if (_getShardId(totalEntries) > shardId) {
             uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
             totalPayment += _upfrontPayment(_blockTs()) * kvCountNew;
             totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
@@ -195,8 +202,8 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
         require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
 
-        uint256 shardId = getShardId(kvEntryCount); // shard id after the batch
-        if (shardId > getShardId(kvEntryCountPrev)) {
+        uint256 shardId = _getShardId(kvEntryCount); // shard id after the batch
+        if (shardId > _getShardId(kvEntryCountPrev)) {
             // Open a new shard and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
             infos[shardId].lastMineTime = _blockTs();
@@ -278,7 +285,7 @@ abstract contract StorageContract is DecentralizedKV {
         returns (bool, uint256, uint256, uint256)
     {
         MiningLib.MiningInfo storage info = infos[_shardId];
-        uint256 lastShardIdx = getShardId(kvEntryCount);
+        uint256 lastShardIdx = _getShardId(kvEntryCount);
         bool updatePrepaidTime = false;
         uint256 prepaidAmountSaved = 0;
         uint256 reward = 0;
@@ -336,24 +343,33 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public virtual nonReentrant {
+        if (enforceMinerRole) {
+            require(hasRole(MINER_ROLE, _miner), "StorageContract: miner not whitelisted");
+        }
         _mine(
             _blockNum, _shardId, _miner, _nonce, _encodedSamples, _masks, _randaoProof, _inclusiveProofs, _decodeProof
         );
     }
 
     /// @notice Set the nonce limit.
-    function setNonceLimit(uint256 _nonceLimit) public onlyOwner {
+    function setNonceLimit(uint256 _nonceLimit) public onlyRole(DEFAULT_ADMIN_ROLE) {
         nonceLimit = _nonceLimit;
     }
 
     /// @notice Set the prepaid amount.
-    function setPrepaidAmount(uint256 _prepaidAmount) public onlyOwner {
+    function setPrepaidAmount(uint256 _prepaidAmount) public onlyRole(DEFAULT_ADMIN_ROLE) {
         prepaidAmount = _prepaidAmount;
     }
 
     /// @notice Set the treasury address.
-    function setMinimumDiff(uint256 _minimumDiff) public onlyOwner {
+    function setMinimumDiff(uint256 _minimumDiff) public onlyRole(DEFAULT_ADMIN_ROLE) {
         minimumDiff = _minimumDiff;
+    }
+
+    /// @notice Enable or disable the MINER_ROLE check.
+    /// @param _enforceMinerRole Boolean to enable or disable the check.
+    function setEnforceMinerRole(bool _enforceMinerRole) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        enforceMinerRole = _enforceMinerRole;
     }
 
     /// @notice On-chain verification of storage proof of sufficient sampling.
@@ -432,6 +448,11 @@ abstract contract StorageContract is DecentralizedKV {
         return _blockTs() - (_blockNumber() - _blockNum) * 12;
     }
 
+    /// @notice Get the shard id by kv entry count.
+    function _getShardId(uint256 _kvEntryCount) internal view returns (uint256) {
+        return _kvEntryCount > 0 ? (_kvEntryCount - 1) >> SHARD_ENTRY_BITS : 0;
+    }
+
     /// @notice Return the sample size bits.
     function sampleSizeBits() public pure returns (uint256) {
         return SAMPLE_SIZE_BITS;
@@ -482,7 +503,18 @@ abstract contract StorageContract is DecentralizedKV {
         return TREASURY_SHARE;
     }
 
-    function getShardId(uint256 _kvEntryCount) internal view returns (uint256) {
-        return _kvEntryCount > 0 ? (_kvEntryCount - 1) >> SHARD_ENTRY_BITS : 0;
+    /// @notice Grant the MINER_ROLE to a miner address.
+    function grantMinerRole(address _miner) public {
+        grantRole(MINER_ROLE, _miner);
+    }
+
+    /// @notice Revoke the MINER_ROLE from a miner address.
+    function revokeMinerRole(address _miner) public {
+        revokeRole(MINER_ROLE, _miner);
+    }
+
+    /// @notice Check if a miner address has the MINER_ROLE.
+    function hasMinerRole(address _miner) public view returns (bool) {
+        return hasRole(MINER_ROLE, _miner);
     }
 }
