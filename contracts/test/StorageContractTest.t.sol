@@ -11,6 +11,8 @@ contract StorageContractTest is Test {
     uint256 constant MAX_KV_SIZE = 17;
     uint256 constant PREPAID_AMOUNT = 2 * STORAGE_COST;
     TestStorageContract storageContract;
+    address owner = address(0x1);
+    address miner = address(0x2);
 
     function setUp() public {
         storageContract = new TestStorageContract(
@@ -19,7 +21,7 @@ contract StorageContractTest is Test {
             STORAGE_COST,
             340282366367469178095360967382638002176
         );
-        storageContract.initialize(0, PREPAID_AMOUNT, 0, vm.addr(1), address(0x1));
+        storageContract.initialize(0, PREPAID_AMOUNT, 0, vm.addr(1), owner);
     }
 
     function testMiningReward() public {
@@ -63,7 +65,6 @@ contract StorageContractTest is Test {
         uint256 valueToSent = 50000000;
         uint256 withdrawAmount = 8000000;
         uint256 mineTs = 10000;
-        address miner = vm.addr(2);
         storageContract.sendValue{value: valueToSent}();
 
         // a little half
@@ -88,7 +89,6 @@ contract StorageContractTest is Test {
         uint256 valueToSent = 50000000;
         uint256 withdrawAmount = 8000000;
         uint256 mineTs = 10000;
-        address miner = vm.addr(2);
         storageContract.sendValue{value: valueToSent}();
 
         // more than half
@@ -110,7 +110,6 @@ contract StorageContractTest is Test {
     }
 
     function testRewardMiner() public {
-        address miner = vm.addr(2);
         uint256 mineTs = 10000;
         uint256 diff = 1;
 
@@ -161,7 +160,6 @@ contract StorageContractTest is Test {
     }
 
     function testMineWhitelisted() public {
-        address miner = address(0x2);
         // MINER_ROLE is not granted to miner, so it should revert
         vm.expectRevert("StorageContract: miner not whitelisted");
         storageContract.mine(1, 0, miner, 0, new bytes32[](0), new uint256[](0), "", new bytes[](0), new bytes[](0));
@@ -171,7 +169,6 @@ contract StorageContractTest is Test {
         assertEq(adminRole, storageContract.DEFAULT_ADMIN_ROLE());
 
         // Owner has DEFAULT_ADMIN_ROLE
-        address owner = storageContract.owner();
         assertTrue(storageContract.hasRole(storageContract.DEFAULT_ADMIN_ROLE(), owner));
 
         // So owner can grant MINER_ROLE to other address
@@ -199,9 +196,7 @@ contract StorageContractTest is Test {
     }
 
     function testEnforceMinerRole() public {
-        address miner = address(0x2);
         address notWhiteListedMiner = address(0x3);
-        address owner = storageContract.owner();
 
         // EnforceMinerRole is enabled by default
         vm.expectRevert("StorageContract: miner not whitelisted");

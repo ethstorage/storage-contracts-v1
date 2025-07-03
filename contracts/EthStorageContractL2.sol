@@ -57,7 +57,7 @@ contract EthStorageContractL2 is EthStorageContract2 {
     }
 
     /// @notice Set the soul gas token address for the contract.
-    function setSoulGasToken(address _soulGasToken) external onlyOwner {
+    function setSoulGasToken(address _soulGasToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
         soulGasToken = _soulGasToken;
     }
 
