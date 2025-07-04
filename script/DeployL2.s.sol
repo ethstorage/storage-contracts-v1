@@ -34,24 +34,24 @@ contract DeployL2 is Script {
 
         // print configuration parameters
         console.log("Configuration parameters:");
-        console.log("maxKvSizeBits: %s", config.maxKvSizeBits.toString());
-        console.log("shardSizeBits: %s", config.shardSizeBits.toString());
-        console.log("randomChecks: %s", config.randomChecks.toString());
-        console.log("cutoff: %s", config.cutoff.toString());
-        console.log("diffAdjDivisor: %s", config.diffAdjDivisor.toString());
-        console.log("treasuryShare: %s", config.treasuryShare.toString());
-        console.log("storageCost: %s", storageCost.toString());
-        console.log("dcfFactor: %s", dcfFactor.toString());
-        console.log("updateLimit: %s", updateLimit.toString());
-        console.log("startTime: %s", startTime.toString());
+        console.log("\tmaxKvSizeBits: %s", config.maxKvSizeBits.toString());
+        console.log("\tshardSizeBits: %s", config.shardSizeBits.toString());
+        console.log("\trandomChecks: %s", config.randomChecks.toString());
+        console.log("\tcutoff: %s", config.cutoff.toString());
+        console.log("\tdiffAdjDivisor: %s", config.diffAdjDivisor.toString());
+        console.log("\ttreasuryShare: %s", config.treasuryShare.toString());
+        console.log("\tstorageCost: %s", storageCost.toString());
+        console.log("\tdcfFactor: %s", dcfFactor.toString());
+        console.log("\tupdateLimit: %s", updateLimit.toString());
+        console.log("\tstartTime: %s", startTime.toString());
 
         uint256 minimumDiff = vm.envOr("MINIMUM_DIFF", uint256(94371840)); // minimumDiff 0.1 * 3 * 3600 * 1024 * 1024 / 12 = 94371840 for 0.1 replicas that can have 1M IOs in one epoch
         uint256 prepaidAmount = vm.envOr("PREPAID_AMOUNT", uint256(1195376640000000000000000)); // prepaidAmount - 50% * 2^39 / 131072 * 570000000000000000, it also means around 1,200,000 QKC for half of the shard
         uint256 nonceLimit = vm.envOr("NONCE_LIMIT", uint256(1048576)); // nonceLimit 1024 * 1024 = 1M samples and finish sampling in 1.3s with IO rate 6144 MB/s: 4k * 2(random checks) / 6144 = 1.3s
 
-        console.log("minimumDiff: %s", minimumDiff.toString());
-        console.log("prepaidAmount: %s", prepaidAmount.toString());
-        console.log("nonceLimit: %s", nonceLimit.toString());
+        console.log("\tminimumDiff: %s", minimumDiff.toString());
+        console.log("\tprepaidAmount: %s", prepaidAmount.toString());
+        console.log("\tnonceLimit: %s", nonceLimit.toString());
 
         vm.startBroadcast();
 
