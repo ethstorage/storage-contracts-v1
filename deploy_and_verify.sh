@@ -6,7 +6,8 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-output_file="deploy_output_l2.txt"
+timestamp=$(date +"%Y%m%d_%H%M%S")
+output_file="deploy_output_l2_${timestamp}.txt"
 
 echo "Deploying contracts..."
 forge script script/DeployL2.s.sol \
