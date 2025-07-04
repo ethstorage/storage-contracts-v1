@@ -42,3 +42,4 @@ forge verify-contract "$PROXY_ADDRESS" contracts/EthStorageUpgradeableProxy.sol:
   --watch
 
 echo "Deployment and verification complete."
+echo "Done: $(date '+%Y-%m-%d %H:%M:%S')" >> "$output_file"

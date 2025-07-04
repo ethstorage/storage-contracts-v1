@@ -29,7 +29,7 @@ abstract contract StorageContract is DecentralizedKV {
     uint256 internal constant SAMPLE_SIZE_BITS = 5;
 
     /// @notice 64 blocks
-    uint8 internal constant MAX_L1_MINING_DRIFT = 64;
+    uint256 internal constant MAX_L1_MINING_DRIFT = 6400000;
 
     /// @notice Role for whitelisted miners
     bytes32 public constant MINER_ROLE = keccak256("MINER_ROLE");
@@ -459,7 +459,7 @@ abstract contract StorageContract is DecentralizedKV {
     }
 
     /// @notice Return the max L1 mining drift.
-    function maxL1MiningDrift() public pure returns (uint8) {
+    function maxL1MiningDrift() public pure returns (uint256) {
         return MAX_L1_MINING_DRIFT;
     }
 
