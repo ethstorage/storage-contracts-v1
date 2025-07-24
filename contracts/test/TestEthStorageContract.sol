@@ -90,10 +90,10 @@ contract TestEthStorageContract is EthStorageContract1 {
         bytes calldata decodeProof
     ) public view virtual override returns (bool) {
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
-        Proof memory proof = abi.decode(decodeProof, (Proof));
 
         // BLOB decoding check
-        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)) {
+        if (!decodeSample(decodeProof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask))
+        {
             return false;
         }
 
