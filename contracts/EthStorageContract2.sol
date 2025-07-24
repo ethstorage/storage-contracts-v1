@@ -49,17 +49,19 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         address _miner,
         bytes calldata _decodeProof
     ) public view returns (bool) {
-        return _decodeSamples(
-            _decodeProof,
-            [
-                _getEncodingKey(_kvIdxs[0], _miner),
-                _getEncodingKey(_kvIdxs[1], _miner),
-                _getXIn(_sampleIdxs[0]),
-                _getXIn(_sampleIdxs[1]),
-                _masks[0],
-                _masks[1]
-            ]
-        );
+        (uint256[2] memory pA, uint256[2][2] memory pB, uint256[2] memory pC) =
+            abi.decode(_decodeProof, (uint256[2], uint256[2][2], uint256[2]));
+        _pubSignals = [
+            _getEncodingKey(_kvIdxs[0], _miner),
+            _getEncodingKey(_kvIdxs[1], _miner),
+            _getXIn(_sampleIdxs[0]),
+            _getXIn(_sampleIdxs[1]),
+            _masks[0],
+            _masks[1]
+        ];
+        // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code'
+        // and causes the caller function return directly
+        return this.verifyProof(pA, pB, pC, _pubSignals);
     }
 
     /// @notice Check the sample is included in the kvIdx

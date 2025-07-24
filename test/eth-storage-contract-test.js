@@ -454,7 +454,7 @@ describe("EthStorageContract Test", function () {
 
     // the lastest block number is 11 at current state
     let bn = await ethers.provider.getBlockNumber();
-    printlog("Mining at block height %d", bn);
+    console.log("Mining at block height %d", bn);
 
     const blockNumber = ethers.toBeHex(bn);
     const block = await ethers.provider.send('eth_getBlockByNumber', [blockNumber, false]);
