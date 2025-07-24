@@ -23,18 +23,6 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         return _modExp(RU_BN254, _sampleIdx, MODULUS_BN254);
     }
 
-    /// @notice Verify the zk proof for two sample decoding
-    /// @param _decodeProof The zk proof for multiple sample decoding
-    /// @param _pubSignals The public signals for the zk proof
-    /// @return true if the proof is valid, false otherwise
-    function _decodeSamples(bytes calldata _decodeProof, uint256[6] memory _pubSignals) internal view returns (bool) {
-        (uint256[2] memory pA, uint256[2][2] memory pB, uint256[2] memory pC) =
-            abi.decode(_decodeProof, (uint256[2], uint256[2][2], uint256[2]));
-        // verifyProof uses the opcode 'return', so if we call verifyProof directly, it will lead to a compiler warning about 'unreachable code'
-        // and causes the caller function return directly
-        return this.verifyProof(pA, pB, pC, _pubSignals);
-    }
-
     /// @notice Verify the masks using the zk proof
     /// @param _masks The masks for the samples
     /// @param _kvIdxs The kvIdxs that contain the samples
