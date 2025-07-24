@@ -19,19 +19,18 @@ contract EthStorageContract1 is EthStorageContract, Decoder {
     /// @param _sampleIdxInKv The sample index in the KV
     /// @param _mask The mask of the sample
     /// @return The result of the verification
-    function decodeSample(Proof memory _proof, uint256 _encodingKey, uint256 _sampleIdxInKv, uint256 _mask)
+    function decodeSample(bytes memory _proof, uint256 _encodingKey, uint256 _sampleIdxInKv, uint256 _mask)
         public
         view
         returns (bool)
     {
+        (uint256[2] memory pA, uint256[2][2] memory pB, uint256[2] memory pC) =
+            abi.decode(_proof, (uint256[2], uint256[2][2], uint256[2]));
+
         uint256 xBn254 = _modExp(RU_BN254, _sampleIdxInKv, MODULUS_BN254);
 
-        uint256[] memory input = new uint256[](3);
         // TODO: simple hash to curve mapping
-        input[0] = _encodingKey % MODULUS_BN254;
-        input[1] = xBn254;
-        input[2] = _mask;
-        return (verifyDecoding(input, _proof) == 0);
+        return this.verifyProof(pA, pB, pC, [_encodingKey % MODULUS_BN254, xBn254, _mask]);
     }
 
     /// @notice Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes
@@ -53,9 +52,12 @@ contract EthStorageContract1 is EthStorageContract, Decoder {
         bytes calldata _decodeProof
     ) public view virtual returns (bool) {
         PhyAddr memory kvInfo = kvMap[idxMap[_kvIdx]];
-        Proof memory proof = abi.decode(_decodeProof, (Proof));
         // BLOB decoding check
-        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, _miner, _kvIdx))), _sampleIdxInKv, _mask)) {
+        if (
+            !decodeSample(
+                _decodeProof, uint256(keccak256(abi.encode(kvInfo.hash, _miner, _kvIdx))), _sampleIdxInKv, _mask
+            )
+        ) {
             return false;
         }
 

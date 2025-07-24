@@ -61,25 +61,30 @@ describe("EthStorageContract Test", function () {
     const mask = "0x301b9cec8aae1155d883c48308dbd2f24e54aff21bfbd7b3d1afecb5507bf521";
     const proof = [
       [
-        "0x090f3e4a06c0ed38dcb3a37315500c141445e34a5cb337cb2056f7f31901dc58",
-        "0x0589ecedde0c8c58b8840aa673ad737b5b6a2db6953a058d8837475bba0ba7bb",
+        "0x78e4c42fa4f0d326f6ed23e08ccf4a1690d020b5307476339761c878e4fd93b",
+        "0x2f8d5730408615ffd0d78c104faeed0dfc9556bd5cc858ff00d16d5c5ee4bec5"
       ],
       [
         [
-          "0x05299703ffdb8cc84182e8ff9e25f52e37e28eb394a63ce4868d5468e6782b6b",
-          "0x17639172d28071634a2c52e1141b749561ed36ed18afe1d01f4ceb8a9ecc5bcd",
+          "0x3707dc3b24f4cd77289dc3fd93ac2ba12098f1e93a6c370c70de94051661ceb",
+          "0x16130e5f937a11f65450d3006ebc6d15174f35277ee95989cc73ed661fb84278"
         ],
         [
-          "0x1160394a5486727ab770b6eb79b48b401ce217f94935a6b887ec29d162cb29f7",
-          "0x2931be7c62deb504103a7675651a469e07911ba8ea3dc26cca7402a5b4dd9410",
-        ],
+          "0x150f361f8b43acf2f6b2ecabfd0e300e95da35949c5cf80fc811dec7aab968ae",
+          "0xa8d2fb3261418d4ff2ab9dd13e29a79cb3a821aaa30534f7a9a015699c5f274"
+        ]
       ],
       [
-        "0x2a43c2db08a6da5a69f2e151dd0b4ff207de82f2734936945611c03f607276c9",
-        "0x21d11d759864978d12ee06a093d56941a79de611e9df633c404770d70c2fd5a7",
-      ],
+        "0x2a4c45f2e1232c2ef8130a52678a22012131f39b4cfdfd1f47daa0a89f14e0c",
+        "0x80b1f60362a990582d231ceac6f8af57feec7d0d342789657cf4377f7c14cd4"
+      ]
     ];
-    expect(await sc.decodeSample(proof, encodingKey, sampleIdxInKv, mask)).to.equal(true);
+    const abiCoder = new ethers.AbiCoder();
+    const decodeProofBytes = abiCoder.encode(
+      ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
+      [proof]
+    );
+    expect(await sc.decodeSample(decodeProofBytes, encodingKey, sampleIdxInKv, mask)).to.equal(true);
   });
 
   it("decode-inclusive-8k-blob-test", async function () {
@@ -143,25 +148,30 @@ describe("EthStorageContract Test", function () {
     const mask = "0x1a3526f58594d237ca2cddc84670a3ebb004e745a57b22acbbaf335d2c13fcd2";
     const decodeProof = [
       [
-        "0x0832889498a8fe4eef8b0892fa1249ebd7a8aed09d372faaed1c94dff01d7cc9",
-        "0x17bcad2369edb3a5f36cd75ce8ff15260528af8bbb744e79e8d2a28acb7b6153",
+        "0x2c033866f9339f6b7e486bd2683ad044c749d938282e182bcfcd361e89c3dcfe",
+        "0x16b919204d3f44e46418e27ca133da6b803649b2f22ad8a7c3fb6a31e5fb1b30",
       ],
       [
         [
-          "0x1589c78081a735b082a0660ce1ec524c02a7e5b157893ce27698e7eddf56f98a",
-          "0x20681d15437ae4f65a809d7ea04fdbe2584cab2cb20380652863fbaa4d9a677d",
+          "0x76267516ab7c70392c756aacfbcdbb9726afde5664b334f73b046eeb084b28b",
+          "0x27f6cb07ef3ce13bd0c34221d33521517cb4b690f2b8e8360086008e86dbf75f",
         ],
         [
-          "0x28d8955c5fd1041d9242171171f981fde7353dca48c613086af3adfadac3782e",
-          "0x1e3e72972cb918190ac612852b3b50e264502907640a9519a8aedf3297154cf6",
+          "0x2a13ed27ea4e281f99e73690d3678059bffed60c052573b7c16d84f50dc8af37",
+          "0x16c1ed06157a1c0e115a59134d9912d2cce885f772d369fdc755cef6a5e1e4f7",
         ],
       ],
       [
-        "0x06803c666e791e3e2031c99a5eb8153f46e9a9b6b73ad5618bc9b59613d1b430",
-        "0x1f1a2e683ab254d22156e964448b53742c4baf04e009ad532728391135f97716",
-      ],
+        "0x2ac75b5f6e0858b245b6e88362435a5b920904b2dec41e4bf372b1d50b171d24",
+        "0x172cb102a51789ce37fc019d32af773166c4dfee8a5f0d6698735c477cc6ba77",
+      ]
     ];
-    expect(await sc.decodeSample(decodeProof, encodingKey, sampleIdxInKv, mask)).to.equal(true);
+    // combine all proof into single decode-and-inclusive proof
+    const decodeProofData = abiCoder.encode(
+      ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
+      [decodeProof]
+    );
+    expect(await sc.decodeSample(decodeProofData, encodingKey, sampleIdxInKv, mask)).to.equal(true);
 
     // evaluate merkle proof
     let merkleProofImmutable = await ml.getProof(blob, 32, 8, sampleIdxInKv);
@@ -173,11 +183,6 @@ describe("EthStorageContract Test", function () {
 
     expect(await ml.verify(decodedSample, sampleIdxInKv, root, merkleProof)).to.equal(true);
 
-    // combine all proof into single decode-and-inclusive proof
-    const decodeProofData = abiCoder.encode(
-      ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
-      [decodeProof]
-    );
     const inclusiveProofData = abiCoder.encode(
       ["tuple(bytes32, bytes32, bytes32[])"],
       [[decodedSample, root, merkleProof]]
@@ -275,25 +280,30 @@ describe("EthStorageContract Test", function () {
     const mask = "0x1a3526f58594d237ca2cddc84670a3ebb004e745a57b22acbbaf335d2c13fcd2";
     const decodeProof = [
       [
-        "0x0832889498a8fe4eef8b0892fa1249ebd7a8aed09d372faaed1c94dff01d7cc9",
-        "0x17bcad2369edb3a5f36cd75ce8ff15260528af8bbb744e79e8d2a28acb7b6153",
+        "0x2c033866f9339f6b7e486bd2683ad044c749d938282e182bcfcd361e89c3dcfe",
+        "0x16b919204d3f44e46418e27ca133da6b803649b2f22ad8a7c3fb6a31e5fb1b30"
       ],
       [
         [
-          "0x1589c78081a735b082a0660ce1ec524c02a7e5b157893ce27698e7eddf56f98a",
-          "0x20681d15437ae4f65a809d7ea04fdbe2584cab2cb20380652863fbaa4d9a677d",
+          "0x76267516ab7c70392c756aacfbcdbb9726afde5664b334f73b046eeb084b28b",
+          "0x27f6cb07ef3ce13bd0c34221d33521517cb4b690f2b8e8360086008e86dbf75f"
         ],
         [
-          "0x28d8955c5fd1041d9242171171f981fde7353dca48c613086af3adfadac3782e",
-          "0x1e3e72972cb918190ac612852b3b50e264502907640a9519a8aedf3297154cf6",
-        ],
+          "0x2a13ed27ea4e281f99e73690d3678059bffed60c052573b7c16d84f50dc8af37",
+          "0x16c1ed06157a1c0e115a59134d9912d2cce885f772d369fdc755cef6a5e1e4f7"
+        ]
       ],
       [
-        "0x06803c666e791e3e2031c99a5eb8153f46e9a9b6b73ad5618bc9b59613d1b430",
-        "0x1f1a2e683ab254d22156e964448b53742c4baf04e009ad532728391135f97716",
-      ],
+        "0x2ac75b5f6e0858b245b6e88362435a5b920904b2dec41e4bf372b1d50b171d24",
+        "0x172cb102a51789ce37fc019d32af773166c4dfee8a5f0d6698735c477cc6ba77"
+      ]
     ];
-    expect(await sc.decodeSample(decodeProof, ecodingKeyFromSC, sampleIdxInKv, mask)).to.equal(true);
+    const abiCoder = new ethers.AbiCoder();
+    const decodeProofBytes = abiCoder.encode(
+      ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
+      [decodeProof]
+    );
+    expect(await sc.decodeSample(decodeProofBytes, ecodingKeyFromSC, sampleIdxInKv, mask)).to.equal(true);
 
     let blobArray = ethers.getBytes(blob);
 
@@ -318,23 +328,23 @@ describe("EthStorageContract Test", function () {
     const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
     const nextDecodeProof = [
       [
-        "0x21eaa5a171f25bf2643a93700c04cf21da572e5b946fb9ca6ca3cf7a41256db2",
-        "0x269cddd043e10fd0733bbeb2df6594a9e28008065e1f1b752b38b8621b265a30",
+        "0x2ef7a57d70371f477e072a9407178d7b4c42ca8215843ce12f46010e311b0004",
+        "0x1393325cf0b0e9e46207558c8dd0d273075de56ac78da03217cbbd72aa592609"
       ],
       [
         [
-          "0x22fcb16796bb4d4c84507269a83c6ee3b78ecfb5329fe09a4a0609f4f2afdfb1",
-          "0x14a94f013f6afe0af55e7ecad5ed05c28e56a3e9409755329f93895126567406",
+          "0xca2d640d1612fea57318495313a0f0d77b83e5e62a1ec97dcf4805a745ae1a9",
+          "0x25ae9533cde5b51a30d186ffff4a59522e93ec7521447c1f688492e1fa4b3fe9"
         ],
         [
-          "0x199c15935f667824d3c8636a3b8173a52b7c932fcc3539c369be1d6b5c601b0a",
-          "0x0f3cac0df863f017443f1b20214d7ec0d900b5cdfa72e394aa175b08c7c849d8",
-        ],
+          "0xd2e67ee952009fb593d48320969bf8b22b37ad0fe15310d902171c6acc9c38e",
+          "0xcc0ec025ad9b8220ec9ffb62a6777e6ed801fbe45d6ec5592327cd3d72806b2"
+        ]
       ],
       [
-        "0x198895d717cabc4065e3b957a854fe880872378605c4ac4f30b10bca1cc2c833",
-        "0x2cc767691f3559288663f70488d5c610886d0aa8d7e497eb4277f5e0a055c0b5",
-      ],
+        "0xdb81bb258c62ce5aa5170a1ea35aea4dbddb2833a6a991e6192d5b708083be7",
+        "0xc18b0fc292568fb207f0c2c4694c52127bc55762c8bf96d4d01c96455ade62f"
+      ]
     ];
 
     let proof = await testState.getIntegrityProof(

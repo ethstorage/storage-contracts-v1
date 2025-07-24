@@ -187,13 +187,14 @@ class TestState {
 
   async getIntegrityProof(decodeProof, Mask, encodingKey, sampleKvIdx, sampleIdxInKv, decodedSampleData) {
     let [root, merkleProof] = await this.getMerkleProof(sampleKvIdx, sampleIdxInKv, decodedSampleData);
-    expect(await this.StorageContract.decodeSample(decodeProof, encodingKey, sampleIdxInKv, Mask)).to.equal(true);
 
     const abiCoder = new ethers.AbiCoder();
     const decodeProofData = abiCoder.encode(
       ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
       [decodeProof],
     );
+
+    expect(await this.StorageContract.decodeSample(decodeProofData, encodingKey, sampleIdxInKv, Mask)).to.equal(true);
     const inclusiveProofData = abiCoder.encode(
       ["tuple(bytes32, bytes32, bytes32[])"],
       [[decodedSampleData, root, merkleProof]],
