@@ -13,16 +13,6 @@ contract EthStorageContract2 is EthStorageContract, Decoder2 {
         EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {}
 
-    /// @notice Compute the encoding key using the kvIdx and miner address
-    function _getEncodingKey(uint256 _kvIdx, address _miner) internal view returns (uint256) {
-        return uint256(keccak256(abi.encode(kvMap[idxMap[_kvIdx]].hash, _miner, _kvIdx))) % MODULUS_BN254;
-    }
-
-    /// @notice Compute the input X for inclusion proof using the sample index
-    function _getXIn(uint256 _sampleIdx) internal view returns (uint256) {
-        return _modExp(RU_BN254, _sampleIdx, MODULUS_BN254);
-    }
-
     /// @notice Verify the masks using the zk proof
     /// @param _masks The masks for the samples
     /// @param _kvIdxs The kvIdxs that contain the samples

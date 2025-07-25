@@ -84,7 +84,7 @@ describe("EthStorageContract Test", function () {
       ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
       [proof]
     );
-    expect(await sc.decodeSample(decodeProofBytes, encodingKey, sampleIdxInKv, mask)).to.equal(true);
+    expect(await sc.decodeSampleCheck(decodeProofBytes, encodingKey, sampleIdxInKv, mask)).to.equal(true);
   });
 
   it("decode-inclusive-8k-blob-test", async function () {
@@ -171,7 +171,7 @@ describe("EthStorageContract Test", function () {
       ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
       [decodeProof]
     );
-    expect(await sc.decodeSample(decodeProofData, encodingKey, sampleIdxInKv, mask)).to.equal(true);
+    expect(await sc.decodeSampleCheck(decodeProofData, encodingKey, sampleIdxInKv, mask)).to.equal(true);
 
     // evaluate merkle proof
     let merkleProofImmutable = await ml.getProof(blob, 32, 8, sampleIdxInKv);
@@ -303,7 +303,7 @@ describe("EthStorageContract Test", function () {
       ["tuple(tuple(uint256, uint256), tuple(uint256[2], uint256[2]), tuple(uint256, uint256))"],
       [decodeProof]
     );
-    expect(await sc.decodeSample(decodeProofBytes, ecodingKeyFromSC, sampleIdxInKv, mask)).to.equal(true);
+    expect(await sc.decodeSampleCheck(decodeProofBytes, ecodingKeyFromSC, sampleIdxInKv, mask)).to.equal(true);
 
     let blobArray = ethers.getBytes(blob);
 
