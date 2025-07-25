@@ -13,56 +13,29 @@ contract EthStorageContract1 is EthStorageContract, Decoder {
         EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {}
 
-    /// @notice Verify the mask is correct
-    /// @param _proof The ZK proof
-    /// @param _encodingKey The encoding key
-    /// @param _sampleIdxInKv The sample index in the KV
-    /// @param _mask The mask of the sample
-    /// @return The result of the verification
-    function decodeSample(bytes memory _proof, uint256 _encodingKey, uint256 _sampleIdxInKv, uint256 _mask)
-        public
-        view
-        returns (bool)
-    {
-        (uint256[2] memory pA, uint256[2][2] memory pB, uint256[2] memory pC) =
-            abi.decode(_proof, (uint256[2], uint256[2][2], uint256[2]));
-
-        uint256 xBn254 = _modExp(RU_BN254, _sampleIdxInKv, MODULUS_BN254);
-
-        // TODO: simple hash to curve mapping
-        return this.verifyProof(pA, pB, pC, [_encodingKey % MODULUS_BN254, xBn254, _mask]);
-    }
-
-    /// @notice Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes
-    /// @param _kvIdx The index of the KV pair
-    /// @param _sampleIdxInKv The sample index in the KV
+    /// @notice Verify the masks using the zk proof
+    /// @param _mask The mask for the sample
+    /// @param _kvIdx The kvIdx that contain the sample
+    /// @param _sampleIdx The sampleIdx in the kvIdx
     /// @param _miner The miner address
-    /// @param _encodedData The encoded sample data
-    /// @param _mask The mask of the sample
-    /// @param _inclusiveProof The inclusive proof
-    /// @param _decodeProof The decode proof
-    /// @return The result of the check
-    function decodeAndCheckInclusive(
-        uint256 _kvIdx,
-        uint256 _sampleIdxInKv,
-        address _miner,
-        bytes32 _encodedData,
+    /// @param _decodeProof The zk proof for the sample decoding
+    /// @return true if the proof is valid, false otherwise
+    function decodeSample(
         uint256 _mask,
-        bytes calldata _inclusiveProof,
+        uint256 _kvIdx,
+        uint256 _sampleIdx,
+        address _miner,
         bytes calldata _decodeProof
-    ) public view virtual returns (bool) {
-        PhyAddr memory kvInfo = kvMap[idxMap[_kvIdx]];
-        // BLOB decoding check
-        if (
-            !decodeSample(
-                _decodeProof, uint256(keccak256(abi.encode(kvInfo.hash, _miner, _kvIdx))), _sampleIdxInKv, _mask
-            )
-        ) {
-            return false;
-        }
+    ) public view returns (bool) {
+        (uint256[2] memory pA, uint256[2][2] memory pB, uint256[2] memory pC) =
+            abi.decode(_decodeProof, (uint256[2], uint256[2][2], uint256[2]));
 
-        // Inclusive proof of decodedData = mask ^ encodedData
-        return checkInclusive(kvInfo.hash, _sampleIdxInKv, _mask ^ uint256(_encodedData), _inclusiveProof);
+        uint256[3] memory pubSignals;
+        pubSignals[0] = _getEncodingKey(_kvIdx, _miner);
+        pubSignals[1] = _getXIn(_sampleIdx);
+        pubSignals[2] = _mask;
+        // TODO: simple hash to curve mapping
+        return this.verifyProof(pA, pB, pC, pubSignals);
     }
 
     /// @inheritdoc StorageContract
@@ -85,10 +58,17 @@ contract EthStorageContract1 is EthStorageContract, Decoder {
 
         for (uint256 i = 0; i < RANDOM_CHECKS; i++) {
             (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, _startShardId, _hash0);
-
             require(
-                decodeAndCheckInclusive(
-                    kvIdx, sampleIdxInKv, _miner, _encodedSamples[i], _masks[i], _inclusiveProofs[i], _decodeProof[i]
+                decodeSample(_masks[i], kvIdx, sampleIdxInKv, _miner, _decodeProof[i]),
+                "EthStorageContract1: decodeSample failed"
+            );
+            // Inclusive proof of decodedData = mask ^ encodedData
+            require(
+                checkInclusive(
+                    kvMap[idxMap[kvIdx]].hash,
+                    sampleIdxInKv,
+                    _masks[i] ^ uint256(_encodedSamples[i]),
+                    _inclusiveProofs[i]
                 ),
                 "EthStorageContract1: invalid samples"
             );
