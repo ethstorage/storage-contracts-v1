@@ -194,7 +194,7 @@ class TestState {
       [decodeProof],
     );
 
-    expect(await this.StorageContract.decodeSample(decodeProofData, encodingKey, sampleIdxInKv, Mask)).to.equal(true);
+    expect(await this.StorageContract.decodeSampleCheck(decodeProofData, encodingKey, sampleIdxInKv, Mask)).to.equal(true);
     const inclusiveProofData = abiCoder.encode(
       ["tuple(bytes32, bytes32, bytes32[])"],
       [[decodedSampleData, root, merkleProof]],
