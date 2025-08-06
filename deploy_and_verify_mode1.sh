@@ -6,13 +6,11 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-CONTRACT_NAME="EthStorageContractL2"
-
 timestamp=$(date +"%Y%m%d_%H%M%S")
-output_file="${CONTRACT_NAME}_${timestamp}.txt"
+output_file="deploy_output_l2_${timestamp}.txt"
 
-echo "Deploying ${CONTRACT_NAME}..."
-forge script script/DeployL2.s.sol \
+echo "Deploying contracts..."
+forge script script/DeployL2Mode1.s.sol \
   --rpc-url "$QKC_TESTNET_URL" \
   --private-key "$PRIVATE_KEY" \
   --broadcast > "$output_file"
@@ -25,7 +23,7 @@ echo "Implementation deployed at: $IMPL_ADDRESS"
 echo "Proxy deployed at: $PROXY_ADDRESS"
 
 echo "Verifying Implementation contract..."
-forge verify-contract "$IMPL_ADDRESS" "contracts/${CONTRACT_NAME}.sol:${CONTRACT_NAME}" \
+forge verify-contract "$IMPL_ADDRESS" contracts/EthStorageContractL2Mode1.sol:EthStorageContractL2Mode1 \
   --constructor-args $(cast abi-encode "constructor(uint256[],uint256,uint256,uint256,uint256)" "[$MAX_KV_SIZE_BITS,$SHARD_SIZE_BITS,$RANDOM_CHECKS,$CUTOFF,$DIFF_ADJ_DIVISOR,$TREASURY_SHARE]" $START_TIME $STORAGE_COST $DCF_FACTOR $UPDATE_LIMIT) \
   --rpc-url "$QKC_TESTNET_URL" \
   --verifier-url "$BLOCKSCOUT_API_URL" \
