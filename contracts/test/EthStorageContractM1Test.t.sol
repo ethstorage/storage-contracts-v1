@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import "./TestEthStorageContract.sol";
+import "./TestEthStorageContractM1.sol";
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-contract EthStorageContractTest is Test {
+contract EthStorageContractM1Test is Test {
     uint256 constant STORAGE_COST = 1000;
     uint256 constant SHARD_SIZE_BITS = 19;
     uint256 constant MAX_KV_SIZE = 17;
     uint256 constant PREPAID_AMOUNT = 2 * STORAGE_COST;
     uint256 constant START_TIME = 123;
 
-    TestEthStorageContract storageContract;
+    TestEthStorageContractM1 storageContract;
     address owner = address(0x1);
 
     function setUp() public {
-        TestEthStorageContract imp = new TestEthStorageContract(
+        TestEthStorageContractM1 imp = new TestEthStorageContractM1(
             StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), START_TIME, STORAGE_COST, 0
         );
         bytes memory data = abi.encodeWithSelector(
@@ -24,7 +24,7 @@ contract EthStorageContractTest is Test {
         );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
 
-        storageContract = TestEthStorageContract(address(proxy));
+        storageContract = TestEthStorageContractM1(address(proxy));
     }
 
     function testPutBlob() public {

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../EthStorageContract1.sol";
+import "../EthStorageContractM1.sol";
 import "../libraries/MerkleLib.sol";
 
-contract TestEthStorageContract is EthStorageContract1 {
+contract TestEthStorageContractM1 is EthStorageContractM1 {
     uint256 public currentTimestamp;
 
     struct MerkleProof {
@@ -14,7 +14,7 @@ contract TestEthStorageContract is EthStorageContract1 {
     }
 
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        EthStorageContract1(_config, _startTime, _storageCost, _dcfFactor)
+        EthStorageContractM1(_config, _startTime, _storageCost, _dcfFactor)
     {}
 
     function setTimestamp(uint256 ts) public {

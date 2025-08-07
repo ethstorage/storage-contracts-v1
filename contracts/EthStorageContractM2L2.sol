@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "./EthStorageContract1.sol";
+import "./EthStorageContractM2.sol";
 
 /// @title IL1Block
 /// @notice Interface for L1Block contract.
@@ -27,9 +27,9 @@ interface ISoulGasToken {
 }
 
 /// @custom:proxied
-/// @title EthStorageContractL2Mode1
+/// @title EthStorageContractM2L2
 /// @notice EthStorage contract that will be deployed on L2, and uses L1Block contract to mine.
-contract EthStorageContractL2Mode1 is EthStorageContract1 {
+contract EthStorageContractM2L2 is EthStorageContractM2 {
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
 
@@ -45,14 +45,14 @@ contract EthStorageContractL2Mode1 is EthStorageContract1 {
     /// @notice The address of the soul gas token.
     address public soulGasToken;
 
-    /// @notice Constructs the EthStorageContractL2Mode1 contract.
+    /// @notice Constructs the EthStorageContractM2L2 contract.
     constructor(
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
         uint256 _dcfFactor,
         uint256 _updateLimit
-    ) EthStorageContract1(_config, _startTime, _storageCost, _dcfFactor) {
+    ) EthStorageContractM2(_config, _startTime, _storageCost, _dcfFactor) {
         UPDATE_LIMIT = _updateLimit;
     }
 
@@ -69,7 +69,7 @@ contract EthStorageContractL2Mode1 is EthStorageContract1 {
         if (soulGasToken != address(0)) {
             sgtCharged = ISoulGasToken(soulGasToken).chargeFromOrigin(totalPayment);
         }
-        require(msg.value >= totalPayment - sgtCharged, "EthStorageContractL2Mode1: not enough batch payment");
+        require(msg.value >= totalPayment - sgtCharged, "EthStorageContractM2L2: not enough batch payment");
 
         uint256 shardId = _getShardId(kvEntryCount); // shard id after the batch
         if (shardId > _getShardId(kvEntryCountPrev)) {
@@ -96,14 +96,14 @@ contract EthStorageContractL2Mode1 is EthStorageContract1 {
         returns (bytes32)
     {
         bytes32 bh = L1_BLOCK.blockHash(_l1BlockNumber);
-        require(bh != bytes32(0), "EthStorageContractL2Mode1: failed to obtain blockhash");
+        require(bh != bytes32(0), "EthStorageContractM2L2: failed to obtain blockhash");
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
     }
 
     /// @notice Check if the key-values being updated exceed the limit per block.
     function _checkUpdateLimit(uint256 _updateSize) internal override {
         uint256 blobsUpdated = updateState & MASK == block.number << 32 ? updateState & type(uint32).max : 0;
-        require(blobsUpdated + _updateSize <= UPDATE_LIMIT, "EthStorageContractL2Mode1: exceeds update rate limit");
+        require(blobsUpdated + _updateSize <= UPDATE_LIMIT, "EthStorageContractM2L2: exceeds update rate limit");
         updateState = block.number << 32 | (blobsUpdated + _updateSize);
     }
 

@@ -16,7 +16,7 @@ describe("EthStorageContract Test", function () {
   this.timeout(300000);
 
   it("decode-8k-blob-test", async function () {
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContractM1");
     const impl = await EthStorageContract.deploy([
       13, // maxKvSizeBits
       14, // shardSizeBits
@@ -88,7 +88,7 @@ describe("EthStorageContract Test", function () {
   });
 
   it("decode-inclusive-8k-blob-test", async function () {
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContractM1");
     const impl = await EthStorageContract.deploy([
       13, // maxKvSizeBits
       14, // shardSizeBits
@@ -231,7 +231,7 @@ describe("EthStorageContract Test", function () {
   });
 
   it("verify-sample-8k-blob-2-samples-test", async function () {
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContractM1");
     const impl = await EthStorageContract.deploy([
       13, // maxKvSizeBits
       14, // shardSizeBits
@@ -425,7 +425,7 @@ describe("EthStorageContract Test", function () {
       console.log("[Info] complete-mining-process running");
     }
 
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContract");
+    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContractM1");
     const impl = await EthStorageContract.deploy([
       13, // maxKvSizeBits
       14, // shardSizeBits
