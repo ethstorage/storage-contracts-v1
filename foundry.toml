@@ -7,3 +7,7 @@ cache_path = 'cache_forge'
 evm_version = 'cancun'
 solc_version = "0.8.28"
 via_ir = true
+ffi = true
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
