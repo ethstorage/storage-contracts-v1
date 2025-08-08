@@ -9,6 +9,7 @@ import "./zk-verify/Decoder.sol";
 /// @notice EthStorage Contract that verifies sample decodings per zk proof
 contract EthStorageContract1 is EthStorageContract, Decoder {
     /// @notice Constructs the EthStorageContract1 contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {}

@@ -20,55 +20,32 @@ contract DeployEthStorageL2 is Script {
             diffAdjDivisor: vm.envOr("DIFF_ADJ_DIVISOR", uint256(32)),
             treasuryShare: vm.envOr("TREASURY_SHARE", uint256(100))
         });
-        
+
         uint256 startTime = block.timestamp;
+        console.log("Start time:", startTime);
         uint256 storageCost = vm.envOr("STORAGE_COST", uint256(570000000000000000));
         uint256 dcfFactor = vm.envOr("DCF_FACTOR", uint256(340282366367469178095360967382638002176));
         uint256 updateLimit = vm.envOr("UPDATE_LIMIT", uint256(90));
-        
+
         address treasury = vm.envOr("TREASURY_ADDRESS", deployer);
 
         vm.startBroadcast(deployerPrivateKey);
 
-        EthStorageContractL2 implementation = new EthStorageContractL2(
-            config,
-            startTime,
-            storageCost,
-            dcfFactor,
-            updateLimit
-        );
+        EthStorageContractL2 implementation =
+            new EthStorageContractL2(config, startTime, storageCost, dcfFactor, updateLimit);
         console.log("Implementation address:", address(implementation));
 
-        bytes memory initData = abi.encodeWithSelector(
-            implementation.initialize.selector,
-            deployer,  
-            treasury  
-        );
+        bytes memory initData = abi.encodeWithSelector(implementation.initialize.selector, deployer, treasury);
 
         address proxy = Upgrades.deployTransparentProxy(
             "EthStorageContractL2.sol:EthStorageContractL2",
-            deployer, 
+            deployer, // proxy admin
             initData
         );
-        
+        console.log("Proxy address:", proxy);
         address proxyAdmin = Upgrades.getAdminAddress(proxy);
+        console.log("Proxy admin address:", proxyAdmin);
 
         vm.stopBroadcast();
-
-        console.log("Start time:", startTime);
-        console.log("Implementation address:", address(implementation));
-        console.log("Proxy address:", proxy);
-        console.log("Proxy admin address:", proxyAdmin);
-        console.log("Treasury address:", treasury);
-        console.log("Update limit:", updateLimit);
-        
-        console.log("Config - maxKvSizeBits:", config.maxKvSizeBits);
-        console.log("Config - shardSizeBits:", config.shardSizeBits);
-        console.log("Config - randomChecks:", config.randomChecks);
-        console.log("Config - cutoff:", config.cutoff);
-        console.log("Config - diffAdjDivisor:", config.diffAdjDivisor);
-        console.log("Config - treasuryShare:", config.treasuryShare);
-        console.log("Storage cost:", storageCost);
-        console.log("DCF factor:", dcfFactor);
     }
 }

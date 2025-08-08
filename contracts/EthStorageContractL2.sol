@@ -37,6 +37,7 @@ contract EthStorageContractL2 is EthStorageContract2 {
     uint256 internal constant MASK = ~uint256(0) ^ type(uint32).max;
 
     /// @notice The rate limit to update blobs per block
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable UPDATE_LIMIT;
 
     /// @notice A slot to store both `blockLastUpdate` (left 224) and `blobsUpdated` (right 32)
@@ -46,6 +47,7 @@ contract EthStorageContractL2 is EthStorageContract2 {
     address public soulGasToken;
 
     /// @notice Constructs the EthStorageContractL2 contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         Config memory _config,
         uint256 _startTime,

@@ -37,6 +37,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
     /// @notice Constructs the EthStorageContract contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         StorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {
