@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../EthStorageContractL2.sol";
+import "../EthStorageContractM2L2.sol";
 
-contract TestEthStorageContractL2 is EthStorageContractL2 {
+contract TestEthStorageContractM2L2 is EthStorageContractM2L2 {
     constructor(
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
         uint256 _dcfFactor,
         uint256 _updateLimit
-    ) EthStorageContractL2(_config, _startTime, _storageCost, _dcfFactor, _updateLimit) {}
+    ) EthStorageContractM2L2(_config, _startTime, _storageCost, _dcfFactor, _updateLimit) {}
 
     /// @notice Get the number of blobs updated within the current block.
     function getBlobsUpdated() public view returns (uint256) {

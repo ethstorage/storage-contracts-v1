@@ -23,7 +23,7 @@ echo "Implementation deployed at: $IMPL_ADDRESS"
 echo "Proxy deployed at: $PROXY_ADDRESS"
 
 echo "Verifying Implementation contract..."
-forge verify-contract "$IMPL_ADDRESS" contracts/EthStorageContractL2Mode1.sol:EthStorageContractL2Mode1 \
+forge verify-contract "$IMPL_ADDRESS" contracts/EthStorageContractM1L2.sol:EthStorageContractM1L2 \
   --constructor-args $(cast abi-encode "constructor(uint256[],uint256,uint256,uint256,uint256)" "[$MAX_KV_SIZE_BITS,$SHARD_SIZE_BITS,$RANDOM_CHECKS,$CUTOFF,$DIFF_ADJ_DIVISOR,$TREASURY_SHARE]" $START_TIME $STORAGE_COST $DCF_FACTOR $UPDATE_LIMIT) \
   --rpc-url "$QKC_TESTNET_URL" \
   --verifier-url "$BLOCKSCOUT_API_URL" \

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../EthStorageContract2.sol";
+import "../EthStorageContractM2.sol";
 
-contract TestEthStorageContractKZG is EthStorageContract2 {
+contract TestEthStorageContractM2 is EthStorageContractM2 {
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor)
+        EthStorageContractM2(_config, _startTime, _storageCost, _dcfFactor)
     {}
 
     // a test only method to upload multiple blobs in one tx

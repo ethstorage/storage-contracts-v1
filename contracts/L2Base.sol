@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "./EthStorageContract2.sol";
+import "./libraries/RandaoLib.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 /// @title IL1Block
 /// @notice Interface for L1Block contract.
@@ -27,9 +28,9 @@ interface ISoulGasToken {
 }
 
 /// @custom:proxied
-/// @title EthStorageContractL2
-/// @notice EthStorage contract that will be deployed on L2, and uses L1Block contract to mine.
-contract EthStorageContractL2 is EthStorageContract2 {
+/// @title L2Base
+/// @notice Common base contract that will be deployed on L2, and uses L1Block contract to mine.
+abstract contract L2Base is AccessControlUpgradeable {
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
 
@@ -45,14 +46,8 @@ contract EthStorageContractL2 is EthStorageContract2 {
     /// @notice The address of the soul gas token.
     address public soulGasToken;
 
-    /// @notice Constructs the EthStorageContractL2 contract.
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _updateLimit
-    ) EthStorageContract2(_config, _startTime, _storageCost, _dcfFactor) {
+    /// @notice Constructs the L2Base contract.
+    constructor(uint256 _updateLimit) {
         UPDATE_LIMIT = _updateLimit;
     }
 
@@ -61,30 +56,13 @@ contract EthStorageContractL2 is EthStorageContract2 {
         soulGasToken = _soulGasToken;
     }
 
-    /// @inheritdoc StorageContract
-    function _checkAppend(uint256 _batchSize) internal virtual override {
-        uint256 kvEntryCountPrev = kvEntryCount - _batchSize; // kvEntryCount already increased
-        uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
-        uint256 sgtCharged = 0;
-        if (soulGasToken != address(0)) {
-            sgtCharged = ISoulGasToken(soulGasToken).chargeFromOrigin(totalPayment);
-        }
-        require(msg.value >= totalPayment - sgtCharged, "EthStorageContractL2: not enough batch payment");
-
-        uint256 shardId = _getShardId(kvEntryCount); // shard id after the batch
-        if (shardId > _getShardId(kvEntryCountPrev)) {
-            // Open a new shard and mark the shard is ready to mine.
-            infos[shardId].lastMineTime = _blockTs();
-        }
-    }
-
     /// @notice Get the current block number
-    function _blockNumber() internal view virtual override returns (uint256) {
+    function _blockNumber() internal view virtual returns (uint256) {
         return L1_BLOCK.number();
     }
 
     /// @notice Get the current block timestamp
-    function _blockTs() internal view virtual override returns (uint256) {
+    function _blockTs() internal view virtual returns (uint256) {
         return L1_BLOCK.timestamp();
     }
 
@@ -92,18 +70,18 @@ contract EthStorageContractL2 is EthStorageContract2 {
     function _getRandao(uint256 _l1BlockNumber, bytes calldata _headerRlpBytes)
         internal
         view
-        override
+        virtual
         returns (bytes32)
     {
         bytes32 bh = L1_BLOCK.blockHash(_l1BlockNumber);
-        require(bh != bytes32(0), "EthStorageContractL2: failed to obtain blockhash");
+        require(bh != bytes32(0), "L2Base: failed to obtain blockhash");
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
     }
 
     /// @notice Check if the key-values being updated exceed the limit per block.
-    function _checkUpdateLimit(uint256 _updateSize) internal override {
+    function _checkUpdateLimit(uint256 _updateSize) internal virtual {
         uint256 blobsUpdated = updateState & MASK == block.number << 32 ? updateState & type(uint32).max : 0;
-        require(blobsUpdated + _updateSize <= UPDATE_LIMIT, "EthStorageContractL2: exceeds update rate limit");
+        require(blobsUpdated + _updateSize <= UPDATE_LIMIT, "L2Base: exceeds update rate limit");
         updateState = block.number << 32 | (blobsUpdated + _updateSize);
     }
 

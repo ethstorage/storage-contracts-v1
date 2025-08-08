@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import {Script} from "../lib/forge-std/src/Script.sol";
 import {console} from "../lib/forge-std/src/console.sol";
 import {StorageContract} from "../contracts/StorageContract.sol";
-import {EthStorageContractL2Mode1} from "../contracts/EthStorageContractL2Mode1.sol";
+import {EthStorageContractM1L2} from "../contracts/EthStorageContractM1L2.sol";
 import {EthStorageUpgradeableProxy} from "../contracts/EthStorageUpgradeableProxy.sol";
 
 contract DeployL2 is Script {
@@ -56,8 +56,8 @@ contract DeployL2 is Script {
         vm.startBroadcast();
 
         // Deploy the implementation contract
-        EthStorageContractL2Mode1 impl =
-            new EthStorageContractL2Mode1(config, startTime, storageCost, dcfFactor, updateLimit);
+        EthStorageContractM1L2 impl =
+            new EthStorageContractM1L2(config, startTime, storageCost, dcfFactor, updateLimit);
 
         // Prepare initialization data
         bytes memory data = abi.encodeWithSelector(

@@ -6,7 +6,7 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-CONTRACT_NAME="EthStorageContractL2"
+CONTRACT_NAME="EthStorageContractM2L2"
 
 timestamp=$(date +"%Y%m%d_%H%M%S")
 output_file="${CONTRACT_NAME}_${timestamp}.txt"

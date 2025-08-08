@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import {Script} from "../lib/forge-std/src/Script.sol";
 import {console} from "../lib/forge-std/src/console.sol";
 import {StorageContract} from "../contracts/StorageContract.sol";
-import {EthStorageContractL2} from "../contracts/EthStorageContractL2.sol";
+import {EthStorageContractM2L2} from "../contracts/EthStorageContractM2L2.sol";
 
 interface IProxyAdmin {
     function upgradeAndCall(address proxy, address implementation, bytes memory data) external;
@@ -34,7 +34,7 @@ contract UpgradeL2 is Script {
         console.log("Admin address: %s", admin);
 
         vm.startBroadcast();
-        EthStorageContractL2 impl = new EthStorageContractL2(config, startTime, storageCost, dcfFactor, updateLimit);
+        EthStorageContractM2L2 impl = new EthStorageContractM2L2(config, startTime, storageCost, dcfFactor, updateLimit);
         console.log("New implementation: %s", address(impl));
 
         IProxyAdmin(admin).upgradeAndCall(proxy, address(impl), "");

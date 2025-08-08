@@ -17,7 +17,7 @@ Core functionalities of the storage contract:
 ## Architecture
 The storage contract inherits from several contracts, with each one in the inheritance chain implementing different functionalities. The inheritance hierarchy is as follows:
 ```
-DecentralizedKV <- StorageContract <- EthStorageContract <- EthStorageContract2 <- EthStorageContractL2
+DecentralizedKV <- StorageContract <- EthStorageContract <- EthStorageContractM2 <- EthStorageContractM2L2
 ```
 
 ### DecentralizedKV
@@ -40,11 +40,11 @@ EthStorageContract performs the following storage proof verifications submitted 
  - **Inclusive verification**: The contract verifies that the submitted sample data belongs to the stored off-chain BLOB.
  - **zk-SNARK-based encoding verification**: Each sample’s encoding is verified using zk-SNARKs. You can find the related circom [here](https://github.com/ethstorage/zk-decoder/blob/main/circom/circuits/blob_poseidon.circom). The number of random checks is flexible, but more checks increase on-chain verification gas costs.
 
-### EthStorageContract2
-To reduce gas costs, EthStorageContract2 performs a single verification, regardless of how many random sampling checks are required. The corresponding circom file is available [here](https://github.com/ethstorage/zk-decoder/blob/main/circom/circuits/blob_poseidon_2.circom)
+### EthStorageContractM2
+To reduce gas costs, EthStorageContractM2 performs a single verification, regardless of how many random sampling checks are required. The corresponding circom file is available [here](https://github.com/ethstorage/zk-decoder/blob/main/circom/circuits/blob_poseidon_2.circom)
 
-### EthStorageContractL2
-EthStorageContractL2 inherits from EthStorageContract2 and is designed for deployment on L2. While L1 BLOBs are currently inexpensive, Ethereum L1 execution costs remain high for many non-financial applications. Deploying the storage contract on L2 allows EthStorage to serve as a storage L3, offering lower storage costs for applications built on it. The L2 environment differs from L1, requiring two key modifications:
+### EthStorageContractM2L2
+EthStorageContractM2L2 inherits from EthStorageContractM2 and is designed for deployment on L2. While L1 BLOBs are currently inexpensive, Ethereum L1 execution costs remain high for many non-financial applications. Deploying the storage contract on L2 allows EthStorage to serve as a storage L3, offering lower storage costs for applications built on it. The L2 environment differs from L1, requiring two key modifications:
  - **Randomness source**: L2 doesn’t have a reliable random generator like L1’s RANDAO. To address this, L1 [blockhash](https://github.com/ethstorage/optimism/blob/cd66e3ab6fab1b736d07677e80d5b3f3e1401228/packages/contracts-bedrock/src/L2/L1Block.sol#L182) is bridged to L2 for verification.
  - **Rate limiting**: With lower execution costs, it becomes feasible to perform numerous key-value updates at a reasonable cost. To prevent potential DoS attacks, rate limiting is implemented.
 

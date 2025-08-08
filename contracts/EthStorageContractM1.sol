@@ -5,10 +5,10 @@ import "./EthStorageContract.sol";
 import "./zk-verify/Decoder.sol";
 
 /// @custom:proxied
-/// @title EthStorageContract1
+/// @title EthStorageContractM1
 /// @notice EthStorage Contract that verifies sample decodings per zk proof
-contract EthStorageContract1 is EthStorageContract, Decoder {
-    /// @notice Constructs the EthStorageContract1 contract.
+contract EthStorageContractM1 is EthStorageContract, Decoder {
+    /// @notice Constructs the EthStorageContractM1 contract.
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {}
@@ -48,10 +48,10 @@ contract EthStorageContract1 is EthStorageContract, Decoder {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public view virtual override returns (bytes32) {
-        require(_encodedSamples.length == RANDOM_CHECKS, "EthStorageContract1: data length mismatch");
-        require(_masks.length == RANDOM_CHECKS, "EthStorageContract1: masks length mismatch");
-        require(_inclusiveProofs.length == RANDOM_CHECKS, "EthStorageContract1: proof length mismatch");
-        require(_decodeProof.length == RANDOM_CHECKS, "EthStorageContract1: decodeProof length mismatch");
+        require(_encodedSamples.length == RANDOM_CHECKS, "EthStorageContractM1: data length mismatch");
+        require(_masks.length == RANDOM_CHECKS, "EthStorageContractM1: masks length mismatch");
+        require(_inclusiveProofs.length == RANDOM_CHECKS, "EthStorageContractM1: proof length mismatch");
+        require(_decodeProof.length == RANDOM_CHECKS, "EthStorageContractM1: decodeProof length mismatch");
 
         // calculate the number of samples range of the sample check
         uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS);
@@ -60,7 +60,7 @@ contract EthStorageContract1 is EthStorageContract, Decoder {
             (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, _startShardId, _hash0);
             require(
                 decodeSample(_masks[i], kvIdx, sampleIdxInKv, _miner, _decodeProof[i]),
-                "EthStorageContract1: decodeSample failed"
+                "EthStorageContractM1: decodeSample failed"
             );
             // Inclusive proof of decodedData = mask ^ encodedData
             require(
@@ -70,7 +70,7 @@ contract EthStorageContract1 is EthStorageContract, Decoder {
                     _masks[i] ^ uint256(_encodedSamples[i]),
                     _inclusiveProofs[i]
                 ),
-                "EthStorageContract1: invalid samples"
+                "EthStorageContractM1: invalid samples"
             );
             _hash0 = keccak256(abi.encode(_hash0, _encodedSamples[i]));
         }
