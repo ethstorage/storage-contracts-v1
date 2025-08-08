@@ -64,7 +64,7 @@ contract EthStorageContractL2Test is Test {
         assertEq(storageContract.getBlobsUpdated(), 11);
 
         // Update all 6 again, exceeds UPDATE_LIMIT = 16
-        vm.expectRevert("EthStorageContractM2L2: exceeds update rate limit");
+        vm.expectRevert("L2Base: exceeds update rate limit");
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlockLastUpdate(), 10000);
 
@@ -79,7 +79,7 @@ contract EthStorageContractL2Test is Test {
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlobsUpdated(), 12);
         assertEq(storageContract.getBlockLastUpdate(), 10001);
-        vm.expectRevert("EthStorageContractM2L2: exceeds update rate limit");
+        vm.expectRevert("L2Base: exceeds update rate limit");
         storageContract.putBlobs(keys, blobIdxs, lengths);
     }
 
