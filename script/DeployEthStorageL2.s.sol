@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 import "openzeppelin-foundry-upgrades/Upgrades.sol";
 import "../contracts/EthStorageContractL2.sol";
 
-contract DeployEthStorageL2Script is Script {
+contract DeployEthStorageL2 is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
@@ -40,13 +40,13 @@ contract DeployEthStorageL2Script is Script {
         console.log("Implementation address:", address(implementation));
 
         bytes memory initData = abi.encodeWithSelector(
-            EthStorageContractL2.initialize.selector,
+            implementation.initialize.selector,
             deployer,  
             treasury  
         );
 
         address proxy = Upgrades.deployTransparentProxy(
-            address(implementation),
+            "EthStorageContractL2.sol:EthStorageContractL2",
             deployer, 
             initData
         );
