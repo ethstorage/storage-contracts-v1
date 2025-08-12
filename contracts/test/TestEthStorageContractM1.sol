@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../EthStorageContract1.sol";
+import "../EthStorageContractM1.sol";
 import "../libraries/MerkleLib.sol";
 
-contract TestEthStorageContract is EthStorageContract1 {
+contract TestEthStorageContractM1 is EthStorageContractM1 {
     uint256 public currentTimestamp;
 
     struct MerkleProof {
@@ -14,7 +14,7 @@ contract TestEthStorageContract is EthStorageContract1 {
     }
 
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        EthStorageContract1(_config, _startTime, _storageCost, _dcfFactor)
+        EthStorageContractM1(_config, _startTime, _storageCost, _dcfFactor)
     {}
 
     function setTimestamp(uint256 ts) public {
@@ -77,6 +77,44 @@ contract TestEthStorageContract is EthStorageContract1 {
         return keccak256(abi.encode(kvMap[idxMap[kvIdx]].hash, miner, kvIdx));
     }
 
+    /// @notice Verify the mask is correct
+    /// @param _proof The ZK proof
+    /// @param _encodingKey The encoding key
+    /// @param _sampleIdxInKv The sample index in the KV
+    /// @param _mask The mask of the sample
+    /// @return The result of the verification
+    function decodeSampleCheck(bytes memory _proof, uint256 _encodingKey, uint256 _sampleIdxInKv, uint256 _mask)
+        public
+        view
+        returns (bool)
+    {
+        (uint256[2] memory pA, uint256[2][2] memory pB, uint256[2] memory pC) =
+            abi.decode(_proof, (uint256[2], uint256[2][2], uint256[2]));
+
+        uint256 xBn254 = _modExp(RU_BN254, _sampleIdxInKv, MODULUS_BN254);
+
+        // TODO: simple hash to curve mapping
+        return this.verifyProof(pA, pB, pC, [_encodingKey % MODULUS_BN254, xBn254, _mask]);
+    }
+
+    function checkInclusive(
+        bytes32 _dataHash,
+        uint256 _sampleIdxInKv,
+        uint256 _decodedData,
+        bytes memory inclusiveProof
+    ) public pure override returns (bool) {
+        if (_dataHash == 0x0) {
+            return _decodedData == 0;
+        }
+        MerkleProof memory mProof = abi.decode(inclusiveProof, (MerkleProof));
+
+        // Inclusive proof of decodedData = mask ^ encodedData
+        if (!MerkleLib.verify(keccak256(abi.encode(mProof.data)), _sampleIdxInKv, mProof.rootHash, mProof.proofs)) {
+            return false;
+        }
+        return uint256(mProof.data) == _decodedData;
+    }
+
     /*
      * Decode the sample and check the decoded sample is included in the BLOB corresponding to on-chain datahashes.
      */
@@ -88,12 +126,9 @@ contract TestEthStorageContract is EthStorageContract1 {
         uint256 mask,
         bytes calldata inclusiveProof,
         bytes calldata decodeProof
-    ) public view virtual override returns (bool) {
-        PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
-        Proof memory proof = abi.decode(decodeProof, (Proof));
-
+    ) public view virtual returns (bool) {
         // BLOB decoding check
-        if (!decodeSample(proof, uint256(keccak256(abi.encode(kvInfo.hash, miner, kvIdx))), sampleIdxInKv, mask)) {
+        if (!decodeSample(mask, kvIdx, sampleIdxInKv, miner, decodeProof)) {
             return false;
         }
 

@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "openzeppelin-foundry-upgrades/Upgrades.sol";
-import "../contracts/EthStorageContractL2.sol";
+import "../contracts/EthStorageContractM2L2.sol";
 
 contract DeployEthStorageL2 is Script {
     function run() external {
@@ -31,14 +31,14 @@ contract DeployEthStorageL2 is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        EthStorageContractL2 implementation =
-            new EthStorageContractL2(config, startTime, storageCost, dcfFactor, updateLimit);
+        EthStorageContract implementation =
+            new EthStorageContractM2L2(config, startTime, storageCost, dcfFactor, updateLimit);
         console.log("Implementation address:", address(implementation));
 
         bytes memory initData = abi.encodeWithSelector(implementation.initialize.selector, deployer, treasury);
 
         address proxy = Upgrades.deployTransparentProxy(
-            "EthStorageContractL2.sol:EthStorageContractL2",
+            "EthStorageContractM2L2.sol:EthStorageContractM2L2",
             deployer, // proxy admin
             initData
         );
