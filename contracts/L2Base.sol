@@ -2,7 +2,6 @@
 pragma solidity 0.8.28;
 
 import "./libraries/RandaoLib.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 /// @title IL1Block
 /// @notice Interface for L1Block contract.
@@ -30,7 +29,7 @@ interface ISoulGasToken {
 /// @custom:proxied
 /// @title L2Base
 /// @notice Common base contract that will be deployed on L2, and uses L1Block contract to mine.
-abstract contract L2Base is AccessControlUpgradeable {
+abstract contract L2Base {
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
 
@@ -52,7 +51,7 @@ abstract contract L2Base is AccessControlUpgradeable {
     }
 
     /// @notice Set the soul gas token address for the contract.
-    function setSoulGasToken(address _soulGasToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function _setSoulGasToken(address _soulGasToken) internal {
         soulGasToken = _soulGasToken;
     }
 

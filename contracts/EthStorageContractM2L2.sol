@@ -58,4 +58,9 @@ contract EthStorageContractM2L2 is EthStorageContractM2, L2Base {
     function _checkUpdateLimit(uint256 _updateSize) internal override(DecentralizedKV, L2Base) {
         L2Base._checkUpdateLimit(_updateSize);
     }
+
+    /// @notice Set the soul gas token address for the contract.
+    function setSoulGasToken(address _soulGasToken) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setSoulGasToken(_soulGasToken);
+    }
 }
