@@ -130,9 +130,28 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Constructs the StorageContract contract. Initializes the storage config.
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor)
-    {
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initializer.
+    /// @param _minimumDiff   The minimum difficulty.
+    /// @param _prepaidAmount The prepaid amount for the last shard.
+    /// @param _nonceLimit    The maximum nonce per block.
+    /// @param _treasury      The treasury address.
+    /// @param _owner         The contract owner.
+    function __init_storage(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _owner
+    ) internal onlyInitializing {
+        __init_KV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor, _owner);
         /* Assumptions */
         require(_config.shardSizeBits >= _config.maxKvSizeBits, "StorageContract: shardSize too small");
         require(_config.maxKvSizeBits >= SAMPLE_SIZE_BITS, "StorageContract: maxKvSize too small");
@@ -146,30 +165,13 @@ abstract contract StorageContract is DecentralizedKV {
         CUTOFF = _config.cutoff;
         DIFF_ADJ_DIVISOR = _config.diffAdjDivisor;
         TREASURY_SHARE = _config.treasuryShare;
-    }
-
-    /// @notice Initializer.
-    /// @param _minimumDiff   The minimum difficulty.
-    /// @param _prepaidAmount The prepaid amount for the last shard.
-    /// @param _nonceLimit    The maximum nonce per block.
-    /// @param _treasury      The treasury address.
-    /// @param _owner         The contract owner.
-    function __init_storage(
-        uint256 _minimumDiff,
-        uint256 _prepaidAmount,
-        uint256 _nonceLimit,
-        address _treasury,
-        address _owner
-    ) public onlyInitializing {
-        __init_KV(_owner);
-
         minimumDiff = _minimumDiff;
         prepaidAmount = _prepaidAmount;
         nonceLimit = _nonceLimit;
         treasury = _treasury;
-        prepaidLastMineTime = START_TIME;
+        prepaidLastMineTime = _startTime;
         // make sure shard0 is ready to mine and pay correctly
-        infos[0].lastMineTime = START_TIME;
+        infos[0].lastMineTime = _startTime;
         enforceMinerRole = true;
     }
 

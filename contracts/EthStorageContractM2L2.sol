@@ -3,20 +3,36 @@ pragma solidity 0.8.28;
 
 import "./EthStorageContractM2.sol";
 import "./L2Base.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// @custom:proxied
 /// @title EthStorageContractM2L2
 /// @notice EthStorage contract that will be deployed on L2, and uses mode 2 zk proof.
-contract EthStorageContractM2L2 is EthStorageContractM2, L2Base {
+contract EthStorageContractM2L2 is Initializable, EthStorageContractM2, L2Base {
     /// @notice Constructs the EthStorageContractM2L2 contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the EthStorageContractM2L2 contract.
+    function initialize(
         Config memory _config,
         uint256 _startTime,
         uint256 _storageCost,
         uint256 _dcfFactor,
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _admin,
         uint256 _updateLimit
-    ) EthStorageContractM2(_config, _startTime, _storageCost, _dcfFactor) L2Base(_updateLimit) {}
+    ) public initializer {
+        EthStorageContractM2.initialize(
+            _config, _startTime, _storageCost, _dcfFactor, _minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _admin
+        );
+        __L2Base_init(_updateLimit);
+    }
 
     /// @inheritdoc StorageContract
     function _checkAppend(uint256 _batchSize) internal virtual override {

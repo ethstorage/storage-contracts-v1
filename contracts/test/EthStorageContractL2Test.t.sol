@@ -22,11 +22,16 @@ contract EthStorageContractL2Test is Test {
     address owner = address(0x1);
 
     function setUp() public {
-        TestEthStorageContractM2L2 imp = new TestEthStorageContractM2L2(
-            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0, UPDATE_LIMIT
-        );
+        TestEthStorageContractM2L2 imp = new TestEthStorageContractM2L2();
         bytes memory data = abi.encodeWithSelector(
-            storageContract.initialize.selector, 0, PREPAID_AMOUNT, 0, address(0x1), address(0x1)
+            EthStorageContractM2L2.initialize.selector,
+            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0),
+            0,
+            PREPAID_AMOUNT,
+            0,
+            address(0x1),
+            address(0x1),
+            UPDATE_LIMIT
         );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
 
@@ -84,15 +89,19 @@ contract EthStorageContractL2Test is Test {
     }
 
     function testSGTPayment() public {
-        TestEthStorageContractM2L2 imp = new TestEthStorageContractM2L2(
+        TestEthStorageContractM2L2 imp = new TestEthStorageContractM2L2();
+        bytes memory data = abi.encodeWithSelector(
+            EthStorageContractM2L2.initialize.selector,
             StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0),
             block.timestamp,
             1500000000000000,
             0,
+            0,
+            PREPAID_AMOUNT,
+            0,
+            address(0x1),
+            address(0x1),
             UPDATE_LIMIT
-        );
-        bytes memory data = abi.encodeWithSelector(
-            storageContract.initialize.selector, 0, PREPAID_AMOUNT, 0, address(0x1), address(0x1)
         );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
 

@@ -13,9 +13,23 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         bytes32[] proofs;
     }
 
-    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        EthStorageContractM1(_config, _startTime, _storageCost, _dcfFactor)
-    {}
+    constructor() EthStorageContractM1() {}
+
+    function initializeTest(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _admin
+    ) public {
+        initialize(
+            _config, _startTime, _storageCost, _dcfFactor, _minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _admin
+        );
+    }
 
     function setTimestamp(uint256 ts) public {
         require(ts > currentTimestamp, "ts");
@@ -32,7 +46,6 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         uint256[] memory lengths = new uint256[](1);
         lengths[0] = data.length;
 
-        // TODO: 64-bytes should be more efficient.
         _putBatchInternal(keys, dataHashes, lengths);
     }
 

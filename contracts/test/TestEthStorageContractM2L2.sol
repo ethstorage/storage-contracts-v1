@@ -4,13 +4,7 @@ pragma solidity 0.8.28;
 import "../EthStorageContractM2L2.sol";
 
 contract TestEthStorageContractM2L2 is EthStorageContractM2L2 {
-    constructor(
-        Config memory _config,
-        uint256 _startTime,
-        uint256 _storageCost,
-        uint256 _dcfFactor,
-        uint256 _updateLimit
-    ) EthStorageContractM2L2(_config, _startTime, _storageCost, _dcfFactor, _updateLimit) {}
+    constructor() {}
 
     /// @notice Get the number of blobs updated within the current block.
     function getBlobsUpdated() public view returns (uint256) {

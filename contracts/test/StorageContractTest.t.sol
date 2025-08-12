@@ -15,13 +15,28 @@ contract StorageContractTest is Test {
     address miner = address(0x2);
 
     function setUp() public {
-        storageContract = new TestStorageContract(
-            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0),
-            0,
-            STORAGE_COST,
-            340282366367469178095360967382638002176
+        storageContract = new TestStorageContract();
+
+        StorageContract.Config memory config = StorageContract.Config(
+            MAX_KV_SIZE, // maxKvSizeBits
+            SHARD_SIZE_BITS, // shardSizeBits
+            2, // randomChecks
+            0, // cutoff
+            0, // diffAdjDivisor
+            0 // treasuryShare
         );
-        storageContract.initialize(0, PREPAID_AMOUNT, 0, vm.addr(1), owner);
+
+        storageContract.initialize(
+            config, // _config
+            0, // _startTime
+            STORAGE_COST, // _storageCost
+            340282366367469178095360967382638002176, // _dcfFactor
+            0, // _minimumDiff
+            PREPAID_AMOUNT, // _prepaidAmount
+            0, // _nonceLimit
+            vm.addr(1), // _treasury
+            owner // _owner
+        );
     }
 
     function testMiningReward() public {

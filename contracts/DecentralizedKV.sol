@@ -71,22 +71,27 @@ contract DecentralizedKV is AccessControlUpgradeable {
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
-    /// @notice Constructs the DecentralizedKV contract. Initializes the immutables.
+    /// @notice Constructs the DecentralizedKV contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor) {
-        MAX_KV_SIZE = _maxKvSize;
-        START_TIME = _startTime;
-        STORAGE_COST = _storageCost;
-        DCF_FACTOR = _dcfFactor;
+    constructor() {
+        _disableInitializers();
     }
 
     /// @notice Initializer.
     /// @param _owner The contract owner.
-    function __init_KV(address _owner) internal onlyInitializing {
+    function __init_KV(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor, address _owner)
+        internal
+        onlyInitializing
+    {
         __Context_init();
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
         kvEntryCount = 0;
+
+        MAX_KV_SIZE = _maxKvSize;
+        START_TIME = _startTime;
+        STORAGE_COST = _storageCost;
+        DCF_FACTOR = _dcfFactor;
     }
 
     /// @notice Pow function in Q128.

@@ -28,8 +28,8 @@ interface ISoulGasToken {
 
 /// @custom:proxied
 /// @title L2Base
-/// @notice Common base contract that will be deployed on L2, and uses L1Block contract to mine.
-abstract contract L2Base {
+/// @notice Base contract for L2 storage contracts with common functionality
+abstract contract L2Base is Initializable {
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
 
@@ -48,11 +48,16 @@ abstract contract L2Base {
 
     /// @notice Constructs the L2Base contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(uint256 _updateLimit) {
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the L2Base contract.
+    function __L2Base_init(uint256 _updateLimit) internal onlyInitializing {
+        __AccessControl_init();
         UPDATE_LIMIT = _updateLimit;
     }
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
     /// @notice Set the soul gas token address for the contract.
     function _setSoulGasToken(address _soulGasToken) internal {
         soulGasToken = _soulGasToken;

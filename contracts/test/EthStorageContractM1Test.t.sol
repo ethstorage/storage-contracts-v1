@@ -16,14 +16,24 @@ contract EthStorageContractM1Test is Test {
     address owner = address(0x1);
 
     function setUp() public {
-        TestEthStorageContractM1 imp = new TestEthStorageContractM1(
-            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), START_TIME, STORAGE_COST, 0
-        );
-        bytes memory data = abi.encodeWithSelector(
-            storageContract.initialize.selector, 0, PREPAID_AMOUNT, 0, address(0x1), address(0x1)
-        );
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
+        // Deploy implementation with no constructor parameters
+        TestEthStorageContractM1 imp = new TestEthStorageContractM1();
 
+        // Prepare initialization data
+        bytes memory data = abi.encodeWithSelector(
+            TestEthStorageContractM1.initializeTest.selector,
+            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), // _config
+            START_TIME, // _startTime
+            STORAGE_COST, // _storageCost
+            0, // _dcfFactor
+            0, // _minimumDiff
+            PREPAID_AMOUNT, // _prepaidAmount
+            0, // _nonceLimit
+            address(0x1), // _treasury
+            address(0x1) // _admin
+        );
+
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
         storageContract = TestEthStorageContractM1(address(proxy));
     }
 

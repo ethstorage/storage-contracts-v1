@@ -38,21 +38,25 @@ abstract contract EthStorageContract is StorageContract, ISemver {
 
     /// @notice Constructs the EthStorageContract contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        StorageContract(_config, _startTime, _storageCost, _dcfFactor)
-    {
+    constructor() {
         _disableInitializers();
     }
 
-    /// @notice Initialize the contract
-    function initialize(
+    /// @notice Initialize the EthStorageContract contract
+    function __init_eth_storage(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
         uint256 _minimumDiff,
         uint256 _prepaidAmount,
         uint256 _nonceLimit,
         address _treasury,
         address _owner
-    ) public payable initializer {
-        __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
+    ) internal virtual onlyInitializing {
+        __init_storage(
+            _config, _startTime, _storageCost, _dcfFactor, _minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner
+        );
     }
 
     /// @notice Performs modular exponentiation, which is a type of exponentiation performed over a modulus.

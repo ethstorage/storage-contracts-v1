@@ -12,8 +12,8 @@ contract DecentralizedKVTest is Test {
     TestDecentralizedKV decentralizedKV;
 
     function setUp() public {
-        decentralizedKV = new TestDecentralizedKV(MAX_KV_SIZE, 0, STORAGE_COST, 340282366367469178095360967382638002176);
-        decentralizedKV.initialize(vm.addr(1));
+        decentralizedKV = new TestDecentralizedKV();
+        decentralizedKV.initialize(MAX_KV_SIZE, 0, STORAGE_COST, 340282366367469178095360967382638002176, vm.addr(1));
     }
 
     function testTransferOwnership() public {

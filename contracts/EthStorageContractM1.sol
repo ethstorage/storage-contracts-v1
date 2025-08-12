@@ -3,15 +3,34 @@ pragma solidity 0.8.28;
 
 import "./EthStorageContract.sol";
 import "./zk-verify/Decoder.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// @custom:proxied
 /// @title EthStorageContractM1
 /// @notice EthStorage Contract that verifies sample decodings per zk proof
-contract EthStorageContractM1 is EthStorageContract, Decoder {
+contract EthStorageContractM1 is Initializable, EthStorageContract, Decoder {
     /// @notice Constructs the EthStorageContractM1 contract.
-    constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
-        EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
-    {}
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Public initializer for EthStorageContractM1.
+    function initialize(
+        Config memory _config,
+        uint256 _startTime,
+        uint256 _storageCost,
+        uint256 _dcfFactor,
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _admin
+    ) public payable virtual initializer {
+        __init_eth_storage(
+            _config, _startTime, _storageCost, _dcfFactor, _minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _admin
+        );
+    }
 
     /// @notice Verify the masks using the zk proof
     /// @param _mask The mask for the sample
