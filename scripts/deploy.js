@@ -38,8 +38,8 @@ async function deployContract() {
   ownerAddress = deployerAddress;
   treasuryAddress = deployerAddress;
 
-  const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractM2");
-  const bytecode = require('../artifacts/contracts/test/TestEthStorageContractM2.sol/TestEthStorageContractM2.json').deployedBytecode;
+  const StorageContract = await hre.ethers.getContractFactory("EthStorageContractM2");
+  const bytecode = require('../artifacts/contracts/EthStorageContractM2.sol/EthStorageContractM2.json').deployedBytecode;
   console.log('Runtime bytecode length (bytes):', bytecode.length / 2 - 1);
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
   const implContract = await StorageContract.deploy(
@@ -92,7 +92,7 @@ async function deployContract() {
 
 async function updateContract() {
   console.log("Updating contracts to network", hre.network.name);
-  const StorageContract = await hre.ethers.getContractFactory("TestEthStorageContractM2");
+  const StorageContract = await hre.ethers.getContractFactory("EthStorageContractM2");
 
   let startTime = 0;
   try {
