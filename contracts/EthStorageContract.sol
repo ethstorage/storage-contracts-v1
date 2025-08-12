@@ -191,20 +191,21 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         payable
         virtual
     {
+        uint256 blobIndexesLength = _blobIdxs.length;
         require(
-            _keys.length == _blobIdxs.length && _keys.length == _lengths.length,
+            _keys.length == blobIndexesLength && _keys.length == _lengths.length,
             "EthStorageContract: input length mismatch"
         );
 
         bytes32[] memory dataHashes = new bytes32[](_blobIdxs.length);
-        for (uint256 i = 0; i < _blobIdxs.length; i++) {
+        for (uint256 i = 0; i < blobIndexesLength; i++) {
             dataHashes[i] = blobhash(_blobIdxs[i]);
             require(dataHashes[i] != 0, "EthStorageContract: failed to get blob hash");
         }
 
         uint256[] memory kvIdxs = _putBatchInternal(_keys, dataHashes, _lengths);
 
-        for (uint256 i = 0; i < _blobIdxs.length; i++) {
+        for (uint256 i = 0; i < blobIndexesLength; i++) {
             emit PutBlob(kvIdxs[i], _lengths[i], dataHashes[i]);
         }
     }
