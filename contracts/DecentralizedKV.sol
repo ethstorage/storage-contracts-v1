@@ -131,13 +131,14 @@ contract DecentralizedKV is AccessControlUpgradeable {
         internal
         returns (uint256[] memory)
     {
-        for (uint256 i = 0; i < _keys.length; i++) {
+        uint256 keysLength = _keys.length;
+        for (uint256 i = 0; i < keysLength; i++) {
             require(_lengths[i] <= MAX_KV_SIZE, "DecentralizedKV: data too large");
         }
 
-        uint256[] memory res = new uint256[](_keys.length);
+        uint256[] memory res = new uint256[](keysLength);
         uint256 batchPaymentSize = 0;
-        for (uint256 i = 0; i < _keys.length; i++) {
+        for (uint256 i = 0; i < keysLength; i++) {
             bytes32 skey = keccak256(abi.encode(msg.sender, _keys[i]));
             PhyAddr memory paddr = kvMap[skey];
 
@@ -156,8 +157,8 @@ contract DecentralizedKV is AccessControlUpgradeable {
         }
 
         _checkAppend(batchPaymentSize);
-        if (_keys.length > batchPaymentSize) {
-            _checkUpdateLimit(_keys.length - batchPaymentSize);
+        if (keysLength > batchPaymentSize) {
+            _checkUpdateLimit(keysLength - batchPaymentSize);
         }
 
         return res;
@@ -247,9 +248,10 @@ contract DecentralizedKV is AccessControlUpgradeable {
     /// @param _kvIndices The indices of the key-value.
     /// @return The metadatas of the key-value.
     function getKvMetas(uint256[] memory _kvIndices) public view virtual returns (bytes32[] memory) {
-        bytes32[] memory res = new bytes32[](_kvIndices.length);
+        uint256 kvIndicesLength = _kvIndices.length;
 
-        for (uint256 i = 0; i < _kvIndices.length; i++) {
+        bytes32[] memory res = new bytes32[](kvIndicesLength);
+        for (uint256 i = 0; i < kvIndicesLength; i++) {
             PhyAddr memory paddr = kvMap[idxMap[_kvIndices[i]]];
 
             res[i] |= bytes32(uint256(_kvIndices[i])) << 216;
