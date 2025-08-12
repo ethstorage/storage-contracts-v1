@@ -40,7 +40,7 @@ async function deployContract() {
   ownerAddress = deployerAddress;
   treasuryAddress = deployerAddress;
 
-  const StorageContract = await hre.ethers.getContractFactory("EthStorageContractL2");
+  const StorageContract = await hre.ethers.getContractFactory("EthStorageContractM2L2");
   // refer to https://docs.google.com/spreadsheets/d/11DHhSang1UZxIFAKYw6_Qxxb-V40Wh1lsYjY2dbIP5k/edit#gid=0
   const implContract = await StorageContract.deploy(
     config,
@@ -111,7 +111,7 @@ async function deployContract() {
 }
 
 async function updateContract() {
-  const StorageContract = await hre.ethers.getContractFactory("EthStorageContractL2");
+  const StorageContract = await hre.ethers.getContractFactory("EthStorageContractM2L2");
 
   // get start time
   const ethStorage = StorageContract.attach(storageContractProxy);

@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import "forge-std/Test.sol";
-import "./TestEthStorageContractL2.sol";
+import "./TestEthStorageContractM2L2.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract SoulGasToken {
@@ -18,11 +18,11 @@ contract EthStorageContractL2Test is Test {
     uint256 constant PREPAID_AMOUNT = 0;
     uint256 constant UPDATE_LIMIT = 16;
 
-    TestEthStorageContractL2 storageContract;
+    TestEthStorageContractM2L2 storageContract;
     address owner = address(0x1);
 
     function setUp() public {
-        TestEthStorageContractL2 imp = new TestEthStorageContractL2(
+        TestEthStorageContractM2L2 imp = new TestEthStorageContractM2L2(
             StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0, UPDATE_LIMIT
         );
         bytes memory data = abi.encodeWithSelector(
@@ -30,7 +30,7 @@ contract EthStorageContractL2Test is Test {
         );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
 
-        storageContract = TestEthStorageContractL2(address(proxy));
+        storageContract = TestEthStorageContractM2L2(address(proxy));
     }
 
     function testUpdateLimit() public {
@@ -64,7 +64,7 @@ contract EthStorageContractL2Test is Test {
         assertEq(storageContract.getBlobsUpdated(), 11);
 
         // Update all 6 again, exceeds UPDATE_LIMIT = 16
-        vm.expectRevert("EthStorageContractL2: exceeds update rate limit");
+        vm.expectRevert("L2Base: exceeds update rate limit");
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlockLastUpdate(), 10000);
 
@@ -79,12 +79,12 @@ contract EthStorageContractL2Test is Test {
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlobsUpdated(), 12);
         assertEq(storageContract.getBlockLastUpdate(), 10001);
-        vm.expectRevert("EthStorageContractL2: exceeds update rate limit");
+        vm.expectRevert("L2Base: exceeds update rate limit");
         storageContract.putBlobs(keys, blobIdxs, lengths);
     }
 
     function testSGTPayment() public {
-        TestEthStorageContractL2 imp = new TestEthStorageContractL2(
+        TestEthStorageContractM2L2 imp = new TestEthStorageContractM2L2(
             StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0),
             block.timestamp,
             1500000000000000,
@@ -96,7 +96,7 @@ contract EthStorageContractL2Test is Test {
         );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
 
-        TestEthStorageContractL2 l2Contract = TestEthStorageContractL2(address(proxy));
+        TestEthStorageContractM2L2 l2Contract = TestEthStorageContractM2L2(address(proxy));
 
         uint256 size = 6;
         bytes32[] memory hashes = new bytes32[](size);
@@ -111,7 +111,7 @@ contract EthStorageContractL2Test is Test {
         }
         vm.blobhashes(hashes);
 
-        vm.expectRevert("EthStorageContractL2: not enough batch payment");
+        vm.expectRevert("EthStorageContractM2L2: not enough batch payment");
         l2Contract.putBlobs{value: 1500000000000000 * 5}(keys, blobIdxs, lengths);
 
         l2Contract.putBlobs{value: 1500000000000000 * 6}(keys, blobIdxs, lengths);

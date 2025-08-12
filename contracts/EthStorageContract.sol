@@ -84,6 +84,16 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         }
     }
 
+    /// @notice Compute the encoding key using the kvIdx and miner address
+    function _getEncodingKey(uint256 _kvIdx, address _miner) internal view returns (uint256) {
+        return uint256(keccak256(abi.encode(kvMap[idxMap[_kvIdx]].hash, _miner, _kvIdx))) % MODULUS_BN254;
+    }
+
+    /// @notice Compute the input X for inclusion proof using the sample index
+    function _getXIn(uint256 _sampleIdx) internal view returns (uint256) {
+        return _modExp(RU_BN254, _sampleIdx, MODULUS_BN254);
+    }
+
     /// @notice Perform point evaluation
     /// @param _input The input data
     /// @return versionedHash_ The versioned hash
@@ -116,6 +126,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     function checkInclusive(bytes32 _dataHash, uint256 _sampleIdxInKv, uint256 _decodedData, bytes memory _peInput)
         public
         view
+        virtual
         returns (bool)
     {
         if (_dataHash == 0x0) {
