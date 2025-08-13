@@ -27,9 +27,8 @@ jobs:
       - name: Install forge deps
         run: |
           git submodule update --init --recursive
-          forge install --no-commit OpenZeppelin/openzeppelin-contracts
-          forge install --no-commit OpenZeppelin/openzeppelin-contracts-upgradeable
-          forge install --no-commit OpenZeppelin/openzeppelin-foundry-upgrades
+          forge install OpenZeppelin/openzeppelin-foundry-upgrades
+          forge install OpenZeppelin/openzeppelin-contracts-upgradeable
 
       - name: Test
         run: npm run test
