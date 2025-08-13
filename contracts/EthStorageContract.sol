@@ -51,7 +51,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         uint256 _nonceLimit,
         address _treasury,
         address _owner
-    ) public payable initializer {
+    ) public payable virtual initializer {
         __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 

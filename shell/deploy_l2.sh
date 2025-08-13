@@ -2,7 +2,7 @@
 set -e
 
 if [ ! -f .env ]; then
-  echo "Error: .env file not found. Please copy .env.sample to .env and fill in your values."
+  echo "Error: .env file not found."
   exit 1
 fi
 
@@ -25,24 +25,35 @@ forge script script/DeployEthStorageL2.s.sol:DeployEthStorageL2 \
   --rpc-url "$RPC_URL" \
   --broadcast \
   --verify \
+  --verifier blockscout \
   --verifier-url "$BLOCKSCOUT_API_URL" \
-  --verifier blockscout
+  -vvvv 2>&1 | tee "$OUTPUT_FILE"
 
-IMPL_ADDRESS=$(grep "Implementation address:" $OUTPUT_FILE | awk '{print $6}')
-PROXY_ADDRESS=$(grep "Proxy address:" $OUTPUT_FILE | awk '{print $3}')
-ADMIN_ADDRESS=$(grep "Proxy admin address:" $OUTPUT_FILE | awk '{print $3}')
+PROXY_ADDRESS=$(grep -E "Proxy address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
+ADMIN_ADDRESS=$(grep -E "Proxy admin address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
+IMPL_ADDRESS=$(grep -E "Implementation address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
+OWNER_ADDRESS=$(grep -E "Owner address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
+START_TIME=$(grep -E "Start time: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 
 echo "===== Deployment Complete ====="
-echo "Implementation: $IMPL_ADDRESS" 
 echo "Proxy: $PROXY_ADDRESS"
 echo "Admin: $ADMIN_ADDRESS"
+echo "Implementation: $IMPL_ADDRESS"
+echo "Owner: $OWNER_ADDRESS"
 echo "Output saved to: $OUTPUT_FILE"
 
-cat > deployments/latest_l2_addresses.txt << EOF
-IMPLEMENTATION_ADDRESS=$IMPL_ADDRESS
-PROXY_ADDRESS=$PROXY_ADDRESS
-ADMIN_ADDRESS=$ADMIN_ADDRESS
+ADDRESS_FILE="deployments/latest_l2_addresses.txt"
+
+{
+  [ -s $ADDRESS_FILE ] && echo
+  cat << EOF
+PROXY=$PROXY_ADDRESS
+ADMIN=$ADMIN_ADDRESS
+IMPLEMENTATION=$IMPL_ADDRESS
+OWNER=$OWNER_ADDRESS
+START_TIME=$START_TIME
 DEPLOYMENT_TIME=$(date)
 EOF
+} >> $ADDRESS_FILE 
 
-echo "Deployment addresses saved to deployments/latest_l2_addresses.txt"
+echo "Deployment addresses saved to $ADDRESS_FILE"

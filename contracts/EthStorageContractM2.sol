@@ -14,6 +14,17 @@ contract EthStorageContractM2 is EthStorageContract, Decoder2 {
         EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {}
 
+    /// @notice Initialize the contract
+    function initialize(
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _admin
+    ) public payable virtual override initializer {
+        super.initialize(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _admin);
+    }
+
     /// @notice Verify the masks using the zk proof
     /// @param _masks The masks for the samples
     /// @param _kvIdxs The kvIdxs that contain the samples

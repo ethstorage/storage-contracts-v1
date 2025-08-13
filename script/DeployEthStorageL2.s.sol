@@ -10,7 +10,7 @@ contract DeployEthStorageL2 is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
-        console.log("Deploying from address:", deployer);
+        console.log("Deployer address:", deployer);
 
         StorageContract.Config memory config = StorageContract.Config({
             maxKvSizeBits: vm.envOr("MAX_KV_SIZE_BITS", uint256(17)),
@@ -25,26 +25,31 @@ contract DeployEthStorageL2 is Script {
         console.log("Start time:", startTime);
         uint256 storageCost = vm.envOr("STORAGE_COST", uint256(570000000000000000));
         uint256 dcfFactor = vm.envOr("DCF_FACTOR", uint256(340282366367469178095360967382638002176));
+
+        uint256 minimumDiff = vm.envOr("MINIMUM_DIFF", uint256(94371840));
+        uint256 prepaidAmount = vm.envOr("PREPAID_AMOUNT", uint256(119537664000000000000000));
+        uint256 nonceLimit = vm.envOr("NONCE_LIMIT", uint256(1048576));
+
         uint256 updateLimit = vm.envOr("UPDATE_LIMIT", uint256(90));
 
         address treasury = vm.envOr("TREASURY_ADDRESS", deployer);
-
+        address admin = vm.envOr("OWNER_ADDRESS", deployer);
+        console.log("Owner address:", admin);
         vm.startBroadcast(deployerPrivateKey);
 
-        EthStorageContract implementation =
-            new EthStorageContractM2L2(config, startTime, storageCost, dcfFactor, updateLimit);
-        console.log("Implementation address:", address(implementation));
-
-        bytes memory initData = abi.encodeWithSelector(implementation.initialize.selector, deployer, treasury);
-
-        address proxy = Upgrades.deployTransparentProxy(
-            "EthStorageContractM2L2.sol:EthStorageContractM2L2",
-            deployer, // proxy admin
-            initData
+        bytes memory initData = abi.encodeWithSelector(
+            EthStorageContractM2L2.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, admin
         );
+        Options memory opts;
+        opts.constructorData = abi.encode(config, startTime, storageCost, dcfFactor, updateLimit);
+
+        address proxy =
+            Upgrades.deployTransparentProxy("EthStorageContractM2L2.sol:EthStorageContractM2L2", admin, initData, opts);
         console.log("Proxy address:", proxy);
         address proxyAdmin = Upgrades.getAdminAddress(proxy);
         console.log("Proxy admin address:", proxyAdmin);
+        address impl = Upgrades.getImplementationAddress(proxy);
+        console.log("Implementation address:", impl);
 
         vm.stopBroadcast();
     }
