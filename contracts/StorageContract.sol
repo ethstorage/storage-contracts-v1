@@ -9,6 +9,48 @@ import "./libraries/RandaoLib.sol";
 /// @title StorageContract
 /// @notice EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification
 abstract contract StorageContract is DecentralizedKV {
+    /// @notice Thrown when a reentrancy attempt is detected.
+    error StorageContract_ReentrancyAttempt();
+
+    /// @notice Thrown when the shard size is too small.
+    error StorageContract_ShardSizeTooSmall();
+
+    /// @notice Thrown when the max key-value size is too small.
+    error StorageContract_MaxKvSizeTooSmall();
+
+    /// @notice Thrown when at least one checkpoint is needed.
+    error StorageContract_AtLeastOneCheckpointNeeded();
+
+    /// @notice Thrown when the batch payment is not enough.
+    error StorageContract_NotEnoughBatchPayment();
+
+    /// @notice Thrown when the mined timestamp is too small.
+    error StorageContract_MinedTsTooSmall();
+
+    /// @notice Thrown when the miner reward is not enough.
+    error StorageContract_NotEnoughMinerReward();
+
+    /// @notice Thrown when the miner is not whitelisted.
+    error StorageContract_MinerNotWhitelisted();
+
+    /// @notice Thrown when the block number is too old.
+    error StorageContract_BlockNumberTooOld();
+
+    /// @notice Thrown when the nonce is too big.
+    error StorageContract_NonceTooBig();
+
+    /// @notice Thrown when the difficulty is not met.
+    error StorageContract_DifficultyNotMet();
+
+    /// @notice Thrown when the balance is not enough.
+    error StorageContract_NotEnoughBalance();
+
+    /// @notice Thrown when the blockhash is not obtained.
+    error StorageContract_FailedToObtainBlockhash();
+
+    /// @notice Thrown when the prepaid amount is not enough.
+    error StorageContract_NotEnoughPrepaidAmount();
+
     /// @notice Represents the configuration of the storage contract.
     /// @custom:field maxKvSizeBits  Maximum size of a single key-value pair.
     /// @custom:field shardSizeBits  Storage shard size.
@@ -112,7 +154,9 @@ abstract contract StorageContract is DecentralizedKV {
     );
 
     modifier nonReentrant() {
-        require(!locked, "StorageContract: reentrancy attempt!");
+        if (locked) {
+            revert StorageContract_ReentrancyAttempt();
+        }
         locked = true;
         _;
         // Unlocks the guard, making the pattern composable.
@@ -125,9 +169,15 @@ abstract contract StorageContract is DecentralizedKV {
         DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor)
     {
         /* Assumptions */
-        require(_config.shardSizeBits >= _config.maxKvSizeBits, "StorageContract: shardSize too small");
-        require(_config.maxKvSizeBits >= SAMPLE_SIZE_BITS, "StorageContract: maxKvSize too small");
-        require(_config.randomChecks > 0, "StorageContract: at least one checkpoint needed");
+        if (_config.shardSizeBits < _config.maxKvSizeBits) {
+            revert StorageContract_ShardSizeTooSmall();
+        }
+        if (_config.maxKvSizeBits < SAMPLE_SIZE_BITS) {
+            revert StorageContract_MaxKvSizeTooSmall();
+        }
+        if (_config.randomChecks == 0) {
+            revert StorageContract_AtLeastOneCheckpointNeeded();
+        }
 
         MAX_KV_SIZE_BITS = _config.maxKvSizeBits;
         SHARD_SIZE_BITS = _config.shardSizeBits;
@@ -200,7 +250,10 @@ abstract contract StorageContract is DecentralizedKV {
     function _checkAppend(uint256 _batchSize) internal virtual override {
         uint256 kvEntryCountPrev = kvEntryCount - _batchSize; // kvEntryCount already increased
         uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
-        require(msg.value >= totalPayment, "StorageContract: not enough batch payment");
+
+        if (msg.value < totalPayment) {
+            revert StorageContract_NotEnoughBatchPayment();
+        }
 
         uint256 shardId = _getShardId(kvEntryCount); // shard id after the batch
         if (shardId > _getShardId(kvEntryCountPrev)) {
@@ -242,7 +295,11 @@ abstract contract StorageContract is DecentralizedKV {
         returns (uint256 diff_)
     {
         MiningLib.MiningInfo storage info = infos[_shardId];
-        require(_minedTs >= info.lastMineTime, "StorageContract: minedTs too small");
+
+        if (_minedTs < info.lastMineTime) {
+            revert StorageContract_MinedTsTooSmall();
+        }
+
         diff_ = MiningLib.expectedDiff(info, _minedTs, CUTOFF, DIFF_ADJ_DIVISOR, minimumDiff);
     }
 
@@ -263,7 +320,9 @@ abstract contract StorageContract is DecentralizedKV {
         // Update mining info.
         MiningLib.update(infos[_shardId], _minedTs, _diff);
 
-        require(minerReward <= address(this).balance, "StorageContract: not enough balance");
+        if (minerReward > address(this).balance) {
+            revert StorageContract_NotEnoughMinerReward();
+        }
         // Actually `transfer` is limited by the amount of gas allocated, which is not sufficient to enable reentrancy attacks.
         // However, this behavior may restrict the extensibility of scenarios where the receiver is a contract that requires
         // additional gas for its fallback functions of proper operations.
@@ -343,8 +402,8 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public virtual nonReentrant {
-        if (enforceMinerRole) {
-            require(hasRole(MINER_ROLE, _miner), "StorageContract: miner not whitelisted");
+        if (enforceMinerRole && !hasRole(MINER_ROLE, _miner)) {
+            revert StorageContract_MinerNotWhitelisted();
         }
         _mine(
             _blockNum, _shardId, _miner, _nonce, _encodedSamples, _masks, _randaoProof, _inclusiveProofs, _decodeProof
@@ -397,14 +456,18 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) internal virtual {
-        require(_blockNumber() - _blockNum <= MAX_L1_MINING_DRIFT, "StorageContract: block number too old");
+        if (_blockNumber() - _blockNum > MAX_L1_MINING_DRIFT) {
+            revert StorageContract_BlockNumberTooOld();
+        }
         // To avoid stack too deep, we reuse the hash0 instead of using randao
         bytes32 hash0 = _getRandao(_blockNum, _randaoProof);
         // Estimate block timestamp
         uint256 mineTs = _getMinedTs(_blockNum);
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
-        require(_nonce < nonceLimit, "StorageContract: nonce too big");
+        if (_nonce >= nonceLimit) {
+            revert StorageContract_NonceTooBig();
+        }
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         hash0 = keccak256(abi.encode(_miner, hash0, _nonce));
@@ -413,16 +476,26 @@ abstract contract StorageContract is DecentralizedKV {
         // Check difficulty
         uint256 diff = _calculateDiffAndInitHashSingleShard(_shardId, mineTs);
         uint256 required = uint256(2 ** 256 - 1) / diff;
-        require(uint256(hash0) <= required, "StorageContract: diff not match");
+
+        if (uint256(hash0) > required) {
+            revert StorageContract_DifficultyNotMet();
+        }
 
         _rewardMiner(_shardId, _miner, mineTs, diff);
     }
 
     /// @notice Withdraw treasury fund
     function withdraw(uint256 _amount) public {
-        require(accPrepaidAmount >= prepaidAmount + _amount, "StorageContract: not enough prepaid amount");
+        if (accPrepaidAmount < prepaidAmount + _amount) {
+            revert StorageContract_NotEnoughPrepaidAmount();
+        }
+
         accPrepaidAmount -= _amount;
-        require(address(this).balance >= _amount, "StorageContract: not enough balance");
+
+        if (address(this).balance < _amount) {
+            revert StorageContract_NotEnoughBalance();
+        }
+
         payable(treasury).transfer(_amount);
     }
 
@@ -439,7 +512,11 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Get the randao value by block number.
     function _getRandao(uint256 _blockNum, bytes calldata _headerRlpBytes) internal view virtual returns (bytes32) {
         bytes32 bh = blockhash(_blockNum);
-        require(bh != bytes32(0), "StorageContract: failed to obtain blockhash");
+
+        if (bh == bytes32(0)) {
+            revert StorageContract_FailedToObtainBlockhash();
+        }
+
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
     }
 
