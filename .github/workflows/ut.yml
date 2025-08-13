@@ -24,8 +24,12 @@ jobs:
         with:
           version: stable
 
-      - name: Install forge-std
-        run: git submodule init && git submodule update
+      - name: Install forge deps
+        run: |
+          git submodule update --init --recursive
+          forge install --no-commit OpenZeppelin/openzeppelin-contracts
+          forge install --no-commit OpenZeppelin/openzeppelin-contracts-upgradeable
+          forge install --no-commit OpenZeppelin/openzeppelin-foundry-upgrades
 
       - name: Test
         run: npm run test
