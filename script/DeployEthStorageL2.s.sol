@@ -13,27 +13,27 @@ contract DeployEthStorageL2 is Script {
         console.log("Deployer address:", deployer);
 
         StorageContract.Config memory config = StorageContract.Config({
-            maxKvSizeBits: vm.envOr("MAX_KV_SIZE_BITS", uint256(17)),
-            shardSizeBits: vm.envOr("SHARD_SIZE_BITS", uint256(39)),
-            randomChecks: vm.envOr("RANDOM_CHECKS", uint256(2)),
-            cutoff: vm.envOr("CUTOFF", uint256(7200)),
-            diffAdjDivisor: vm.envOr("DIFF_ADJ_DIVISOR", uint256(32)),
-            treasuryShare: vm.envOr("TREASURY_SHARE", uint256(100))
+            maxKvSizeBits: vm.envUint("MAX_KV_SIZE_BITS"),
+            shardSizeBits: vm.envUint("SHARD_SIZE_BITS"),
+            randomChecks: vm.envUint("RANDOM_CHECKS"),
+            cutoff: vm.envUint("CUTOFF"),
+            diffAdjDivisor: vm.envUint("DIFF_ADJ_DIVISOR"),
+            treasuryShare: vm.envUint("TREASURY_SHARE")
         });
 
         uint256 startTime = block.timestamp;
         console.log("Start time:", startTime);
-        uint256 storageCost = vm.envOr("STORAGE_COST", uint256(570000000000000000));
-        uint256 dcfFactor = vm.envOr("DCF_FACTOR", uint256(340282366367469178095360967382638002176));
+        uint256 storageCost = vm.envUint("STORAGE_COST");
+        uint256 dcfFactor = vm.envUint("DCF_FACTOR");
 
-        uint256 minimumDiff = vm.envOr("MINIMUM_DIFF", uint256(94371840));
-        uint256 prepaidAmount = vm.envOr("PREPAID_AMOUNT", uint256(119537664000000000000000));
-        uint256 nonceLimit = vm.envOr("NONCE_LIMIT", uint256(1048576));
+        uint256 minimumDiff = vm.envUint("MINIMUM_DIFF");
+        uint256 prepaidAmount = vm.envUint("PREPAID_AMOUNT");
+        uint256 nonceLimit = vm.envUint("NONCE_LIMIT");
 
-        uint256 updateLimit = vm.envOr("UPDATE_LIMIT", uint256(90));
+        uint256 updateLimit = vm.envUint("UPDATE_LIMIT");
 
-        address treasury = vm.envOr("TREASURY_ADDRESS", deployer);
-        address admin = vm.envOr("OWNER_ADDRESS", deployer);
+        address treasury = vm.envAddress("TREASURY_ADDRESS");
+        address admin = vm.envAddress("OWNER_ADDRESS");
         console.log("Owner address:", admin);
         vm.startBroadcast(deployerPrivateKey);
 

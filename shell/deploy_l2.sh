@@ -42,18 +42,23 @@ echo "Implementation: $IMPL_ADDRESS"
 echo "Owner: $OWNER_ADDRESS"
 echo "Output saved to: $OUTPUT_FILE"
 
-ADDRESS_FILE="deployments/latest_l2_addresses.txt"
+RESULT_FILE="deployments/latest_addresses_l2.txt"
 
-{
-  [ -s $ADDRESS_FILE ] && echo
-  cat << EOF
+cat > "$RESULT_FILE" << EOF
 PROXY=$PROXY_ADDRESS
 ADMIN=$ADMIN_ADDRESS
 IMPLEMENTATION=$IMPL_ADDRESS
 OWNER=$OWNER_ADDRESS
 START_TIME=$START_TIME
-DEPLOYMENT_TIME=$(date)
+Deployed at $(TIMESTAMP)
 EOF
-} >> $ADDRESS_FILE 
 
-echo "Deployment addresses saved to $ADDRESS_FILE"
+echo "Deployment addresses saved to $RESULT_FILE"
+
+if [ -n "$INITIAL_BALANCE" ] && (( $(echo "$INITIAL_BALANCE > 0" | bc -l) )); then
+  echo "Funding proxy contract $PROXY_ADDRESS with $INITIAL_BALANCE ether..."
+  cast send "$PROXY_ADDRESS" "sendValue()" \
+    --value "$(cast --to-wei "$INITIAL_BALANCE" ether)" \
+    --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" -vvvv
+  echo "Funding complete."
+fi
