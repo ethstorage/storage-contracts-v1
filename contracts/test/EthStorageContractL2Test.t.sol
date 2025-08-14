@@ -64,7 +64,7 @@ contract EthStorageContractL2Test is Test {
         assertEq(storageContract.getBlobsUpdated(), 11);
 
         // Update all 6 again, exceeds UPDATE_LIMIT = 16
-        vm.expectRevert("L2Base: exceeds update rate limit");
+        vm.expectRevert(L2Base.L2Base_ExceedsUpdateRateLimit.selector);
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlockLastUpdate(), 10000);
 
@@ -79,7 +79,7 @@ contract EthStorageContractL2Test is Test {
         storageContract.putBlobs(keys, blobIdxs, lengths);
         assertEq(storageContract.getBlobsUpdated(), 12);
         assertEq(storageContract.getBlockLastUpdate(), 10001);
-        vm.expectRevert("L2Base: exceeds update rate limit");
+        vm.expectRevert(L2Base.L2Base_ExceedsUpdateRateLimit.selector);
         storageContract.putBlobs(keys, blobIdxs, lengths);
     }
 
@@ -111,7 +111,8 @@ contract EthStorageContractL2Test is Test {
         }
         vm.blobhashes(hashes);
 
-        vm.expectRevert("EthStorageContractM2L2: not enough batch payment");
+        vm.expectRevert(EthStorageContractM2L2.EthStorageContractM2L2_NotEnoughPayment.selector);
+
         l2Contract.putBlobs{value: 1500000000000000 * 5}(keys, blobIdxs, lengths);
 
         l2Contract.putBlobs{value: 1500000000000000 * 6}(keys, blobIdxs, lengths);

@@ -10,6 +10,9 @@ library RandaoLib {
     using RLPReader for RLPReader.Iterator;
     using RLPReader for bytes;
 
+    /// @notice Thrown when the header hash does not match
+    error RandaoLib_HeaderHashMismatch();
+
     /// @notice Get the Randao mixDigest from the header
     /// @param _item The RLP data of the header
     /// @return The Randao mixDigest
@@ -33,7 +36,9 @@ library RandaoLib {
         returns (bytes32)
     {
         RLPReader.RLPItem memory item = _headerRlpBytes.toRlpItem();
-        require(_headerHash == item.rlpBytesKeccak256(), "RandaoLib: header hash mismatch");
+        if (_headerHash != item.rlpBytesKeccak256()) {
+            revert RandaoLib_HeaderHashMismatch();
+        }
         return getRandaoFromHeader(item);
     }
 }

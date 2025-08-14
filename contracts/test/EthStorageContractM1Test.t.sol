@@ -35,7 +35,7 @@ contract EthStorageContractM1Test is Test {
         uint256 insufficientCost = storageContract.upfrontPayment() - 1;
 
         // Expect the specific revert reason from _checkAppend due to insufficient msg.value
-        vm.expectRevert("StorageContract: not enough batch payment");
+        vm.expectRevert(StorageContract.StorageContract_NotEnoughBatchPayment.selector);
         storageContract.putBlob{value: insufficientCost}(key, blobIdx, length);
 
         // Enough storage cost
@@ -70,7 +70,7 @@ contract EthStorageContractM1Test is Test {
         uint256 insufficientCost = storageContract.upfrontPayment();
 
         // Expect the specific revert reason from _prepareBatchAppend due to insufficient msg.value
-        vm.expectRevert("StorageContract: not enough batch payment");
+        vm.expectRevert(StorageContract.StorageContract_NotEnoughBatchPayment.selector);
         storageContract.putBlobs{value: insufficientCost}(keys, blobIdxs, lengths);
 
         // Enough storage cost
@@ -116,7 +116,7 @@ contract EthStorageContractM1Test is Test {
         uint256 insufficientCost = sufficientCost - 1;
 
         // Expect the specific revert reason from _prepareBatchAppend due to insufficient msg.value
-        vm.expectRevert("StorageContract: not enough batch payment");
+        vm.expectRevert(StorageContract.StorageContract_NotEnoughBatchPayment.selector);
         storageContract.putBlobs{value: insufficientCost}(keys, blobIdxs, lengths);
 
         // Enough storage cost
