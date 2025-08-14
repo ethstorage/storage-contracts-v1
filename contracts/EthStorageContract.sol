@@ -92,7 +92,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
 
     /// @notice Compute the encoding key using the kvIdx and miner address
     function _getEncodingKey(uint256 _kvIdx, address _miner) internal view returns (uint256) {
-        return uint256(keccak256(abi.encode(kvMap[idxMap[_kvIdx]].hash, _miner, _kvIdx))) % MODULUS_BN254;
+        return uint256(keccak256(abi.encode(_kvMap(_idxMap(_kvIdx)).hash, _miner, _kvIdx))) % MODULUS_BN254;
     }
 
     /// @notice Compute the input X for inclusion proof using the sample index

@@ -221,14 +221,14 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Upfront payment for the next insertion
     function upfrontPayment() public view virtual override returns (uint256) {
-        return _upfrontPaymentInBatch(kvEntryCount, 1);
+        return _upfrontPaymentInBatch(kvEntryCount(), 1);
     }
 
     /// @notice Upfront payment for a batch insertion
     /// @param _batchSize The blob count for a batch insertion.
     /// @return The total payment for a batch insertion.
     function upfrontPaymentInBatch(uint256 _batchSize) public view returns (uint256) {
-        return _upfrontPaymentInBatch(kvEntryCount, _batchSize);
+        return _upfrontPaymentInBatch(kvEntryCount(), _batchSize);
     }
 
     /// @notice Upfront payment for a batch insertion
@@ -248,14 +248,14 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @inheritdoc DecentralizedKV
     function _checkAppend(uint256 _batchSize) internal virtual override {
-        uint256 kvEntryCountPrev = kvEntryCount - _batchSize; // kvEntryCount already increased
+        uint256 kvEntryCountPrev = kvEntryCount() - _batchSize; // kvEntryCount already increased
         uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
 
         if (msg.value < totalPayment) {
             revert StorageContract_NotEnoughBatchPayment();
         }
 
-        uint256 shardId = _getShardId(kvEntryCount); // shard id after the batch
+        uint256 shardId = _getShardId(kvEntryCount()); // shard id after the batch
         if (shardId > _getShardId(kvEntryCountPrev)) {
             // Open a new shard and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
@@ -344,14 +344,14 @@ abstract contract StorageContract is DecentralizedKV {
         returns (bool, uint256, uint256, uint256)
     {
         MiningLib.MiningInfo storage info = infos[_shardId];
-        uint256 lastShardIdx = _getShardId(kvEntryCount);
+        uint256 lastShardIdx = _getShardId(kvEntryCount());
         bool updatePrepaidTime = false;
         uint256 prepaidAmountSaved = 0;
         uint256 reward = 0;
         if (_shardId < lastShardIdx) {
             reward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
         } else if (_shardId == lastShardIdx) {
-            reward = _paymentIn(STORAGE_COST * (kvEntryCount % (1 << SHARD_ENTRY_BITS)), info.lastMineTime, _minedTs);
+            reward = _paymentIn(STORAGE_COST * (kvEntryCount() % (1 << SHARD_ENTRY_BITS)), info.lastMineTime, _minedTs);
             // Additional prepaid for the last shard
             if (prepaidLastMineTime < _minedTs) {
                 uint256 fullReward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);

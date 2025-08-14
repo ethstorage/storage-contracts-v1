@@ -74,7 +74,7 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
     }
 
     function getEncodingKey(uint256 kvIdx, address miner) public view returns (bytes32) {
-        return keccak256(abi.encode(kvMap[idxMap[kvIdx]].hash, miner, kvIdx));
+        return keccak256(abi.encode(_kvMap(_idxMap(kvIdx)).hash, miner, kvIdx));
     }
 
     /// @notice Verify the mask is correct

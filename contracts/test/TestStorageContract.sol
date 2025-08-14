@@ -31,7 +31,7 @@ contract TestStorageContract is StorageContract {
     }
 
     function setKvEntryCount(uint40 _kvEntryCount) public {
-        kvEntryCount = _kvEntryCount;
+        _setKvEntryCount(_kvEntryCount);
     }
 
     function paymentIn(uint256 _x, uint256 _fromTs, uint256 _toTs) public view returns (uint256) {

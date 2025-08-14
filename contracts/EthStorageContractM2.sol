@@ -71,7 +71,7 @@ contract EthStorageContractM2 is EthStorageContract, Decoder2 {
     ) internal view returns (bytes32, uint256, uint256) {
         (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(_rows, _startShardId, _hash0);
 
-        PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
+        PhyAddr memory kvInfo = _kvMap(_idxMap(kvIdx));
 
         if (!checkInclusive(kvInfo.hash, sampleIdxInKv, _mask ^ uint256(_encodedSample), _inclusiveProof)) {
             revert EthStorageContractM2_InvalidSamples();
