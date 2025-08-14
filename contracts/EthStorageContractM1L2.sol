@@ -25,8 +25,8 @@ contract EthStorageContractM1L2 is EthStorageContractM1, L2Base {
         uint256 kvEntryCountPrev = kvEntryCount() - _batchSize; // kvEntryCount already increased
         uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
         uint256 sgtCharged = 0;
-        if (soulGasToken != address(0)) {
-            sgtCharged = ISoulGasToken(soulGasToken).chargeFromOrigin(totalPayment);
+        if (soulGasToken() != address(0)) {
+            sgtCharged = ISoulGasToken(soulGasToken()).chargeFromOrigin(totalPayment);
         }
         if (msg.value < totalPayment - sgtCharged) {
             revert EthStorageContractM1L2_NotEnoughPayment();
