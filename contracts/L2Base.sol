@@ -30,6 +30,12 @@ interface ISoulGasToken {
 /// @title L2Base
 /// @notice Common base contract that will be deployed on L2, and uses L1Block contract to mine.
 abstract contract L2Base {
+    /// @notice Thrown when the blockhash cannot be obtained.
+    error L2Base_FailedObtainBlockhash();
+
+    /// @notice Thrown when the update rate limit is exceeded.
+    error L2Base_ExceedsUpdateRateLimit();
+
     /// @notice The precompile contract address for L1Block.
     IL1Block internal constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
 
@@ -76,14 +82,22 @@ abstract contract L2Base {
         returns (bytes32)
     {
         bytes32 bh = L1_BLOCK.blockHash(_l1BlockNumber);
-        require(bh != bytes32(0), "L2Base: failed to obtain blockhash");
+
+        if (bh == bytes32(0)) {
+            revert L2Base_FailedObtainBlockhash();
+        }
+
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
     }
 
     /// @notice Check if the key-values being updated exceed the limit per block.
     function _checkUpdateLimit(uint256 _updateSize) internal virtual {
         uint256 blobsUpdated = updateState & MASK == block.number << 32 ? updateState & type(uint32).max : 0;
-        require(blobsUpdated + _updateSize <= UPDATE_LIMIT, "L2Base: exceeds update rate limit");
+
+        if (blobsUpdated + _updateSize > UPDATE_LIMIT) {
+            revert L2Base_ExceedsUpdateRateLimit();
+        }
+
         updateState = block.number << 32 | (blobsUpdated + _updateSize);
     }
 

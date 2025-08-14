@@ -9,6 +9,24 @@ import "./libraries/BinaryRelated.sol";
 /// @notice The DecentralizedKV is a top base contract for the EthStorage contract. It provides the
 ///         basic key-value store functionalities.
 contract DecentralizedKV is AccessControlUpgradeable {
+    /// @notice Thrown when the batch payment is not enough.
+    error DecentralizedKV_NotEnoughBatchPayment();
+
+    /// @notice Thrown when the data is too large.
+    error DecentralizedKV_DataTooLarge();
+
+    /// @notice Thrown when the data length is zero.
+    error DecentralizedKV_DataLenZero();
+
+    /// @notice Thrown when the data is beyond the range of kvSize.
+    error DecentralizedKV_BeyondRangeOfKVSize();
+
+    /// @notice Thrown when the get() is not called on ES node.
+    error DecentralizedKV_GetMustBeCalledOnESNode();
+
+    /// @notice Thrown when the data is not exist.
+    error DecentralizedKV_DataNotExist();
+
     /// @notice Represents the metadata of the key-value .
     /// @custom:field kvIdx  Internal address seeking.
     /// @custom:field kvSize BLOB size.
@@ -121,7 +139,9 @@ contract DecentralizedKV is AccessControlUpgradeable {
 
     /// @notice Checks while appending the key-value.
     function _checkAppend(uint256 _batchSize) internal virtual {
-        require(msg.value >= upfrontPayment() * _batchSize, "DecentralizedKV: not enough batch payment");
+        if (msg.value < upfrontPayment() * _batchSize) {
+            revert DecentralizedKV_NotEnoughBatchPayment();
+        }
     }
 
     /// @notice Check if the key-values being updated exceed the limit per block (L2 only).
@@ -138,7 +158,9 @@ contract DecentralizedKV is AccessControlUpgradeable {
     {
         uint256 keysLength = _keys.length;
         for (uint256 i = 0; i < keysLength; i++) {
-            require(_lengths[i] <= MAX_KV_SIZE, "DecentralizedKV: data too large");
+            if (_lengths[i] > MAX_KV_SIZE) {
+                revert DecentralizedKV_DataTooLarge();
+            }
         }
 
         uint256[] memory res = new uint256[](keysLength);
@@ -199,26 +221,32 @@ contract DecentralizedKV is AccessControlUpgradeable {
         virtual
         returns (bytes memory)
     {
-        require(_len > 0, "DecentralizedKV: data len should be non zero");
+        if (_len == 0) {
+            revert DecentralizedKV_DataLenZero();
+        }
 
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
         PhyAddr memory paddr = kvMap[skey];
-        require(paddr.hash != 0, "DecentralizedKV: data not exist");
+
+        if (paddr.hash == 0) {
+            revert DecentralizedKV_DataNotExist();
+        }
+
         if (_decodeType == DecodeType.OptimismCompact) {
             // kvSize is the actual data size that dApp contract stores
-            require(
-                (paddr.kvSize >= _off + _len) && (_off + _len <= MAX_OPTIMISM_BLOB_DATA_SIZE),
-                "DecentralizedKV: beyond the range of kvSize"
-            );
+            if ((_off + _len > paddr.kvSize) || (_off + _len > MAX_OPTIMISM_BLOB_DATA_SIZE)) {
+                revert DecentralizedKV_BeyondRangeOfKVSize();
+            }
         } else if (_decodeType == DecodeType.PaddingPer31Bytes) {
             // kvSize is the actual data size that dApp contract stores
-            require(
-                (paddr.kvSize >= _off + _len) && (_off + _len <= MAX_KV_SIZE - 4096),
-                "DecentralizedKV: beyond the range of kvSize"
-            );
+            if ((_off + _len > paddr.kvSize) || (_off + _len > MAX_KV_SIZE - 4096)) {
+                revert DecentralizedKV_BeyondRangeOfKVSize();
+            }
         } else {
             // maxKvSize is blob size
-            require(MAX_KV_SIZE >= _off + _len, "DecentralizedKV: beyond the range of maxKvSize");
+            if (_off + _len > MAX_KV_SIZE) {
+                revert DecentralizedKV_BeyondRangeOfKVSize();
+            }
         }
 
         bytes memory input = abi.encode(paddr.kvIdx, _decodeType, _off, _len, paddr.hash);
@@ -233,7 +261,9 @@ contract DecentralizedKV is AccessControlUpgradeable {
 
         // If this function is called in a regular L1 node, there will no code in 0x33301,
         // and it will simply return immediately instead of revert
-        require(retSize > 0, "DecentralizedKV: get() must be called on ES node");
+        if (retSize == 0) {
+            revert DecentralizedKV_GetMustBeCalledOnESNode();
+        }
 
         return output;
     }

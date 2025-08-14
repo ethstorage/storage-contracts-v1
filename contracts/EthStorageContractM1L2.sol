@@ -8,6 +8,9 @@ import "./L2Base.sol";
 /// @title EthStorageContractM1L2
 /// @notice EthStorage contract that will be deployed on L2, and uses mode 1 zk proof.
 contract EthStorageContractM1L2 is EthStorageContractM1, L2Base {
+    /// @notice Thrown when the payment is not enough.
+    error EthStorageContractM1L2_NotEnoughPayment();
+
     /// @notice Constructs the EthStorageContractM1L2 contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -37,7 +40,9 @@ contract EthStorageContractM1L2 is EthStorageContractM1, L2Base {
         if (soulGasToken != address(0)) {
             sgtCharged = ISoulGasToken(soulGasToken).chargeFromOrigin(totalPayment);
         }
-        require(msg.value >= totalPayment - sgtCharged, "EthStorageContractM1L2: not enough batch payment");
+        if (msg.value < totalPayment - sgtCharged) {
+            revert EthStorageContractM1L2_NotEnoughPayment();
+        }
 
         uint256 shardId = _getShardId(kvEntryCount); // shard id after the batch
         if (shardId > _getShardId(kvEntryCountPrev)) {

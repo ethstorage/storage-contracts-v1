@@ -9,6 +9,12 @@ import "./Interfaces/ISemver.sol";
 /// @title EthStorageContract
 /// @notice EthStorage Contract that using EIP-4844 BLOB
 abstract contract EthStorageContract is StorageContract, ISemver {
+    /// @notice Thrown when the BLOB hash is not found.
+    error EthStorageContract_FailedToGetBlobHash();
+
+    /// @notice Thrown when the input length is mismatched.
+    error EthStorageContract_LengthMismatch();
+
     /// @notice The modulus for the BLS curve
     uint256 internal constant MODULUS_BLS = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
 
@@ -169,7 +175,9 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     /// @param _length The length of the blob
     function putBlob(bytes32 _key, uint256 _blobIdx, uint256 _length) public payable virtual {
         bytes32 dataHash = blobhash(_blobIdx);
-        require(dataHash != 0, "EthStorageContract: failed to get blob hash");
+        if (dataHash == 0) {
+            revert EthStorageContract_FailedToGetBlobHash();
+        }
 
         bytes32[] memory keys = new bytes32[](1);
         keys[0] = _key;
@@ -193,15 +201,16 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         virtual
     {
         uint256 blobIndexesLength = _blobIdxs.length;
-        require(
-            _keys.length == blobIndexesLength && _keys.length == _lengths.length,
-            "EthStorageContract: input length mismatch"
-        );
+        if ((_keys.length != blobIndexesLength) || (_keys.length != _lengths.length)) {
+            revert EthStorageContract_LengthMismatch();
+        }
 
         bytes32[] memory dataHashes = new bytes32[](_blobIdxs.length);
         for (uint256 i = 0; i < blobIndexesLength; i++) {
             dataHashes[i] = blobhash(_blobIdxs[i]);
-            require(dataHashes[i] != 0, "EthStorageContract: failed to get blob hash");
+            if (dataHashes[i] == 0) {
+                revert EthStorageContract_FailedToGetBlobHash();
+            }
         }
 
         uint256[] memory kvIdxs = _putBatchInternal(_keys, dataHashes, _lengths);

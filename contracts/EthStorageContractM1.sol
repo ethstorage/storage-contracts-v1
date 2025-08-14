@@ -8,6 +8,15 @@ import "./zk-verify/Decoder.sol";
 /// @title EthStorageContractM1
 /// @notice EthStorage Contract that verifies sample decodings per zk proof
 contract EthStorageContractM1 is EthStorageContract, Decoder {
+    /// @notice Thrown when the input length is mismatched.
+    error EthStorageContractM1_LengthMismatch();
+
+    /// @notice Thrown when the decoding of a sample fails.
+    error EthStorageContractM1_DecodeSampleFailed();
+
+    /// @notice Thrown when the samples are invalid.
+    error EthStorageContractM1_InvalidSamples();
+
     /// @notice Constructs the EthStorageContractM1 contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
@@ -60,30 +69,34 @@ contract EthStorageContractM1 is EthStorageContract, Decoder {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public view virtual override returns (bytes32) {
-        require(_encodedSamples.length == RANDOM_CHECKS, "EthStorageContractM1: data length mismatch");
-        require(_masks.length == RANDOM_CHECKS, "EthStorageContractM1: masks length mismatch");
-        require(_inclusiveProofs.length == RANDOM_CHECKS, "EthStorageContractM1: proof length mismatch");
-        require(_decodeProof.length == RANDOM_CHECKS, "EthStorageContractM1: decodeProof length mismatch");
+        if (
+            _encodedSamples.length != RANDOM_CHECKS || _masks.length != RANDOM_CHECKS
+                || _inclusiveProofs.length != RANDOM_CHECKS || _decodeProof.length != RANDOM_CHECKS
+        ) {
+            revert EthStorageContractM1_LengthMismatch();
+        }
 
         // calculate the number of samples range of the sample check
         uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS);
 
         for (uint256 i = 0; i < RANDOM_CHECKS; i++) {
             (uint256 kvIdx, uint256 sampleIdxInKv) = getSampleIdx(rows, _startShardId, _hash0);
-            require(
-                decodeSample(_masks[i], kvIdx, sampleIdxInKv, _miner, _decodeProof[i]),
-                "EthStorageContractM1: decodeSample failed"
-            );
+
+            if (!decodeSample(_masks[i], kvIdx, sampleIdxInKv, _miner, _decodeProof[i])) {
+                revert EthStorageContractM1_DecodeSampleFailed();
+            }
             // Inclusive proof of decodedData = mask ^ encodedData
-            require(
-                checkInclusive(
+            if (
+                !checkInclusive(
                     kvMap[idxMap[kvIdx]].hash,
                     sampleIdxInKv,
                     _masks[i] ^ uint256(_encodedSamples[i]),
                     _inclusiveProofs[i]
-                ),
-                "EthStorageContractM1: invalid samples"
-            );
+                )
+            ) {
+                revert EthStorageContractM1_InvalidSamples();
+            }
+
             _hash0 = keccak256(abi.encode(_hash0, _encodedSamples[i]));
         }
         return _hash0;

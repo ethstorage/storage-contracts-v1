@@ -8,6 +8,15 @@ import "./zk-verify/Decoder2.sol";
 /// @title EthStorageContractM2
 /// @notice EthStorage Contract that verifies two sample decodings using only one zk proof
 contract EthStorageContractM2 is EthStorageContract, Decoder2 {
+    /// @notice Thrown when the samples are invalid.
+    error EthStorageContractM2_InvalidSamples();
+
+    /// @notice Thrown when the input length is mismatched.
+    error EthStorageContractM2_LengthMismatch();
+
+    /// @notice Thrown when the decoding of a sample fails.
+    error EthStorageContractM2_DecodeFailed();
+
     /// @notice Constructs the EthStorageContractM2 contract.
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
@@ -76,10 +85,10 @@ contract EthStorageContractM2 is EthStorageContract, Decoder2 {
 
         PhyAddr memory kvInfo = kvMap[idxMap[kvIdx]];
 
-        require(
-            checkInclusive(kvInfo.hash, sampleIdxInKv, _mask ^ uint256(_encodedSample), _inclusiveProof),
-            "EthStorageContractM2: invalid samples"
-        );
+        if (!checkInclusive(kvInfo.hash, sampleIdxInKv, _mask ^ uint256(_encodedSample), _inclusiveProof)) {
+            revert EthStorageContractM2_InvalidSamples();
+        }
+
         _hash0 = keccak256(abi.encode(_hash0, _encodedSample));
         return (_hash0, kvIdx, sampleIdxInKv);
     }
@@ -94,10 +103,13 @@ contract EthStorageContractM2 is EthStorageContract, Decoder2 {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public view virtual override returns (bytes32) {
-        require(_encodedSamples.length == RANDOM_CHECKS, "EthStorageContractM2: data length mismatch");
-        require(_masks.length == RANDOM_CHECKS, "EthStorageContractM2: masks length mismatch");
-        require(_inclusiveProofs.length == RANDOM_CHECKS, "EthStorageContractM2: proof length mismatch");
-        require(_decodeProof.length == 1, "EthStorageContractM2: decodeProof length mismatch");
+        if (
+            _encodedSamples.length != RANDOM_CHECKS || _masks.length != RANDOM_CHECKS
+                || _inclusiveProofs.length != RANDOM_CHECKS || _decodeProof.length != 1
+        ) {
+            revert EthStorageContractM2_LengthMismatch();
+        }
+
         // calculate the number of samples range of the sample check
         uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS);
 
@@ -108,9 +120,10 @@ contract EthStorageContractM2 is EthStorageContract, Decoder2 {
                 _checkSample(_startShardId, rows, _hash0, _encodedSamples[i], _masks[i], _inclusiveProofs[i]);
         }
 
-        require(
-            decodeSamples(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0]), "EthStorageContractM2: decode failed"
-        );
+        if (!decodeSamples(_masks, kvIdxs, sampleIdxs, _miner, _decodeProof[0])) {
+            revert EthStorageContractM2_DecodeFailed();
+        }
+
         return _hash0;
     }
 }
