@@ -36,7 +36,11 @@ contract EthStorageContractM2L2 is EthStorageContractM2, L2Base {
         uint256 shardId = _getShardId(kvEntryCount()); // shard id after the batch
         if (shardId > _getShardId(kvEntryCountPrev)) {
             // Open a new shard and mark the shard is ready to mine.
-            infos[shardId].lastMineTime = _blockTs();
+            (, uint256 difficulty, uint256 blockMined) = infos(shardId);
+            setMiningInfo(
+                shardId,
+                MiningLib.MiningInfo({lastMineTime: _blockTs(), difficulty: difficulty, blockMined: blockMined})
+            );
         }
     }
 

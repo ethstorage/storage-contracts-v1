@@ -51,22 +51,6 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Thrown when the prepaid amount is not enough.
     error StorageContract_NotEnoughPrepaidAmount();
 
-    /// @notice Represents the configuration of the storage contract.
-    /// @custom:field maxKvSizeBits  Maximum size of a single key-value pair.
-    /// @custom:field shardSizeBits  Storage shard size.
-    /// @custom:field randomChecks   Number of random checks when mining
-    /// @custom:field cutoff         Cutoff time for difficulty adjustment.
-    /// @custom:field diffAdjDivisor Difficulty adjustment divisor.
-    /// @custom:field treasuryShare  Treasury share in basis points. 10000 = 1.0
-    struct Config {
-        uint256 maxKvSizeBits;
-        uint256 shardSizeBits;
-        uint256 randomChecks;
-        uint256 cutoff;
-        uint256 diffAdjDivisor;
-        uint256 treasuryShare;
-    }
-
     /// @notice 32 bytes per sample
     uint256 internal constant SAMPLE_SIZE_BITS = 5;
 
@@ -100,42 +84,54 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Treasury share in basis points.
     uint256 internal immutable TREASURY_SHARE;
 
-    /// @custom:spacer maxKvSizeBits, shardSizeBits, shardEntryBits, sampleLenBits, randomChecks
-    /// @notice Spacer for backwards compatibility.
-    uint256[5] private storSpacers1;
+    /// @notice Represents the configuration of the storage contract.
+    /// @custom:field maxKvSizeBits  Maximum size of a single key-value pair.
+    /// @custom:field shardSizeBits  Storage shard size.
+    /// @custom:field randomChecks   Number of random checks when mining
+    /// @custom:field cutoff         Cutoff time for difficulty adjustment.
+    /// @custom:field diffAdjDivisor Difficulty adjustment divisor.
+    /// @custom:field treasuryShare  Treasury share in basis points. 10000 = 1.0
+    struct Config {
+        uint256 maxKvSizeBits;
+        uint256 shardSizeBits;
+        uint256 randomChecks;
+        uint256 cutoff;
+        uint256 diffAdjDivisor;
+        uint256 treasuryShare;
+    }
 
-    /// @notice Minimum difficulty
-    uint256 public minimumDiff;
+    /// @custom:storage-location erc7201:openzeppelin.storage.StorageContract
+    struct StorageContractStorage {
+        /// @notice Minimum difficulty
+        uint256 _minimumDiff;
+        /// @notice Prepaid amount for the last shard
+        uint256 _prepaidAmount;
+        /// @notice Mining infomation for each shard
+        mapping(uint256 => MiningLib.MiningInfo) _infos;
+        /// @notice Maximum nonce per block
+        uint256 _nonceLimit;
+        /// @notice Treasury address
+        address _treasury;
+        /// @notice Prepaid timestamp of last mined
+        uint256 _prepaidLastMineTime;
+        /// @notice Fund tracker for prepaid
+        uint256 _accPrepaidAmount;
+        /// @notice a state variable to control the MINER_ROLE check
+        bool _enforceMinerRole;
+    }
 
-    /// @custom:spacer cutoff, diffAdjDivisor, treasuryShare
-    /// @notice Spacer for backwards compatibility.
-    uint256[3] private storSpacers2;
+    // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.StorageContract")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant StorageContractStorageLocation =
+        0x2e87afa02c4126794624df6162c63cb642521b7bea4fc2331190b8ab7e6a0f00;
 
-    /// @notice Prepaid amount for the last shard
-    uint256 public prepaidAmount;
-
-    /// @notice Mining infomation for each shard
-    mapping(uint256 => MiningLib.MiningInfo) public infos;
-
-    /// @notice Maximum nonce per block
-    uint256 public nonceLimit;
-
-    /// @notice Treasury address
-    address public treasury;
-
-    /// @notice Prepaid timestamp of last mined
-    uint256 public prepaidLastMineTime;
-
-    /// @notice Fund tracker for prepaid
-    uint256 public accPrepaidAmount;
-
-    /// @notice a state variable to control the MINER_ROLE check
-    bool public enforceMinerRole;
+    function _getStorageContractStorage() private pure returns (StorageContractStorage storage $) {
+        assembly {
+            $.slot := StorageContractStorageLocation
+        }
+    }
 
     /// @notice Reentrancy lock
     bool private transient locked;
-
-    // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     /// @notice Emitted when a block is mined.
     /// @param shardId      The shard id of the mined block.
@@ -144,6 +140,7 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param lastMineTime The last mine time of the shard.
     /// @param miner        The miner of the block.
     /// @param minerReward  The reward of the miner.
+
     event MinedBlock(
         uint256 indexed shardId,
         uint256 indexed difficulty,
@@ -204,19 +201,21 @@ abstract contract StorageContract is DecentralizedKV {
     ) public onlyInitializing {
         __init_KV(_owner);
 
-        minimumDiff = _minimumDiff;
-        prepaidAmount = _prepaidAmount;
-        nonceLimit = _nonceLimit;
-        treasury = _treasury;
-        prepaidLastMineTime = START_TIME;
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        $._minimumDiff = _minimumDiff;
+        $._prepaidAmount = _prepaidAmount;
+        $._nonceLimit = _nonceLimit;
+        $._treasury = _treasury;
+        $._prepaidLastMineTime = START_TIME;
         // make sure shard0 is ready to mine and pay correctly
-        infos[0].lastMineTime = START_TIME;
-        enforceMinerRole = true;
+        $._infos[0].lastMineTime = START_TIME;
+        $._enforceMinerRole = true;
     }
 
     /// @notice People can sent ETH to the contract.
     function sendValue() public payable {
-        accPrepaidAmount += msg.value;
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        $._accPrepaidAmount += msg.value;
     }
 
     /// @notice Upfront payment for the next insertion
@@ -236,12 +235,14 @@ abstract contract StorageContract is DecentralizedKV {
         uint256 shardId = _getShardId(_kvEntryCount);
         uint256 totalEntries = _kvEntryCount + _batchSize; // include the batch to be put
         uint256 totalPayment = 0;
+
+        StorageContractStorage storage $ = _getStorageContractStorage();
         if (_getShardId(totalEntries) > shardId) {
             uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
             totalPayment += _upfrontPayment(_blockTs()) * kvCountNew;
-            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
+            totalPayment += _upfrontPayment($._infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
         } else {
-            totalPayment += _upfrontPayment(infos[shardId].lastMineTime) * _batchSize;
+            totalPayment += _upfrontPayment($._infos[shardId].lastMineTime) * _batchSize;
         }
         return totalPayment;
     }
@@ -256,10 +257,11 @@ abstract contract StorageContract is DecentralizedKV {
         }
 
         uint256 shardId = _getShardId(kvEntryCount()); // shard id after the batch
+        StorageContractStorage storage $ = _getStorageContractStorage();
         if (shardId > _getShardId(kvEntryCountPrev)) {
             // Open a new shard and mark the shard is ready to mine.
             // (TODO): Setup shard difficulty as current difficulty / factor?
-            infos[shardId].lastMineTime = _blockTs();
+            $._infos[shardId].lastMineTime = _blockTs();
         }
     }
 
@@ -294,13 +296,14 @@ abstract contract StorageContract is DecentralizedKV {
         view
         returns (uint256 diff_)
     {
-        MiningLib.MiningInfo storage info = infos[_shardId];
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        MiningLib.MiningInfo storage info = $._infos[_shardId];
 
         if (_minedTs < info.lastMineTime) {
             revert StorageContract_MinedTsTooSmall();
         }
 
-        diff_ = MiningLib.expectedDiff(info, _minedTs, CUTOFF, DIFF_ADJ_DIVISOR, minimumDiff);
+        diff_ = MiningLib.expectedDiff(info, _minedTs, CUTOFF, DIFF_ADJ_DIVISOR, $._minimumDiff);
     }
 
     /// @notice Reward the miner
@@ -309,16 +312,17 @@ abstract contract StorageContract is DecentralizedKV {
     /// @param _minedTs  The mined timestamp.
     /// @param _diff     The difficulty of the shard.
     function _rewardMiner(uint256 _shardId, address _miner, uint256 _minedTs, uint256 _diff) internal {
+        StorageContractStorage storage $ = _getStorageContractStorage();
         // Mining is successful.
         // Send reward to coinbase and miner.
         (bool updatePrepaidTime, uint256 prepaidAmountSaved, uint256 treasuryReward, uint256 minerReward) =
             _miningReward(_shardId, _minedTs);
         if (updatePrepaidTime) {
-            prepaidLastMineTime = _minedTs;
+            $._prepaidLastMineTime = _minedTs;
         }
-        accPrepaidAmount += prepaidAmountSaved + treasuryReward;
+        $._accPrepaidAmount += prepaidAmountSaved + treasuryReward;
         // Update mining info.
-        MiningLib.update(infos[_shardId], _minedTs, _diff);
+        MiningLib.update($._infos[_shardId], _minedTs, _diff);
 
         if (minerReward > address(this).balance) {
             revert StorageContract_NotEnoughMinerReward();
@@ -328,7 +332,7 @@ abstract contract StorageContract is DecentralizedKV {
         // additional gas for its fallback functions of proper operations.
         // Therefore, we still use a reentrancy guard (`nonReentrant`) in case `call` replaces `transfer` in the future.
         payable(_miner).transfer(minerReward);
-        emit MinedBlock(_shardId, _diff, infos[_shardId].blockMined, _minedTs, _miner, minerReward);
+        emit MinedBlock(_shardId, _diff, $._infos[_shardId].blockMined, _minedTs, _miner, minerReward);
     }
 
     /// @notice Calculate the mining reward
@@ -343,7 +347,8 @@ abstract contract StorageContract is DecentralizedKV {
         view
         returns (bool, uint256, uint256, uint256)
     {
-        MiningLib.MiningInfo storage info = infos[_shardId];
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        MiningLib.MiningInfo storage info = $._infos[_shardId];
         uint256 lastShardIdx = _getShardId(kvEntryCount());
         bool updatePrepaidTime = false;
         uint256 prepaidAmountSaved = 0;
@@ -353,9 +358,9 @@ abstract contract StorageContract is DecentralizedKV {
         } else if (_shardId == lastShardIdx) {
             reward = _paymentIn(STORAGE_COST * (kvEntryCount() % (1 << SHARD_ENTRY_BITS)), info.lastMineTime, _minedTs);
             // Additional prepaid for the last shard
-            if (prepaidLastMineTime < _minedTs) {
+            if ($._prepaidLastMineTime < _minedTs) {
                 uint256 fullReward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
-                uint256 prepaidAmountIn = _paymentIn(prepaidAmount, prepaidLastMineTime, _minedTs);
+                uint256 prepaidAmountIn = _paymentIn($._prepaidAmount, $._prepaidLastMineTime, _minedTs);
                 uint256 rewardCap = fullReward - reward;
                 if (prepaidAmountIn > rewardCap) {
                     prepaidAmountSaved = prepaidAmountIn - rewardCap;
@@ -402,7 +407,8 @@ abstract contract StorageContract is DecentralizedKV {
         bytes[] calldata _inclusiveProofs,
         bytes[] calldata _decodeProof
     ) public virtual nonReentrant {
-        if (enforceMinerRole && !hasRole(MINER_ROLE, _miner)) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        if ($._enforceMinerRole && !hasRole(MINER_ROLE, _miner)) {
             revert StorageContract_MinerNotWhitelisted();
         }
         _mine(
@@ -412,23 +418,27 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Set the nonce limit.
     function setNonceLimit(uint256 _nonceLimit) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        nonceLimit = _nonceLimit;
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        $._nonceLimit = _nonceLimit;
     }
 
     /// @notice Set the prepaid amount.
     function setPrepaidAmount(uint256 _prepaidAmount) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        prepaidAmount = _prepaidAmount;
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        $._prepaidAmount = _prepaidAmount;
     }
 
     /// @notice Set the treasury address.
     function setMinimumDiff(uint256 _minimumDiff) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        minimumDiff = _minimumDiff;
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        $._minimumDiff = _minimumDiff;
     }
 
     /// @notice Enable or disable the MINER_ROLE check.
     /// @param _enforceMinerRole Boolean to enable or disable the check.
     function setEnforceMinerRole(bool _enforceMinerRole) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        enforceMinerRole = _enforceMinerRole;
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        $._enforceMinerRole = _enforceMinerRole;
     }
 
     /// @notice On-chain verification of storage proof of sufficient sampling.
@@ -464,9 +474,12 @@ abstract contract StorageContract is DecentralizedKV {
         // Estimate block timestamp
         uint256 mineTs = _getMinedTs(_blockNum);
 
-        // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
-        if (_nonce >= nonceLimit) {
-            revert StorageContract_NonceTooBig();
+        {
+            // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
+            StorageContractStorage storage $ = _getStorageContractStorage();
+            if (_nonce >= $._nonceLimit) {
+                revert StorageContract_NonceTooBig();
+            }
         }
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
@@ -486,17 +499,18 @@ abstract contract StorageContract is DecentralizedKV {
 
     /// @notice Withdraw treasury fund
     function withdraw(uint256 _amount) public {
-        if (accPrepaidAmount < prepaidAmount + _amount) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        if ($._accPrepaidAmount < $._prepaidAmount + _amount) {
             revert StorageContract_NotEnoughPrepaidAmount();
         }
 
-        accPrepaidAmount -= _amount;
+        $._accPrepaidAmount -= _amount;
 
         if (address(this).balance < _amount) {
             revert StorageContract_NotEnoughBalance();
         }
 
-        payable(treasury).transfer(_amount);
+        payable($._treasury).transfer(_amount);
     }
 
     /// @notice Get the current block number
@@ -528,6 +542,60 @@ abstract contract StorageContract is DecentralizedKV {
     /// @notice Get the shard id by kv entry count.
     function _getShardId(uint256 _kvEntryCount) internal view returns (uint256) {
         return _kvEntryCount > 0 ? (_kvEntryCount - 1) >> SHARD_ENTRY_BITS : 0;
+    }
+
+    /// @notice Return the minimumDiff
+    function minimumDiff() public view returns (uint256) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        return $._minimumDiff;
+    }
+
+    /// @notice Return the prepaid amount.
+    function prepaidAmount() public view returns (uint256) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        return $._prepaidAmount;
+    }
+
+    /// @notice Return the mining info
+    function infos(uint256 _shardId) public view returns (uint256, uint256, uint256) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        return ($._infos[_shardId].lastMineTime, $._infos[_shardId].difficulty, $._infos[_shardId].blockMined);
+    }
+
+    /// @notice Set the mining info
+    function setMiningInfo(uint256 _shardId, MiningLib.MiningInfo memory _info) internal {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        $._infos[_shardId] = _info;
+    }
+
+    /// @notice Return the max nonce limit.
+    function nonceLimit() public view returns (uint256) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        return $._nonceLimit;
+    }
+
+    /// @notice Return the treasury address.
+    function treasury() public view returns (address) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        return $._treasury;
+    }
+
+    /// @notice Return the prepaid last mine time.
+    function prepaidLastMineTime() public view returns (uint256) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        return $._prepaidLastMineTime;
+    }
+
+    /// @notice Return the accumulated prepaid amount.
+    function accPrepaidAmount() public view returns (uint256) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        return $._accPrepaidAmount;
+    }
+
+    /// @notice Return enforce miner role.
+    function enforceMinerRole() public view returns (bool) {
+        StorageContractStorage storage $ = _getStorageContractStorage();
+        return $._enforceMinerRole;
     }
 
     /// @notice Return the sample size bits.
