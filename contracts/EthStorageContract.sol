@@ -34,8 +34,6 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     /// @custom:semver 0.2.0
     string public constant version = "0.2.0";
 
-    // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
-
     /// @notice Emitted when a BLOB is appended.
     /// @param kvIdx    The index of the KV pair
     /// @param kvSize   The size of the KV pair
@@ -43,6 +41,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
     /// @notice Constructs the EthStorageContract contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         StorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {
@@ -56,7 +55,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         uint256 _nonceLimit,
         address _treasury,
         address _owner
-    ) public payable initializer {
+    ) public payable virtual initializer {
         __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 

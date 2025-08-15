@@ -43,6 +43,7 @@ abstract contract L2Base {
     uint256 internal constant MASK = ~uint256(0) ^ type(uint32).max;
 
     /// @notice The rate limit to update blobs per block
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable UPDATE_LIMIT;
 
     /// @custom:storage-location erc7201:openzeppelin.storage.L2Base
@@ -63,10 +64,12 @@ abstract contract L2Base {
     }
 
     /// @notice Constructs the L2Base contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(uint256 _updateLimit) {
         UPDATE_LIMIT = _updateLimit;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     /// @notice Set the soul gas token address for the contract.
     function _setSoulGasToken(address _soulGasToken) internal {
         L2BaseStorage storage $ = _getL2BaseStorage();

@@ -18,9 +18,21 @@ contract EthStorageContractM1 is EthStorageContract, Decoder {
     error EthStorageContractM1_InvalidSamples();
 
     /// @notice Constructs the EthStorageContractM1 contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {}
+
+    /// @notice Initialize the contract
+    function initialize(
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _admin
+    ) public payable virtual override initializer {
+        super.initialize(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _admin);
+    }
 
     /// @notice Verify the masks using the zk proof
     /// @param _mask The mask for the sample
