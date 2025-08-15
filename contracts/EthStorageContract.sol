@@ -31,8 +31,8 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     uint256 constant FIELD_ELEMENTS_PER_BLOB = 0x1000;
 
     /// @notice Semantic version.
-    /// @custom:semver 0.1.2
-    string public constant version = "0.1.2";
+    /// @custom:semver 0.2.0
+    string public constant version = "0.2.0";
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
@@ -93,7 +93,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
 
     /// @notice Compute the encoding key using the kvIdx and miner address
     function _getEncodingKey(uint256 _kvIdx, address _miner) internal view returns (uint256) {
-        return uint256(keccak256(abi.encode(kvMap[idxMap[_kvIdx]].hash, _miner, _kvIdx))) % MODULUS_BN254;
+        return uint256(keccak256(abi.encode(_kvMap(_idxMap(_kvIdx)).hash, _miner, _kvIdx))) % MODULUS_BN254;
     }
 
     /// @notice Compute the input X for inclusion proof using the sample index

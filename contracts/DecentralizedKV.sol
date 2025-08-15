@@ -27,6 +27,23 @@ contract DecentralizedKV is AccessControlUpgradeable {
     /// @notice Thrown when the data is not exist.
     error DecentralizedKV_DataNotExist();
 
+    /// @notice The maximum value of optimization blob storage content. It can store 3068 bytes more data than standard blob.
+    /// https://github.com/ethereum-optimism/optimism/blob/develop/op-service/eth/blob.go#L16
+    uint256 internal constant MAX_OPTIMISM_BLOB_DATA_SIZE = (4 * 31 + 3) * 1024 - 4;
+
+    /// @notice Upfront storage cost (pre-dcf)
+    uint256 internal immutable STORAGE_COST;
+
+    /// @notice Discounted cash flow factor in seconds
+    ///         E.g., 0.85 yearly discount in second = 0.9999999948465585 = 340282365167313208607671216367074279424 in Q128.128
+    uint256 internal immutable DCF_FACTOR;
+
+    /// @notice The start time of the storage payment
+    uint256 internal immutable START_TIME;
+
+    /// @notice Maximum size of a single key-value pair
+    uint256 internal immutable MAX_KV_SIZE;
+
     /// @notice Represents the metadata of the key-value .
     /// @custom:field kvIdx  Internal address seeking.
     /// @custom:field kvSize BLOB size.
@@ -47,9 +64,15 @@ contract DecentralizedKV is AccessControlUpgradeable {
         OptimismCompact
     }
 
-    /// @notice The maximum value of optimization blob storage content. It can store 3068 bytes more data than standard blob.
-    /// https://github.com/ethereum-optimism/optimism/blob/develop/op-service/eth/blob.go#L16
-    uint256 internal constant MAX_OPTIMISM_BLOB_DATA_SIZE = (4 * 31 + 3) * 1024 - 4;
+    /// @custom:storage-location erc7201:openzeppelin.storage.DecentralizedKV
+    struct DecentralizedKVStorage {
+        /// @notice The number of entries in the store
+        uint40 _kvEntryCount;
+        /// @notice skey and PhyAddr mapping
+        mapping(bytes32 => PhyAddr) _kvMap;
+        /// @notice index and skey mapping, reverse lookup
+        mapping(uint256 => bytes32) _idxMap;
+    }
 
     /// @notice Upfront storage cost (pre-dcf)
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -81,13 +104,20 @@ contract DecentralizedKV is AccessControlUpgradeable {
 
     /// @notice index and skey mapping, reverse lookup
     mapping(uint256 => bytes32) internal idxMap;
+    // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.DecentralizedKV")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant DecentralizedKVStorageLocation =
+        0xdddbcfdf01968304fa73e5ba952efaf0203fd233c51e4f58b8a185ceb1c2a300;
+
+    function _getDecentralizedKVStorage() private pure returns (DecentralizedKVStorage storage $) {
+        assembly {
+            $.slot := DecentralizedKVStorageLocation
+        }
+    }
 
     /// @notice Emitted when a key-value is removed.
     /// @param kvIdx        The removed key-value index.
     /// @param kvEntryCount The key-value entry count after removing the kvIdx.
     event Remove(uint256 indexed kvIdx, uint256 indexed kvEntryCount);
-
-    // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     /// @notice Constructs the DecentralizedKV contract. Initializes the immutables.
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -104,7 +134,9 @@ contract DecentralizedKV is AccessControlUpgradeable {
         __Context_init();
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
-        kvEntryCount = 0;
+
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        $._kvEntryCount = 0;
     }
 
     /// @notice Pow function in Q128.
@@ -163,22 +195,24 @@ contract DecentralizedKV is AccessControlUpgradeable {
             }
         }
 
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+
         uint256[] memory res = new uint256[](keysLength);
         uint256 batchPaymentSize = 0;
         for (uint256 i = 0; i < keysLength; i++) {
             bytes32 skey = keccak256(abi.encode(msg.sender, _keys[i]));
-            PhyAddr memory paddr = kvMap[skey];
+            PhyAddr memory paddr = $._kvMap[skey];
 
             if (paddr.hash == 0) {
                 // append (require payment from sender)
                 batchPaymentSize++;
-                paddr.kvIdx = kvEntryCount;
-                idxMap[paddr.kvIdx] = skey;
-                kvEntryCount = kvEntryCount + 1;
+                paddr.kvIdx = $._kvEntryCount;
+                $._idxMap[paddr.kvIdx] = skey;
+                $._kvEntryCount = $._kvEntryCount + 1;
             }
             paddr.kvSize = uint24(_lengths[i]);
             paddr.hash = bytes24(_dataHashes[i]);
-            kvMap[skey] = paddr;
+            $._kvMap[skey] = paddr;
 
             res[i] = paddr.kvIdx;
         }
@@ -194,19 +228,22 @@ contract DecentralizedKV is AccessControlUpgradeable {
     /// @notice Return the size of the keyed value.
     function size(bytes32 _key) public view returns (uint256) {
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        return kvMap[skey].kvSize;
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        return $._kvMap[skey].kvSize;
     }
 
     /// @notice Return the dataHash of the keyed value.
     function hash(bytes32 _key) public view returns (bytes24) {
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        return kvMap[skey].hash;
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        return $._kvMap[skey].hash;
     }
 
     /// @notice Check if the key-value exists.
     function exist(bytes32 _key) public view returns (bool) {
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        return kvMap[skey].hash != 0;
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        return $._kvMap[skey].hash != 0;
     }
 
     // @notice Return the keyed data given off and len.  This function can be only called in JSON-RPC context of ES L2 node.
@@ -226,7 +263,8 @@ contract DecentralizedKV is AccessControlUpgradeable {
         }
 
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        PhyAddr memory paddr = kvMap[skey];
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        PhyAddr memory paddr = $._kvMap[skey];
 
         if (paddr.hash == 0) {
             revert DecentralizedKV_DataNotExist();
@@ -286,8 +324,9 @@ contract DecentralizedKV is AccessControlUpgradeable {
         uint256 kvIndicesLength = _kvIndices.length;
 
         bytes32[] memory res = new bytes32[](kvIndicesLength);
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
         for (uint256 i = 0; i < kvIndicesLength; i++) {
-            PhyAddr memory paddr = kvMap[idxMap[_kvIndices[i]]];
+            PhyAddr memory paddr = $._kvMap[$._idxMap[_kvIndices[i]]];
 
             res[i] |= bytes32(uint256(_kvIndices[i])) << 216;
             res[i] |= bytes32(uint256(paddr.kvSize)) << 192;
@@ -297,9 +336,40 @@ contract DecentralizedKV is AccessControlUpgradeable {
         return res;
     }
 
-    /// @notice This is for compatibility with earlier versions and can be removed in the future.
-    function lastKvIdx() public view returns (uint40) {
-        return kvEntryCount;
+    /// @notice Getter for kvEntryCount
+    function kvEntryCount() public view returns (uint40) {
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        return $._kvEntryCount;
+    }
+
+    /// @notice Setter for kvEntryCount
+    function _setKvEntryCount(uint40 _value) internal {
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        $._kvEntryCount = _value;
+    }
+
+    /// @notice Getter for kvMap
+    function _kvMap(bytes32 _key) internal view returns (PhyAddr memory) {
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        return $._kvMap[_key];
+    }
+
+    /// @notice Setter for kvMap
+    function _setKvMap(bytes32 _key, PhyAddr memory _value) internal {
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        $._kvMap[_key] = _value;
+    }
+
+    /// @notice Getter for idxMap
+    function _idxMap(uint256 _kvIdx) internal view returns (bytes32) {
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        return $._idxMap[_kvIdx];
+    }
+
+    /// @notice Setter for idxMap
+    function _setIdxMap(uint256 _kvIdx, bytes32 _value) internal {
+        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        $._idxMap[_kvIdx] = _value;
     }
 
     /// @notice Getter for STORAGE_COST

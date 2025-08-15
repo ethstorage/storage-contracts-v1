@@ -69,7 +69,9 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 CHAIN_ID=$(cast chain-id --rpc-url "$RPC_URL")
 OUTPUT_FILE="deployments/logs/${TIMESTAMP}_${CONTRACT_NAME}_${CHAIN_ID}.log"
 
-echo "===== Starting $CONTRACT_NAME Deployment ====="
+# To avoid Error - `Build info file ${buildInfoFilePath} is not from a full compilation.`
+forge clean & forge build
+
 echo "RPC URL: $RPC_URL"
 echo "Chain ID: $CHAIN_ID"
 
@@ -81,6 +83,7 @@ if [ "$CHAIN_ID" -eq 31337 ]; then
   VERIFY_ARGS=()
 fi
 
+echo "===== Starting $CONTRACT_NAME Deployment ====="
 forge script script/Deploy.s.sol:Deploy \
   --rpc-url "$RPC_URL" \
   --broadcast \
@@ -131,6 +134,7 @@ START_TIME=$START_TIME
 VERSION=$CONTRACT_VERSION
 REFERENCE_BUILD_INFO_DIR=old-builds/build-info-v$CONTRACT_VERSION
 REFERENCE_CONTRACT=build-info-v$CONTRACT_VERSION:$CONTRACT_NAME
+
 DEPLOYED_AT=$TIMESTAMP
 EOF
 

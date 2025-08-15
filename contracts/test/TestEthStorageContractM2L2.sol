@@ -14,12 +14,12 @@ contract TestEthStorageContractM2L2 is EthStorageContractM2L2 {
 
     /// @notice Get the number of blobs updated within the current block.
     function getBlobsUpdated() public view returns (uint256) {
-        return updateState & type(uint32).max;
+        return updateState() & type(uint32).max;
     }
 
     /// @notice Get the block number of the last update.
     function getBlockLastUpdate() public view returns (uint256) {
-        return updateState >> 32;
+        return updateState() >> 32;
     }
 
     function _blockNumber() internal view virtual override returns (uint256) {

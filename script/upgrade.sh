@@ -1,6 +1,41 @@
 #!/bin/bash
 set -e
 
+# Function to compare StorageContract versions
+compare_version() {
+  local reference_dir="$1"
+
+  local current_version=""
+  local deployed_version=""
+  
+  # Extract version from current source code
+  if [ -f "contracts/EthStorageContract.sol" ]; then
+    current_version=$(grep -E 'string public constant version = ' contracts/EthStorageContract.sol | sed -E 's/.*version = "([^"]+)".*/\1/' | tr -d ' ')
+  else
+    echo "Error: contracts/EthStorageContract.sol not found"
+    return 2
+  fi
+
+  if [[ "$reference_dir" =~ build-info-v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+    deployed_version="${BASH_REMATCH[1]}"
+  else
+    echo "Error: Could not parse version from reference directory name: $reference_dir"
+    return 2
+  fi
+  echo "Current source code version: $current_version"
+  echo "Deployed contract version: $deployed_version"
+  
+  # Compare versions
+  if [ "$current_version" = "$deployed_version" ]; then
+    echo "⚠️  Version numbers are identical"
+    return 0  # Same version
+  else
+    echo "✅ Version numbers differ - upgrade is valid"
+    return 1  # Different version
+  fi
+}
+
+
 if [ $# -eq 0 ]; then
   echo "Usage: $0 <deployment_file>"
   echo "Example: $0 deployments/EthStorageContractM2L2_31337.txt"
@@ -33,7 +68,6 @@ source "$DEPLOYMENT_FILE"
 echo "Loaded REFERENCE_BUILD_INFO_DIR: '$REFERENCE_BUILD_INFO_DIR'"
 echo "Loaded REFERENCE_CONTRACT: '$REFERENCE_CONTRACT'"
 
-echo "===== Starting $CONTRACT_NAME Upgrade ====="
 echo "Upgrading based on: $DEPLOYMENT_FILE"
 echo "Chain ID: $CHAIN_ID"
 echo "Proxy address: $PROXY"
@@ -71,6 +105,25 @@ else
   exit 1
 fi
 
+# Check if current version is the same as reference
+if compare_version "$REFERENCE_BUILD_INFO_DIR"; then
+  echo "⚠️  WARNING: Current version seems identical to reference version!"
+  echo ""
+  echo "Reference: $REFERENCE_BUILD_INFO_DIR"
+  echo "Current:   out/build-info"
+  echo ""
+  read -p "Do you want to continue with the upgrade anyway? (y/N): " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Upgrade cancelled by user."
+    exit 0
+  fi
+  echo "Continuing with upgrade..."
+fi
+
+# To avoid Error - `Build info file ${buildInfoFilePath} is not from a full compilation.`
+forge clean & forge build
+
 # Set L1/L2 specific parameters based on contract name
 VERIFY_ARGS=()
 if [[ "$CONTRACT_NAME" == *L2 ]]; then
@@ -102,8 +155,7 @@ UPGRADE_OUTPUT_FILE="deployments/logs/${TIMESTAMP}_${CONTRACT_NAME}_${CHAIN_ID}_
 
 echo "RPC URL: $RPC_URL"
 
-# Execute upgrade
-echo "Executing upgrade..."
+echo "===== Starting $CONTRACT_NAME Upgrade ====="
 forge script script/Deploy.s.sol:Deploy \
   --sig "upgrade()" \
   --rpc-url "$RPC_URL" \
@@ -124,10 +176,10 @@ echo "New Implementation: $NEW_IMPL_ADDRESS"
 echo "Upgrade log saved to: $UPGRADE_OUTPUT_FILE"
 
 echo "Verifying upgrade by checking contract version..."
-NEW_VERSION=$(cast call "$PROXY" "version()" --rpc-url "$RPC_URL" | cast --to-ascii | tr -d ' ')
-echo "Upgrade completed from version $OLD_VERSION to version $NEW_VERSION"
-
 OLD_VERSION=$(grep -E "^VERSION=" "$DEPLOYMENT_FILE" | cut -d'=' -f2 || echo "unknown")
+NEW_VERSION=$(cast call "$PROXY" "version()" --rpc-url "$RPC_URL" | cast --to-ascii | tr -d ' ')
+
+echo "Upgrade completed from version $OLD_VERSION to version $NEW_VERSION"
 
 # Update deployment file with new implementation
 UPDATED_DEPLOYMENT_FILE="deployments/${CONTRACT_NAME}_${CHAIN_ID}_${NEW_VERSION}.txt"
@@ -141,11 +193,12 @@ ADMIN=$ADMIN
 IMPLEMENTATION=$NEW_IMPL_ADDRESS
 OWNER=$OWNER
 START_TIME=$START_TIME
-DEPLOYED_AT=$DEPLOYED_AT
-UPGRADED_AT=$TIMESTAMP
 VERSION=$NEW_VERSION
 REFERENCE_BUILD_INFO_DIR=$REFERENCE_BUILD_INFO_DIR
 REFERENCE_CONTRACT=$REFERENCE_CONTRACT
+
+DEPLOYED_AT=$DEPLOYED_AT
+UPGRADED_AT=$TIMESTAMP
 EOF
 
 echo "Updated deployment info saved to: $UPDATED_DEPLOYMENT_FILE"

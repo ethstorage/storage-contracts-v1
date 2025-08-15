@@ -74,7 +74,7 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
     }
 
     function getEncodingKey(uint256 kvIdx, address miner) public view returns (bytes32) {
-        return keccak256(abi.encode(kvMap[idxMap[kvIdx]].hash, miner, kvIdx));
+        return keccak256(abi.encode(_kvMap(_idxMap(kvIdx)).hash, miner, kvIdx));
     }
 
     /// @notice Verify the mask is correct
@@ -185,7 +185,7 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         uint256 mineTs = _getMinedTs(blockNumber);
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
-        require(nonce < nonceLimit, "nonce too big");
+        require(nonce < nonceLimit(), "nonce too big");
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         hash0 = keccak256(abi.encode(miner, hash0, nonce));
@@ -226,7 +226,7 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         uint256 mineTs = block.timestamp;
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
-        require(nonce < nonceLimit, "nonce too big");
+        require(nonce < nonceLimit(), "nonce too big");
 
         // Check if the data matches the hash in metadata and obtain the solution hash.
         verifySamples(shardId, initHash0, miner, encodedSamples, masks, inclusiveProofs, decodeProof);
