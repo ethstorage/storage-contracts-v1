@@ -32,16 +32,20 @@ contract DecentralizedKV is AccessControlUpgradeable {
     uint256 internal constant MAX_OPTIMISM_BLOB_DATA_SIZE = (4 * 31 + 3) * 1024 - 4;
 
     /// @notice Upfront storage cost (pre-dcf)
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable STORAGE_COST;
 
     /// @notice Discounted cash flow factor in seconds
     ///         E.g., 0.85 yearly discount in second = 0.9999999948465585 = 340282365167313208607671216367074279424 in Q128.128
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable DCF_FACTOR;
 
     /// @notice The start time of the storage payment
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable START_TIME;
 
     /// @notice Maximum size of a single key-value pair
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable MAX_KV_SIZE;
 
     /// @notice Represents the metadata of the key-value .
@@ -74,36 +78,6 @@ contract DecentralizedKV is AccessControlUpgradeable {
         mapping(uint256 => bytes32) _idxMap;
     }
 
-    /// @notice Upfront storage cost (pre-dcf)
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    uint256 internal immutable STORAGE_COST;
-
-    /// @notice Discounted cash flow factor in seconds
-    ///         E.g., 0.85 yearly discount in second = 0.9999999948465585 = 340282365167313208607671216367074279424 in Q128.128
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    uint256 internal immutable DCF_FACTOR;
-
-    /// @notice The start time of the storage payment
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    uint256 internal immutable START_TIME;
-
-    /// @notice Maximum size of a single key-value pair
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    uint256 internal immutable MAX_KV_SIZE;
-
-    /// @custom:legacy
-    /// @custom:spacer storageCost, dcfFactor, startTime, maxKvSize
-    /// @notice Spacer for backwards compatibility.
-    uint256[4] private kvSpacers;
-
-    /// @notice The number of entries in the store
-    uint40 public kvEntryCount;
-
-    /// @notice skey and PhyAddr mapping
-    mapping(bytes32 => PhyAddr) internal kvMap;
-
-    /// @notice index and skey mapping, reverse lookup
-    mapping(uint256 => bytes32) internal idxMap;
     // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.DecentralizedKV")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant DecentralizedKVStorageLocation =
         0xdddbcfdf01968304fa73e5ba952efaf0203fd233c51e4f58b8a185ceb1c2a300;
