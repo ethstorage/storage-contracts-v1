@@ -34,7 +34,7 @@ echo "Loaded REFERENCE_BUILD_INFO_DIR: '$REFERENCE_BUILD_INFO_DIR'"
 echo "Loaded REFERENCE_CONTRACT: '$REFERENCE_CONTRACT'"
 
 echo "===== Starting $CONTRACT_NAME Upgrade ====="
-echo "Deployment file: $DEPLOYMENT_FILE"
+echo "Upgrading based on: $DEPLOYMENT_FILE"
 echo "Chain ID: $CHAIN_ID"
 echo "Proxy address: $PROXY"
 
@@ -98,7 +98,7 @@ if [ "$CHAIN_ID" -eq 31337 ]; then
 fi
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-UPGRADE_OUTPUT_FILE="deployments/logs/${TIMESTAMP}_${CHAIN_ID}_${CONTRACT_NAME}_upgrade.log"
+UPGRADE_OUTPUT_FILE="deployments/logs/${TIMESTAMP}_${CONTRACT_NAME}_${CHAIN_ID}_upgrade.log"
 
 echo "RPC URL: $RPC_URL"
 
@@ -119,14 +119,13 @@ if [ -z "$NEW_IMPL_ADDRESS" ]; then
 fi
 
 echo "===== Upgrade Complete ====="
-echo "Proxy: $PROXY (unchanged)"
 echo "Old Implementation: $IMPLEMENTATION"
 echo "New Implementation: $NEW_IMPL_ADDRESS"
 echo "Upgrade log saved to: $UPGRADE_OUTPUT_FILE"
 
 echo "Verifying upgrade by checking contract version..."
 NEW_VERSION=$(cast call "$PROXY" "version()" --rpc-url "$RPC_URL" | cast --to-ascii | tr -d ' ')
-echo "Contract version after upgrade: $NEW_VERSION"
+echo "Upgrade completed from version $OLD_VERSION to version $NEW_VERSION"
 
 OLD_VERSION=$(grep -E "^VERSION=" "$DEPLOYMENT_FILE" | cut -d'=' -f2 || echo "unknown")
 
@@ -144,8 +143,6 @@ OWNER=$OWNER
 START_TIME=$START_TIME
 DEPLOYED_AT=$DEPLOYED_AT
 UPGRADED_AT=$TIMESTAMP
-PREVIOUS_IMPLEMENTATION=$IMPLEMENTATION
-PREVIOUS_VERSION=$OLD_VERSION
 VERSION=$NEW_VERSION
 REFERENCE_BUILD_INFO_DIR=$REFERENCE_BUILD_INFO_DIR
 REFERENCE_CONTRACT=$REFERENCE_CONTRACT
@@ -156,10 +153,10 @@ echo "Updated deployment info saved to: $UPDATED_DEPLOYMENT_FILE"
 # Backup build info for future upgrades
 echo "Backing up build info for future upgrades..."
 BUILD_INFO_BACKUP_DIR="old-builds/build-info-v$NEW_VERSION"
-if [ -d "out/build-info" ]; then
-  mkdir -p "old-builds"
-  cp -r out/build-info "$BUILD_INFO_BACKUP_DIR"
-  echo "Build info backed up to: $BUILD_INFO_BACKUP_DIR"
-else
-  echo "Warning: out/build-info directory not found, skipping backup"
+if [ -d "$BUILD_INFO_BACKUP_DIR" ]; then
+  echo "Removing existing backup directory: $BUILD_INFO_BACKUP_DIR"
+  rm -rf "$BUILD_INFO_BACKUP_DIR"
 fi
+mkdir -p "old-builds"
+cp -r out/build-info "$BUILD_INFO_BACKUP_DIR"
+echo "Build info backed up to: $BUILD_INFO_BACKUP_DIR"

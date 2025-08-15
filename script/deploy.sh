@@ -109,13 +109,13 @@ echo "Contract version: $CONTRACT_VERSION"
 # Backup build info for future upgrades
 echo "Backing up build info for future upgrades..."
 BUILD_INFO_BACKUP_DIR="old-builds/build-info-v$CONTRACT_VERSION"
-if [ -d "out/build-info" ]; then
-  mkdir -p "old-builds"
-  cp -r out/build-info "$BUILD_INFO_BACKUP_DIR"
-  echo "Build info backed up to: $BUILD_INFO_BACKUP_DIR"
-else
-  echo "Warning: out/build-info directory not found, skipping backup"
+if [ -d "$BUILD_INFO_BACKUP_DIR" ]; then
+  echo "Removing existing backup directory: $BUILD_INFO_BACKUP_DIR"
+  rm -rf "$BUILD_INFO_BACKUP_DIR"
 fi
+mkdir -p "old-builds"
+cp -r out/build-info "$BUILD_INFO_BACKUP_DIR"
+echo "Build info backed up to: $BUILD_INFO_BACKUP_DIR"
 
 DEPLOYMENT_FILE="deployments/${CONTRACT_NAME}_${CHAIN_ID}_${CONTRACT_VERSION}.txt"
 
