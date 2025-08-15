@@ -31,8 +31,8 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     uint256 constant FIELD_ELEMENTS_PER_BLOB = 0x1000;
 
     /// @notice Semantic version.
-    /// @custom:semver 0.1.2
-    string public constant version = "0.1.2";
+    /// @custom:semver 0.2.0
+    string public constant version = "0.2.0";
 
     // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
