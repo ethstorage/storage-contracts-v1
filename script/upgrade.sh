@@ -28,10 +28,9 @@ compare_version() {
   # Compare versions
   if [ "$current_version" = "$deployed_version" ]; then
     echo "⚠️  Version numbers are identical"
-    return 0  # Same version
+    return 0
   else
-    echo "✅ Version numbers differ - upgrade is valid"
-    return 1  # Different version
+    return 1
   fi
 }
 
@@ -63,10 +62,6 @@ source .env
 # Load deployment information
 echo "Loading deployment information from: $DEPLOYMENT_FILE"
 source "$DEPLOYMENT_FILE"
-
-# Debug: Print loaded variables
-echo "Loaded REFERENCE_BUILD_INFO_DIR: '$REFERENCE_BUILD_INFO_DIR'"
-echo "Loaded REFERENCE_CONTRACT: '$REFERENCE_CONTRACT'"
 
 echo "Upgrading based on: $DEPLOYMENT_FILE"
 echo "Chain ID: $CHAIN_ID"

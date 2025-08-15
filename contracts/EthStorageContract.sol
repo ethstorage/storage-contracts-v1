@@ -34,8 +34,6 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     /// @custom:semver 0.2.0
     string public constant version = "0.2.0";
 
-    // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
-
     /// @notice Emitted when a BLOB is appended.
     /// @param kvIdx    The index of the KV pair
     /// @param kvSize   The size of the KV pair
