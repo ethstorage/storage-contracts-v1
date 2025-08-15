@@ -22,21 +22,25 @@ contract EthStorageContractM2L2 is EthStorageContractM2, L2Base {
 
     /// @inheritdoc StorageContract
     function _checkAppend(uint256 _batchSize) internal virtual override {
-        uint256 kvEntryCountPrev = kvEntryCount - _batchSize; // kvEntryCount already increased
+        uint256 kvEntryCountPrev = kvEntryCount() - _batchSize; // kvEntryCount already increased
         uint256 totalPayment = _upfrontPaymentInBatch(kvEntryCountPrev, _batchSize);
         uint256 sgtCharged = 0;
-        if (soulGasToken != address(0)) {
-            sgtCharged = ISoulGasToken(soulGasToken).chargeFromOrigin(totalPayment);
+        if (soulGasToken() != address(0)) {
+            sgtCharged = ISoulGasToken(soulGasToken()).chargeFromOrigin(totalPayment);
         }
 
         if (msg.value < totalPayment - sgtCharged) {
             revert EthStorageContractM2L2_NotEnoughPayment();
         }
 
-        uint256 shardId = _getShardId(kvEntryCount); // shard id after the batch
+        uint256 shardId = _getShardId(kvEntryCount()); // shard id after the batch
         if (shardId > _getShardId(kvEntryCountPrev)) {
             // Open a new shard and mark the shard is ready to mine.
-            infos[shardId].lastMineTime = _blockTs();
+            (, uint256 difficulty, uint256 blockMined) = infos(shardId);
+            setMiningInfo(
+                shardId,
+                MiningLib.MiningInfo({lastMineTime: _blockTs(), difficulty: difficulty, blockMined: blockMined})
+            );
         }
     }
 

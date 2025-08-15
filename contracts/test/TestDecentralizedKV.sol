@@ -50,7 +50,7 @@ contract TestDecentralizedKV is DecentralizedKV {
         }
 
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
-        PhyAddr memory paddr = kvMap[skey];
+        PhyAddr memory paddr = _kvMap(skey);
         if (off >= paddr.kvSize) {
             return new bytes(0);
         }
@@ -70,25 +70,28 @@ contract TestDecentralizedKV is DecentralizedKV {
     // Remove an existing KV pair to a recipient.  Refund the cost accordingly.
     function removeTo(bytes32 key, address to) public override {
         bytes32 skey = keccak256(abi.encode(msg.sender, key));
-        PhyAddr memory paddr = kvMap[skey];
+        PhyAddr memory paddr = _kvMap(skey);
         uint40 kvIdx = paddr.kvIdx;
 
         require(paddr.hash != 0, "kv not exist");
 
         // clear kv data
-        kvMap[skey] = PhyAddr({kvIdx: 0, kvSize: 0, hash: 0});
+        _setKvMap(skey, PhyAddr({kvIdx: 0, kvSize: 0, hash: 0}));
 
         // move last kv to current kv
-        bytes32 lastSkey = idxMap[kvEntryCount - 1];
-        idxMap[kvIdx] = lastSkey;
-        kvMap[lastSkey].kvIdx = kvIdx;
+        bytes32 lastSkey = _idxMap(kvEntryCount() - 1);
+        _setIdxMap(kvIdx, lastSkey);
+
+        PhyAddr memory lastValue = _kvMap(lastSkey);
+        lastValue.kvIdx = kvIdx;
+        _setKvMap(lastSkey, lastValue);
 
         // remove the last Kv
-        idxMap[kvEntryCount - 1] = 0x0;
-        kvEntryCount = kvEntryCount - 1;
+        _setIdxMap(kvEntryCount() - 1, 0x0);
+        _setKvEntryCount(kvEntryCount() - 1);
 
-        dataMap[kvIdx] = dataMap[kvEntryCount];
-        delete dataMap[kvEntryCount];
+        dataMap[kvIdx] = dataMap[kvEntryCount()];
+        delete dataMap[kvEntryCount()];
 
         payable(to).transfer(upfrontPayment());
     }

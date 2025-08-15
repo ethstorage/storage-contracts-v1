@@ -45,11 +45,22 @@ abstract contract L2Base {
     /// @notice The rate limit to update blobs per block
     uint256 internal immutable UPDATE_LIMIT;
 
-    /// @notice A slot to store both `blockLastUpdate` (left 224) and `blobsUpdated` (right 32)
-    uint256 internal updateState;
+    /// @custom:storage-location erc7201:openzeppelin.storage.L2Base
+    struct L2BaseStorage {
+        /// @notice A slot to store both `blockLastUpdate` (left 224) and `blobsUpdated` (right 32)
+        uint256 _updateState;
+        /// @notice The address of the soul gas token.
+        address _soulGasToken;
+    }
 
-    /// @notice The address of the soul gas token.
-    address public soulGasToken;
+    // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.L2Base")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant L2BaseStorageLocation = 0x4f2e75529ec26b25c2fdfe7928382000d9e4289cb7792c1db94ef3c9ffecd900;
+
+    function _getL2BaseStorage() private pure returns (L2BaseStorage storage $) {
+        assembly {
+            $.slot := L2BaseStorageLocation
+        }
+    }
 
     /// @notice Constructs the L2Base contract.
     constructor(uint256 _updateLimit) {
@@ -58,7 +69,8 @@ abstract contract L2Base {
 
     /// @notice Set the soul gas token address for the contract.
     function _setSoulGasToken(address _soulGasToken) internal {
-        soulGasToken = _soulGasToken;
+        L2BaseStorage storage $ = _getL2BaseStorage();
+        $._soulGasToken = _soulGasToken;
     }
 
     /// @notice Get the current block number
@@ -89,17 +101,31 @@ abstract contract L2Base {
 
     /// @notice Check if the key-values being updated exceed the limit per block.
     function _checkUpdateLimit(uint256 _updateSize) internal virtual {
-        uint256 blobsUpdated = updateState & MASK == block.number << 32 ? updateState & type(uint32).max : 0;
+        L2BaseStorage storage $ = _getL2BaseStorage();
+
+        uint256 blobsUpdated = $._updateState & MASK == block.number << 32 ? $._updateState & type(uint32).max : 0;
 
         if (blobsUpdated + _updateSize > UPDATE_LIMIT) {
             revert L2Base_ExceedsUpdateRateLimit();
         }
 
-        updateState = block.number << 32 | (blobsUpdated + _updateSize);
+        $._updateState = block.number << 32 | (blobsUpdated + _updateSize);
     }
 
     /// @notice Getter for UPDATE_LIMIT
     function getUpdateLimit() public view returns (uint256) {
         return UPDATE_LIMIT;
+    }
+
+    /// @notice Getter for the soul gas token address.
+    function soulGasToken() public view returns (address) {
+        L2BaseStorage storage $ = _getL2BaseStorage();
+        return $._soulGasToken;
+    }
+
+    /// @notice Getter for update state.
+    function updateState() internal view returns (uint256) {
+        L2BaseStorage storage $ = _getL2BaseStorage();
+        return $._updateState;
     }
 }

@@ -76,7 +76,7 @@ contract EthStorageContractM1 is EthStorageContract, Decoder {
             // Inclusive proof of decodedData = mask ^ encodedData
             if (
                 !checkInclusive(
-                    kvMap[idxMap[kvIdx]].hash,
+                    _kvMap(_idxMap(kvIdx)).hash,
                     sampleIdxInKv,
                     _masks[i] ^ uint256(_encodedSamples[i]),
                     _inclusiveProofs[i]
