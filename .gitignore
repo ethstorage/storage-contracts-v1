@@ -120,4 +120,4 @@ cache_forge
 .vscode/settings.json
 
 broadcast
-deployments
+deployments/logs

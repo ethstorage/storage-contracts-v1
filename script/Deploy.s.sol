@@ -11,13 +11,91 @@ import "../contracts/EthStorageContractM2.sol";
 import "../contracts/EthStorageContractM2L2.sol";
 
 contract Deploy is Script {
+    function setUp() public {}
+
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         console.log("Deployer address:", deployer);
         string memory contractName = vm.envString("CONTRACT_NAME");
         console.log("Contract name:", contractName);
+        address owner = vm.envOr("OWNER_ADDRESS", deployer);
+        console.log("Owner address:", owner);
+        uint256 startTime = block.timestamp;
 
+        string memory contractFQN;
+        bytes memory constructorData;
+        bytes memory initData;
+        
+        (contractFQN, constructorData, initData) = _getDeploymentData(contractName, deployer, startTime);
+        Options memory opts;
+        opts.constructorData = constructorData;
+
+        vm.startBroadcast(deployerPrivateKey);
+        address proxy = Upgrades.deployTransparentProxy(contractFQN, owner, initData, opts);
+        vm.stopBroadcast();
+
+        console.log("Proxy address:", proxy);
+        address proxyAdmin = Upgrades.getAdminAddress(proxy);
+        console.log("Proxy admin address:", proxyAdmin);
+        address impl = Upgrades.getImplementationAddress(proxy);
+        console.log("Implementation address:", impl);
+    }
+
+    function upgrade() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address deployer = vm.addr(deployerPrivateKey);
+        console.log("Deployer address:", deployer);
+        string memory contractName = vm.envString("CONTRACT_NAME");
+        console.log("Contract name:", contractName);
+        address proxyAddress = vm.envAddress("PROXY");
+        console.log("Proxy address:", proxyAddress);
+        uint256 startTime = vm.envUint("START_TIME");
+        
+        // Declare variables at function scope
+        string memory contractFQN;
+        bytes memory constructorData;
+        
+        (contractFQN, constructorData, ) = _getDeploymentData(contractName, deployer, startTime);
+        Options memory opts;
+        opts.constructorData = constructorData;
+
+        // Use the same directory and name for the new version. Refer to
+        // https://docs.openzeppelin.com/upgrades-plugins/foundry-upgrades#upgrade_a_proxy_or_beacon
+
+        try vm.envString("REFERENCE_BUILD_INFO_DIR") returns (string memory referenceBuildInfoDir) {
+            if (bytes(referenceBuildInfoDir).length > 0) {
+                opts.referenceBuildInfoDir = referenceBuildInfoDir;
+                console.log("Using reference build info dir:", referenceBuildInfoDir);
+            }
+        } catch {
+            console.log("WARNING: REFERENCE_BUILD_INFO_DIR not set");
+        }
+
+        try vm.envString("REFERENCE_CONTRACT") returns (string memory referenceContract) {
+            if (bytes(referenceContract).length > 0) {
+                opts.referenceContract = referenceContract;
+                console.log("Using reference contract:", referenceContract);
+            }
+        } catch {
+            console.log("WARNING: REFERENCE_CONTRACT not set");
+        }
+        
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+        Upgrades.upgradeProxy(proxyAddress, contractFQN, "", opts);
+
+        console.log("Upgrade completed successfully!");
+        address newImpl = Upgrades.getImplementationAddress(proxyAddress);
+        console.log("New implementation address:", newImpl);
+
+        vm.stopBroadcast();
+    }
+
+    function _getDeploymentData(string memory contractName, address deployer, uint256 startTime)
+        internal
+        view
+        returns (string memory contractFQN, bytes memory constructorData, bytes memory initData)
+    {
         StorageContract.Config memory config = StorageContract.Config({
             maxKvSizeBits: vm.envUint("MAX_KV_SIZE_BITS"),
             shardSizeBits: vm.envUint("SHARD_SIZE_BITS"),
@@ -27,7 +105,6 @@ contract Deploy is Script {
             treasuryShare: vm.envUint("TREASURY_SHARE")
         });
 
-        uint256 startTime = block.timestamp;
         console.log("Start time:", startTime);
         uint256 storageCost = vm.envUint("STORAGE_COST");
         uint256 dcfFactor = vm.envUint("DCF_FACTOR");
@@ -41,76 +118,37 @@ contract Deploy is Script {
         address owner = vm.envOr("OWNER_ADDRESS", deployer);
         console.log("Owner address:", owner);
 
-        vm.startBroadcast(deployerPrivateKey);
-
-        string memory contractFQN;
-        bytes memory initData;
-        Options memory opts;
-
         bytes32 nameHash = keccak256(bytes(contractName));
 
         if (nameHash == keccak256("EthStorageContractM1")) {
             contractFQN = "EthStorageContractM1.sol:EthStorageContractM1";
             initData = abi.encodeWithSelector(
-                EthStorageContractM1.initialize.selector,
-                minimumDiff,
-                prepaidAmount,
-                nonceLimit,
-                treasury,
-                owner
+                EthStorageContractM1.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, owner
             );
-            opts.constructorData = abi.encode(config, startTime, storageCost, dcfFactor);
-
+            constructorData = abi.encode(config, startTime, storageCost, dcfFactor);
         } else if (nameHash == keccak256("EthStorageContractM1L2")) {
             uint256 updateLimit = vm.envUint("UPDATE_LIMIT");
             contractFQN = "EthStorageContractM1L2.sol:EthStorageContractM1L2";
             initData = abi.encodeWithSelector(
-                EthStorageContractM1L2.initialize.selector,
-                minimumDiff,
-                prepaidAmount,
-                nonceLimit,
-                treasury,
-                owner
+                EthStorageContractM1L2.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, owner
             );
-            opts.constructorData = abi.encode(config, startTime, storageCost, dcfFactor, updateLimit);
-
+            constructorData = abi.encode(config, startTime, storageCost, dcfFactor, updateLimit);
         } else if (nameHash == keccak256("EthStorageContractM2")) {
             contractFQN = "EthStorageContractM2.sol:EthStorageContractM2";
             initData = abi.encodeWithSelector(
-                EthStorageContractM2.initialize.selector,
-                minimumDiff,
-                prepaidAmount,
-                nonceLimit,
-                treasury,
-                owner
+                EthStorageContractM2.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, owner
             );
-            opts.constructorData = abi.encode(config, startTime, storageCost, dcfFactor);
-
+            constructorData = abi.encode(config, startTime, storageCost, dcfFactor);
         } else if (nameHash == keccak256("EthStorageContractM2L2")) {
             uint256 updateLimit = vm.envUint("UPDATE_LIMIT");
             contractFQN = "EthStorageContractM2L2.sol:EthStorageContractM2L2";
             initData = abi.encodeWithSelector(
-                EthStorageContractM2L2.initialize.selector,
-                minimumDiff,
-                prepaidAmount,
-                nonceLimit,
-                treasury,
-                owner
+                EthStorageContractM2L2.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, owner
             );
-            opts.constructorData = abi.encode(config, startTime, storageCost, dcfFactor, updateLimit);
-
+            constructorData = abi.encode(config, startTime, storageCost, dcfFactor, updateLimit);
         } else {
             revert(string(abi.encodePacked("Unsupported CONTRACT_NAME: ", contractName)));
         }
-
-        address proxy = Upgrades.deployTransparentProxy(contractFQN, owner, initData, opts);
-        
-        console.log("Proxy address:", proxy);
-        address proxyAdmin = Upgrades.getAdminAddress(proxy);
-        console.log("Proxy admin address:", proxyAdmin);
-        address impl = Upgrades.getImplementationAddress(proxy);
-        console.log("Implementation address:", impl);
-
-        vm.stopBroadcast();
+        return (contractFQN, constructorData, initData);
     }
 }
