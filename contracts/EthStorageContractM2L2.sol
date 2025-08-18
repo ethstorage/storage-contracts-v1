@@ -28,7 +28,7 @@ contract EthStorageContractM2L2 is EthStorageContractM2, L2Base {
         uint256 _nonceLimit,
         address _treasury,
         address _admin
-    ) public payable override initializer {
+    ) public payable virtual override initializer {
         super.initialize(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _admin);
     }
 
