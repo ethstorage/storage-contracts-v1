@@ -4,7 +4,7 @@ require("dotenv").config();
 const { TestState } = require("./lib/test-helper");
 const { printlog } = require("./lib/print");
 const { generateRandaoProof } = require("./lib/prover");
-const { ethers } = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 
 /* declare const key */
 const key1 = "0x0000000000000000000000000000000000000000000000000000000000000001";
@@ -16,36 +16,31 @@ describe("EthStorageContract Test", function () {
   this.timeout(300000);
 
   it("decode-8k-blob-test", async function () {
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContractM1");
-    const impl = await EthStorageContract.deploy([
-      13, // maxKvSizeBits
-      14, // shardSizeBits
-      1, // randomChecks
-      40, // cutoff
-      1024, // diffAdjDivisor
-      0, // treasuryShare
-    ],
-      0, // startTime
-      0, // storageCost
-      0, // dcfFactor
+    const sc = await upgrades.deployProxy(await ethers.getContractFactory("TestEthStorageContractM1"),
+      [
+        1, // minimumDiff
+        0, // prepaidAmount
+        1, // nonceLimit
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
+      ], {
+        constructorArgs: [
+          [
+            13, // maxKvSizeBits
+            14, // shardSizeBits
+            1, // randomChecks
+            40, // cutoff
+            1024, // diffAdjDivisor
+            0, // treasuryShare
+          ],
+          0, // startTime
+          0, // storageCost
+          0, // dcfFactor
+        ]
+    }
     );
-    await impl.waitForDeployment();
-    const data = impl.interface.encodeFunctionData("initialize", [
-      1, // minimumDiff
-      0, // prepaidAmount
-      1, // nonceLimit
-      "0x0000000000000000000000000000000000000000", // treasury
-      ownerAddr
-    ]);
 
-    const Proxy = await ethers.getContractFactory("EthStorageUpgradeableProxy");
-    const proxy = await Proxy.deploy(
-      await impl.getAddress(),
-      ownerAddr,
-      data
-    );
-    await proxy.waitForDeployment();
-    const sc = EthStorageContract.attach(await proxy.getAddress());
+    await sc.waitForDeployment();
 
     let elements = new Array(256);
 
@@ -88,31 +83,32 @@ describe("EthStorageContract Test", function () {
   });
 
   it("decode-inclusive-8k-blob-test", async function () {
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContractM1");
-    const impl = await EthStorageContract.deploy([
-      13, // maxKvSizeBits
-      14, // shardSizeBits
-      1, // randomChecks
-      40, // cutoff
-      1024, // diffAdjDivisor
-      0, // treasuryShare
-    ],
-      0, // startTime
-      0, // storageCost
-      0, // dcfFactor
+
+    const sc = await upgrades.deployProxy(await ethers.getContractFactory("TestEthStorageContractM1"),
+      [
+        1, // minimumDiff
+        0, // prepaidAmount
+        1, // nonceLimit
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
+      ], {
+        constructorArgs: [
+          [
+            13, // maxKvSizeBits
+            14, // shardSizeBits
+            1, // randomChecks
+            40, // cutoff
+            1024, // diffAdjDivisor
+            0, // treasuryShare
+          ],
+          0, // startTime
+          0, // storageCost
+          0, // dcfFactor
+        ]
+    }
     );
-    await impl.waitForDeployment();
-    const data = impl.interface.encodeFunctionData("initialize", [
-      1, // minimumDiff
-      0, // prepaidAmount
-      1, // nonceLimit
-      "0x0000000000000000000000000000000000000000", // treasury
-      ownerAddr
-    ]);
-    const Proxy = await ethers.getContractFactory("EthStorageUpgradeableProxy");
-    const proxy = await Proxy.deploy(await impl.getAddress(), ownerAddr, data);
-    await proxy.waitForDeployment();
-    const sc = EthStorageContract.attach(await proxy.getAddress());
+
+    await sc.waitForDeployment();
 
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
@@ -231,31 +227,31 @@ describe("EthStorageContract Test", function () {
   });
 
   it("verify-sample-8k-blob-2-samples-test", async function () {
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContractM1");
-    const impl = await EthStorageContract.deploy([
-      13, // maxKvSizeBits
-      14, // shardSizeBits
-      2, // randomChecks
-      40, // cutoff
-      1024, // diffAdjDivisor
-      0, // treasuryShare
-    ],
-      0, // startTime
-      0, // storageCost
-      0, // dcfFactor
+    const sc = await upgrades.deployProxy(await ethers.getContractFactory("TestEthStorageContractM1"),
+      [
+        1, // minimumDiff
+        0, // prepaidAmount
+        1, // nonceLimit
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
+      ], {
+        constructorArgs: [
+          [
+            13, // maxKvSizeBits
+            14, // shardSizeBits
+            2, // randomChecks
+            40, // cutoff
+            1024, // diffAdjDivisor
+            0, // treasuryShare
+          ],
+          0, // startTime
+          0, // storageCost
+          0, // dcfFactor
+        ]
+    }
     );
-    await impl.waitForDeployment();
-    const data = impl.interface.encodeFunctionData("initialize", [
-      1, // minimumDiff
-      0, // prepaidAmount
-      1, // nonceLimit
-      "0x0000000000000000000000000000000000000000", // treasury
-      ownerAddr
-    ]);
-    const Proxy = await ethers.getContractFactory("EthStorageUpgradeableProxy");
-    const proxy = await Proxy.deploy(await impl.getAddress(), ownerAddr, data);
-    await proxy.waitForDeployment();
-    const sc = EthStorageContract.attach(await proxy.getAddress());
+
+    await sc.waitForDeployment();
 
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
@@ -425,31 +421,31 @@ describe("EthStorageContract Test", function () {
       console.log("[Info] complete-mining-process running");
     }
 
-    const EthStorageContract = await ethers.getContractFactory("TestEthStorageContractM1");
-    const impl = await EthStorageContract.deploy([
-      13, // maxKvSizeBits
-      14, // shardSizeBits
-      2, // randomChecks
-      40, // cutoff
-      1024, // diffAdjDivisor
-      0, // treasuryShare
-    ],
-      0, // startTime
-      0, // storageCost
-      0, // dcfFactor
+    const sc = await upgrades.deployProxy(await ethers.getContractFactory("TestEthStorageContractM1"),
+      [
+        1, // minimumDiff
+        0, // prepaidAmount
+        1, // nonceLimit
+        "0x0000000000000000000000000000000000000000", // treasury
+        ownerAddr
+      ], {
+        constructorArgs: [
+          [
+            13, // maxKvSizeBits
+            14, // shardSizeBits
+            2, // randomChecks
+            40, // cutoff
+            1024, // diffAdjDivisor
+            0, // treasuryShare
+          ],
+          0, // startTime
+          0, // storageCost
+          0, // dcfFactor
+        ]
+    }
     );
-    await impl.waitForDeployment();
-    const data = impl.interface.encodeFunctionData("initialize", [
-      1, // minimumDiff
-      0, // prepaidAmount
-      1, // nonceLimit
-      "0x0000000000000000000000000000000000000000", // treasury
-      ownerAddr
-    ]);
-    const Proxy = await ethers.getContractFactory("EthStorageUpgradeableProxy");
-    const proxy = await Proxy.deploy(await impl.getAddress(), ownerAddr, data);
-    await proxy.waitForDeployment();
-    const sc = EthStorageContract.attach(await proxy.getAddress());
+
+    await sc.waitForDeployment();
 
     const MerkleLib = await ethers.getContractFactory("TestMerkleLib");
     const ml = await MerkleLib.deploy();
