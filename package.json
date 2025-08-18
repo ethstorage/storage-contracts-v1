@@ -28,7 +28,7 @@
     "clean": "rm -rf cache artifacts out && forge clean",
     "format:check": "forge fmt --check",
     "format:fix": "forge fmt",
-    "formatjs": "prettier --write test/**/*.js",
+    "formatjs": "prettier --write test/**/*.js"
   },
   "workspaces": {
     "packages": [
