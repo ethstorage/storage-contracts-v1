@@ -1,6 +1,40 @@
 #!/bin/bash
 set -e
 
+
+# Function to compare version strings (semantic versioning)
+semantic_compare() {
+  if [[ $1 == $2 ]]; then
+    return 0  # equal
+  fi
+  
+  local IFS=.
+  local i ver1=($1) ver2=($2)
+  
+  # Fill empty fields in ver1 with zeros
+  for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
+    ver1[i]=0
+  done
+  
+  # Fill empty fields in ver2 with zeros
+  for ((i=${#ver2[@]}; i<${#ver1[@]}; i++)); do
+    ver2[i]=0
+  done
+  
+  for ((i=0; i<${#ver1[@]}; i++)); do
+    if [[ -z ${ver2[i]} ]]; then
+      ver2[i]=0
+    fi
+    if ((10#${ver1[i]} > 10#${ver2[i]})); then
+      return 1  # ver1 > ver2
+    fi
+    if ((10#${ver1[i]} < 10#${ver2[i]})); then
+      return 2  # ver1 < ver2
+    fi
+  done
+  return 0  # equal
+}
+
 # Function to compare StorageContract versions
 compare_version() {
   local reference_dir="$1"
@@ -26,12 +60,22 @@ compare_version() {
   echo "Deployed contract version: $deployed_version"
   
   # Compare versions
-  if [ "$current_version" = "$deployed_version" ]; then
-    echo "⚠️  Version numbers are identical"
-    return 0
-  else
-    return 1
-  fi
+  semantic_compare "$current_version" "$deployed_version"
+  local result=$?
+  
+  case $result in
+    0)
+      echo "⚠️  Version numbers are identical"
+      return 0
+      ;;
+    1)
+      return 1
+      ;;
+    2)
+      echo "⚠️  WARNING: Current version is LOWER than deployed version!"
+      return 0
+      ;;
+  esac
 }
 
 
@@ -102,7 +146,6 @@ fi
 
 # Check if current version is the same as reference
 if compare_version "$REFERENCE_BUILD_INFO_DIR"; then
-  echo "⚠️  WARNING: Current version seems identical to reference version!"
   echo ""
   echo "Reference: $REFERENCE_BUILD_INFO_DIR"
   echo "Current:   out/build-info"
@@ -176,6 +219,17 @@ NEW_VERSION=$(cast call "$PROXY" "version()" --rpc-url "$RPC_URL" | cast --to-as
 
 echo "Upgrade completed from version $OLD_VERSION to version $NEW_VERSION"
 
+# Backup build info for future upgrades
+echo "Backing up build info for future upgrades..."
+BUILD_INFO_BACKUP_DIR="old-builds/build-info-v$NEW_VERSION"
+if [ -d "$BUILD_INFO_BACKUP_DIR" ]; then
+  echo "Removing existing backup directory: $BUILD_INFO_BACKUP_DIR"
+  rm -rf "$BUILD_INFO_BACKUP_DIR"
+fi
+mkdir -p "old-builds"
+cp -r out/build-info "$BUILD_INFO_BACKUP_DIR"
+echo "Build info backed up to: $BUILD_INFO_BACKUP_DIR"
+
 # Update deployment file with new implementation
 UPDATED_DEPLOYMENT_FILE="deployments/${CONTRACT_NAME}_${CHAIN_ID}_${NEW_VERSION}.txt"
 
@@ -197,14 +251,3 @@ UPGRADED_AT=$TIMESTAMP
 EOF
 
 echo "Updated deployment info saved to: $UPDATED_DEPLOYMENT_FILE"
-
-# Backup build info for future upgrades
-echo "Backing up build info for future upgrades..."
-BUILD_INFO_BACKUP_DIR="old-builds/build-info-v$NEW_VERSION"
-if [ -d "$BUILD_INFO_BACKUP_DIR" ]; then
-  echo "Removing existing backup directory: $BUILD_INFO_BACKUP_DIR"
-  rm -rf "$BUILD_INFO_BACKUP_DIR"
-fi
-mkdir -p "old-builds"
-cp -r out/build-info "$BUILD_INFO_BACKUP_DIR"
-echo "Build info backed up to: $BUILD_INFO_BACKUP_DIR"

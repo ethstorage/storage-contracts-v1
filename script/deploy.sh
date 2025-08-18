@@ -36,6 +36,16 @@ esac
 # Go to project root directory
 cd "$(dirname "$0")/.."
 
+# Extract version from current source code
+if [ -f "contracts/EthStorageContract.sol" ]; then
+  current_version=$(grep -E 'string public constant version = ' contracts/EthStorageContract.sol | sed -E 's/.*version = "([^"]+)".*/\1/' | tr -d ' ')
+else
+  echo "Error: contracts/EthStorageContract.sol not found"
+  return 2
+fi
+
+echo "Current source code version: v$current_version"
+
 if [ ! -f .env ]; then
   echo "Error: .env file not found."
   exit 1
