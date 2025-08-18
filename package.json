@@ -23,17 +23,12 @@
   },
   "scripts": {
     "install:all": "npm install && forge install",
-    "compile": "hardhat compile",
+    "compile": "forge build",
     "test": "hardhat test && forge test",
     "clean": "rm -rf cache artifacts out && forge clean",
     "format:check": "forge fmt --check",
     "format:fix": "forge fmt",
     "formatjs": "prettier --write test/**/*.js",
-    "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
-    "deployL2Dev": "npx hardhat run scripts/deployL2.js --network qkc_devnet",
-    "deployL2Test": "npx hardhat run scripts/deployL2.js --network qkc_testnet",
-    "deployL2ITDev": "npx hardhat run scripts/deployL2-it.js --network qkc_devnet",
-    "deployL2ITTest": "npx hardhat run scripts/deployL2-it.js --network qkc_testnet"
   },
   "workspaces": {
     "packages": [
