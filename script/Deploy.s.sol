@@ -29,7 +29,6 @@ contract Deploy is Script {
 
     function run() external {
         address owner = vm.envOr("OWNER_ADDRESS", deployer);
-        console.log("Owner address:", owner);
         uint256 startTime = block.timestamp;
 
         string memory contractFQN;
@@ -55,9 +54,9 @@ contract Deploy is Script {
         address proxyAddress = vm.envAddress("PROXY");
         console.log("Proxy address:", proxyAddress);
         uint256 startTime = vm.envUint("START_TIME");
+        
         string memory contractFQN;
         bytes memory constructorData;
-
         (contractFQN, constructorData,) = _getDeploymentData(contractName, deployer, startTime);
         Options memory opts;
         opts.constructorData = constructorData;
