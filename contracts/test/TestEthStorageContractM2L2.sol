@@ -2,8 +2,9 @@
 pragma solidity 0.8.28;
 
 import "../EthStorageContractM2L2.sol";
+import "forge-std/Test.sol";
 
-contract TestEthStorageContractM2L2 is EthStorageContractM2L2 {
+contract TestEthStorageContractM2L2 is EthStorageContractM2L2, Test {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         Config memory _config,
@@ -41,5 +42,31 @@ contract TestEthStorageContractM2L2 is EthStorageContractM2L2 {
     /// @notice Get the current block timestamp
     function _blockTs() internal view virtual override returns (uint256) {
         return block.timestamp;
+    }
+
+    function putBlobs(bytes32[] memory _keys, uint256[] memory _blobIdxs, uint256[] memory _lengths)
+        public
+        payable
+        override
+    {
+        uint256 blobIndexesLength = _blobIdxs.length;
+        if ((_keys.length != blobIndexesLength) || (_keys.length != _lengths.length)) {
+            revert EthStorageContract_LengthMismatch();
+        }
+
+        bytes32[] memory dataHashes = new bytes32[](_blobIdxs.length);
+        bytes32[] memory blobHashes = vm.getBlobhashes();
+        for (uint256 i = 0; i < blobIndexesLength; i++) {
+            dataHashes[i] = blobHashes[_blobIdxs[i]];
+            if (dataHashes[i] == 0) {
+                revert EthStorageContract_FailedToGetBlobHash();
+            }
+        }
+
+        uint256[] memory kvIdxs = _putBatchInternal(_keys, dataHashes, _lengths);
+
+        for (uint256 i = 0; i < blobIndexesLength; i++) {
+            emit PutBlob(kvIdxs[i], _lengths[i], dataHashes[i]);
+        }
     }
 }

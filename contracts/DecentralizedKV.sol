@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./libraries/BinaryRelated.sol";
 
 /// @custom:upgradeable
 /// @title DecentralizedKV
 /// @notice The DecentralizedKV is a top base contract for the EthStorage contract. It provides the
 ///         basic key-value store functionalities.
-contract DecentralizedKV is AccessControlUpgradeable {
+contract DecentralizedKV is Initializable {
     /// @notice Thrown when the batch payment is not enough.
     error DecentralizedKV_NotEnoughBatchPayment();
 
@@ -103,12 +103,7 @@ contract DecentralizedKV is AccessControlUpgradeable {
     }
 
     /// @notice Initializer.
-    /// @param _owner The contract owner.
-    function __init_KV(address _owner) internal onlyInitializing {
-        __Context_init();
-        __AccessControl_init();
-        _grantRole(DEFAULT_ADMIN_ROLE, _owner);
-
+    function __init_KV() internal onlyInitializing {
         DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
         $._kvEntryCount = 0;
     }

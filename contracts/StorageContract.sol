@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+
 import "./DecentralizedKV.sol";
 import "./libraries/MiningLib.sol";
 import "./libraries/RandaoLib.sol";
@@ -8,7 +10,7 @@ import "./libraries/RandaoLib.sol";
 /// @custom:upgradeable
 /// @title StorageContract
 /// @notice EthStorage L1 Contract with Decentralized KV Interface and Proof of Storage Verification
-abstract contract StorageContract is DecentralizedKV {
+abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     /// @notice Thrown when a reentrancy attempt is detected.
     error StorageContract_ReentrancyAttempt();
 
@@ -208,7 +210,10 @@ abstract contract StorageContract is DecentralizedKV {
         address _treasury,
         address _owner
     ) public onlyInitializing {
-        __init_KV(_owner);
+        __AccessControl_init();
+        _grantRole(DEFAULT_ADMIN_ROLE, _owner);
+
+        __init_KV();
 
         StorageContractStorage storage $ = _getStorageContractStorage();
         $._minimumDiff = _minimumDiff;
