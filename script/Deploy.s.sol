@@ -54,7 +54,7 @@ contract Deploy is Script {
         address proxyAddress = vm.envAddress("PROXY");
         console.log("Proxy address:", proxyAddress);
         uint256 startTime = vm.envUint("START_TIME");
-        
+
         string memory contractFQN;
         bytes memory constructorData;
         (contractFQN, constructorData,) = _getDeploymentData(contractName, deployer, startTime);

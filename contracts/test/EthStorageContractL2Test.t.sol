@@ -26,8 +26,9 @@ contract EthStorageContractL2Test is Test {
             storageContract.initialize.selector, 0, PREPAID_AMOUNT, 0, address(0x1), address(0x1)
         );
         Options memory opts;
-        opts.constructorData =
-            abi.encode(StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0, UPDATE_LIMIT);
+        opts.constructorData = abi.encode(
+            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0, UPDATE_LIMIT
+        );
 
         address proxyAddress = Upgrades.deployTransparentProxy(
             "TestEthStorageContractM2L2.sol:TestEthStorageContractM2L2", owner, data, opts
