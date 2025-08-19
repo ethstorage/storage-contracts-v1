@@ -33,14 +33,5 @@ jobs:
           forge install OpenZeppelin/openzeppelin-foundry-upgrades
           forge install OpenZeppelin/openzeppelin-contracts-upgradeable
 
-      - name: Check whether we're in fork mode
-        run: |
-          # Forge 只要接收到了 --fork-url 或者这俩 env，就认为要 fork
-          if [[ -n "${ETH_RPC_URL}" ]] || [[ -n "${FOUNDRY_FORK_URL}" ]]; then
-            echo "::warning Fork mode detected! ETH_RPC_URL=${ETH_RPC_URL:-}, FOUNDRY_FORK_URL=${FOUNDRY_FORK_URL:-}"
-          else
-            echo "✅ No fork-mode: running against local anvil"
-          fi
-
       - name: Test
         run: npm run test
