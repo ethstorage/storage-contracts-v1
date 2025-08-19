@@ -23,27 +23,28 @@ Run the deployment script with the contract type you want to deploy:
 **Example:**
 
 ```bash
-./script/deploy.sh 21
+./script/deploy.sh 22
 ```
 
 After deployment, a deployment record is generated under the `deployments/` folder.
-For example: `deployments/EthStorageContractM2_31337_0.2.0.txt`
+For example: `deployments/EthStorageContractM2L2_3335_v0.2.0-04b436a.txt.txt`
 
 **Sample deployment file:**
 
 ```
-CONTRACT_NAME=EthStorageContractM2
-CHAIN_ID=31337
-DEPLOYER=0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
-PROXY=0x93C7a6D00849c44Ef3E92E95DCEFfccd447909Ae
-ADMIN=0xdA510e6c845e9bd3ee023d660f353b0aEf7b7dC0
-IMPLEMENTATION=0xA7918D253764E42d60C3ce2010a34d5a1e7C1398
-OWNER=0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
-START_TIME=1755244097
-VERSION=0.2.0
-REFERENCE_BUILD_INFO_DIR=old-builds/build-info-v0.2.0
-REFERENCE_CONTRACT=build-info-v0.2.0:EthStorageContractM2
-DEPLOYED_AT=20250815_155610
+CONTRACT_NAME=EthStorageContractM2L2
+CHAIN_ID=3335
+DEPLOYER=0x471977571aD818379E2b6CC37792a5EaC85FdE22
+PROXY=0x11e2a001E740A6cD5dCe7FEADAd6b221452aC182
+ADMIN=0x962644257a0dA98fC3499531CC10222A258cEA60
+IMPLEMENTATION=0x65c67cda963120CA3b71E9947fe465eD5825A869
+OWNER=0x471977571aD818379E2b6CC37792a5EaC85FdE22
+START_TIME=1755584956
+VERSION=v0.2.0-04b436a
+REFERENCE_BUILD_INFO_DIR=old-builds/build-info-v0.2.0-04b436a
+REFERENCE_CONTRACT=build-info-v0.2.0-04b436a:EthStorageContractM2L2
+
+DEPLOYED_AT=20250819_142757
 ```
 
 This file serves as a reference for future upgrades.
@@ -61,7 +62,7 @@ To upgrade a deployed contract, pass the deployment file to the upgrade script:
 **Example:**
 
 ```bash
-./script/upgrade.sh deployments/EthStorageContractM2_31337_0.2.0.txt
+./script/upgrade.sh deployments/EthStorageContractM2L2_3335_v0.2.0-04b436a.txt.txt
 ```
 
 After the upgrade, a new deployment file will be created with the updated information.
