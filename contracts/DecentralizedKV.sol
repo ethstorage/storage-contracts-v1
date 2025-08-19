@@ -27,6 +27,9 @@ contract DecentralizedKV is AccessControlUpgradeable {
     /// @notice Thrown when the data is not exist.
     error DecentralizedKV_DataNotExist();
 
+    /// @notice Thrown when the removeTo() is not implemented.
+    error DecentralizedKV_RemoveToUnimplemented();
+
     /// @notice The maximum value of optimization blob storage content. It can store 3068 bytes more data than standard blob.
     /// https://github.com/ethereum-optimism/optimism/blob/develop/op-service/eth/blob.go#L16
     uint256 internal constant MAX_OPTIMISM_BLOB_DATA_SIZE = (4 * 31 + 3) * 1024 - 4;
@@ -277,7 +280,7 @@ contract DecentralizedKV is AccessControlUpgradeable {
 
     /// @notice Remove an existing KV pair with key `_key`.  Refund the cost accordingly to a recipient `_to`.
     function removeTo(bytes32, /* _key */ address /* _to */ ) public virtual {
-        revert("DecentralizedKV: removeTo() unimplemented");
+        revert DecentralizedKV_RemoveToUnimplemented();
     }
 
     /// @notice Remove an existing KV pair.  Refund the cost accordingly.
@@ -297,9 +300,8 @@ contract DecentralizedKV is AccessControlUpgradeable {
         for (uint256 i = 0; i < kvIndicesLength; i++) {
             PhyAddr memory paddr = $._kvMap[$._idxMap[_kvIndices[i]]];
 
-            res[i] |= bytes32(uint256(_kvIndices[i])) << 216;
-            res[i] |= bytes32(uint256(paddr.kvSize)) << 192;
-            res[i] |= bytes32(paddr.hash) >> 64;
+            res[i] = bytes32(uint256(_kvIndices[i])) << 216 | bytes32(uint256(paddr.kvSize)) << 192
+                | bytes32(paddr.hash) >> 64;
         }
 
         return res;
