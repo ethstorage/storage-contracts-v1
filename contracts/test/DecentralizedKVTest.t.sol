@@ -13,22 +13,6 @@ contract DecentralizedKVTest is Test {
 
     function setUp() public {
         decentralizedKV = new TestDecentralizedKV(MAX_KV_SIZE, 0, STORAGE_COST, 340282366367469178095360967382638002176);
-        decentralizedKV.initialize(vm.addr(1));
-    }
-
-    function testTransferOwnership() public {
-        bytes32 adminRole = decentralizedKV.DEFAULT_ADMIN_ROLE();
-
-        vm.expectRevert();
-        vm.prank(vm.addr(2));
-        decentralizedKV.grantRole(adminRole, vm.addr(2));
-
-        vm.prank(vm.addr(1));
-        decentralizedKV.grantRole(adminRole, vm.addr(2));
-        assertTrue(decentralizedKV.hasRole(adminRole, vm.addr(2)));
-
-        vm.prank(vm.addr(2));
-        decentralizedKV.revokeRole(adminRole, vm.addr(1));
-        assertFalse(decentralizedKV.hasRole(adminRole, vm.addr(1)));
+        decentralizedKV.initialize();
     }
 }
