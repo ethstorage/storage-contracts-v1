@@ -26,6 +26,20 @@ library RandaoLib {
         return bytes32(iterator.next().toUint());
     }
 
+    /// @notice Get the timestamp from the header
+    /// @param _headerRlpBytes The RLP data of the header
+    /// @return The timestamp
+    function getTimestampFromHeader(bytes memory _headerRlpBytes) internal pure returns (uint256) {
+        RLPReader.RLPItem memory item = _headerRlpBytes.toRlpItem();
+        RLPReader.Iterator memory iterator = item.iterator();
+        // timestamp is at item 11 (0-base index)
+        for (uint256 i = 0; i < 11; i++) {
+            iterator.next();
+        }
+
+        return iterator.next().toUint();
+    }
+
     /// @notice Verify the header hash and get the Randao mixDigest
     /// @param _headerHash The hash of the header
     /// @param _headerRlpBytes The RLP data of the header
