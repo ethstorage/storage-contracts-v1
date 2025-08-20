@@ -12,8 +12,8 @@ contract TestDecentralizedKV is DecentralizedKV {
         DecentralizedKV(_maxKvSize, _startTime, _storageCost, _dcfFactor)
     {}
 
-    function initialize(address owner) public initializer {
-        __init_KV(owner);
+    function initialize() public initializer {
+        __init_KV();
     }
 
     function setTimestamp(uint256 ts) public {

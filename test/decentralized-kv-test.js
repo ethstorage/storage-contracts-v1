@@ -5,14 +5,13 @@ const { ethers } = require("hardhat");
 const key1 = "0x0000000000000000000000000000000000000000000000000000000000000001";
 const key2 = "0x0000000000000000000000000000000000000000000000000000000000000002";
 const key3 = "0x0000000000000000000000000000000000000000000000000000000000000003";
-const ownerAddr = "0x0000000000000000000000000000000000000001"
 
 describe("DecentralizedKV Test", function () {
   it("put/get/remove", async function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     const kv = await DecentralizedKV.deploy(1024, 0, 0, 0);
     await kv.waitForDeployment();
-    await kv.initialize(ownerAddr);
+    await kv.initialize();
 
     await kv.put(key1, "0x11223344");
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x11223344");
@@ -28,7 +27,7 @@ describe("DecentralizedKV Test", function () {
     const DecentralizedKV = await ethers.getContractFactory("TestDecentralizedKV");
     const kv = await DecentralizedKV.deploy(1024, 0, 0, 0);
     await kv.waitForDeployment();
-    await kv.initialize(ownerAddr);
+    await kv.initialize();
 
     await kv.put(key1, "0x11223344");
     expect(await kv.get(key1, 0, 0, 4)).to.equal("0x11223344");
@@ -52,7 +51,7 @@ describe("DecentralizedKV Test", function () {
     // 1e18 cost with 0.5 discount rate per second
     const kv = await DecentralizedKV.deploy(1024, 0, "1000000000000000000", "170141183460469231731687303715884105728");
     await kv.waitForDeployment();
-    await kv.initialize(ownerAddr);
+    await kv.initialize();
 
     expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
     await expect(kv.put(key1, "0x11223344")).to.be.revertedWithCustomError(kv, "DecentralizedKV_NotEnoughBatchPayment");
@@ -88,7 +87,7 @@ describe("DecentralizedKV Test", function () {
     // 1e18 cost with 0.90 discount rate per year
     const kv = await DecentralizedKV.deploy(1024, 0, "1000000000000000000", "340282365784068676928457747575078800565");
     await kv.waitForDeployment();
-    await kv.initialize(ownerAddr);
+    await kv.initialize();
 
     expect(await kv.upfrontPayment()).to.equal("1000000000000000000");
     await expect(kv.put(key1, "0x11223344")).to.be.revertedWithCustomError(kv, "DecentralizedKV_NotEnoughBatchPayment");
@@ -114,7 +113,7 @@ describe("DecentralizedKV Test", function () {
     // 1e18 cost with 0.5 discount rate per second
     const kv = await DecentralizedKV.deploy(1024, 0, 0, 0);
     await kv.waitForDeployment();
-    await kv.initialize(ownerAddr);
+    await kv.initialize();
 
     // write random data
     for (let i = 0; i < 10; i++) {

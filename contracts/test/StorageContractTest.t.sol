@@ -24,6 +24,22 @@ contract StorageContractTest is Test {
         storageContract.initialize(0, PREPAID_AMOUNT, 0, vm.addr(1), owner);
     }
 
+    function testTransferOwnership() public {
+        bytes32 adminRole = storageContract.DEFAULT_ADMIN_ROLE();
+
+        vm.expectRevert();
+        vm.prank(vm.addr(2));
+        storageContract.grantRole(adminRole, vm.addr(2));
+
+        vm.prank(owner);
+        storageContract.grantRole(adminRole, vm.addr(2));
+        assertTrue(storageContract.hasRole(adminRole, vm.addr(2)));
+
+        vm.prank(vm.addr(2));
+        storageContract.revokeRole(adminRole, owner);
+        assertFalse(storageContract.hasRole(adminRole, owner));
+    }
+
     function testMiningReward() public {
         // no key-value stored on EthStorage, only use prepaid amount as the reward
         (,,, uint256 reward) = storageContract.miningRewards(0, 1);
