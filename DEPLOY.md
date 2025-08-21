@@ -27,7 +27,7 @@ Run the deployment script with the contract type you want to deploy:
 ```
 
 After deployment, a deployment record is generated under the `deployments/` folder.
-For example: `deployments/EthStorageContractM2L2_3335_v0.2.0-04b436a.txt.txt`
+For example: `deployments/EthStorageContractM2L2_3335_v0.2.0-04b436a.txt`
 
 **Sample deployment file:**
 
