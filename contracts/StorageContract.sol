@@ -446,11 +446,11 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     }
 
     /// @notice On-chain verification of storage proof of sufficient sampling.
-    ///         On-chain verifier will go same routine as off-chain data host, will check the encoded samples by decoding
+    ///         On-chain verifier follows the same routine as off-chain data host, will check the encoded samples by decoding
     ///         to decoded one. The decoded samples will be used to perform inclusive check with on-chain datahashes.
     ///         The encoded samples will be used to calculate the solution hash, and if the hash passes the difficulty check,
-    ///         the miner, or say the storage provider, shall be rewarded by the token number from out economic models
-    /// @param _blockNum     The block number.
+    ///         the miner, or say the storage provider, shall be rewarded by the token number according to the economic models
+    /// @param _blockNum        The block number.
     /// @param _shardId         The shard id.
     /// @param _miner           The miner address.
     /// @param _nonce           The nonce.
@@ -473,7 +473,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
         if (_blockNumber() - _blockNum > MAX_L1_MINING_DRIFT) {
             revert StorageContract_BlockNumberTooOld();
         }
-        // To avoid stack too deep, we reuse the hash0 instead of using randao
+        // To avoid stack too deep, we reuse the hash0 instead of using a new variable
         bytes32 hash0 = _getRandao(_blockNum, _randaoProof);
         // Query block timestamp
         uint256 mineTs = _getMinedTs(_randaoProof);
@@ -567,7 +567,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     }
 
     /// @notice Set the mining info
-    function setMiningInfo(uint256 _shardId, MiningLib.MiningInfo memory _info) internal {
+    function _setMiningInfo(uint256 _shardId, MiningLib.MiningInfo memory _info) internal {
         StorageContractStorage storage $ = _getStorageContractStorage();
         $._infos[_shardId] = _info;
     }
