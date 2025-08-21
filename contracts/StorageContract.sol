@@ -392,11 +392,10 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
 
     /// @notice Get the mining reward.
     /// @param _shardId     The shard id.
-    /// @param _blockNum The block number.
+    /// @param _minedTs     The mined block timestamp.
     /// @return The mining reward.
-    function miningReward(uint256 _shardId, uint256 _blockNum) public view returns (uint256) {
-        uint256 minedTs = _getMinedTs(_blockNum);
-        (,,, uint256 minerReward) = _miningReward(_shardId, minedTs);
+    function miningReward(uint256 _shardId, uint256 _minedTs) public view returns (uint256) {
+        (,,, uint256 minerReward) = _miningReward(_shardId, _minedTs);
         return minerReward;
     }
 
@@ -456,11 +455,11 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     }
 
     /// @notice On-chain verification of storage proof of sufficient sampling.
-    ///         On-chain verifier will go same routine as off-chain data host, will check the encoded samples by decoding
+    ///         On-chain verifier follows the same routine as off-chain data host, will check the encoded samples by decoding
     ///         to decoded one. The decoded samples will be used to perform inclusive check with on-chain datahashes.
     ///         The encoded samples will be used to calculate the solution hash, and if the hash passes the difficulty check,
-    ///         the miner, or say the storage provider, shall be rewarded by the token number from out economic models
-    /// @param _blockNum     The block number.
+    ///         the miner, or say the storage provider, shall be rewarded by the token number according to the economic models
+    /// @param _blockNum        The block number.
     /// @param _shardId         The shard id.
     /// @param _miner           The miner address.
     /// @param _nonce           The nonce.
@@ -483,10 +482,10 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
         if (_blockNumber() - _blockNum > MAX_L1_MINING_DRIFT) {
             revert StorageContract_BlockNumberTooOld();
         }
-        // To avoid stack too deep, we reuse the hash0 instead of using randao
+        // To avoid stack too deep, we reuse the hash0 instead of using a new variable
         bytes32 hash0 = _getRandao(_blockNum, _randaoProof);
-        // Estimate block timestamp
-        uint256 mineTs = _getMinedTs(_blockNum);
+        // Query block timestamp
+        uint256 mineTs = _getMinedTs(_randaoProof);
 
         {
             // Given a blockhash and a miner, we only allow sampling up to nonce limit times.
@@ -549,8 +548,8 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     }
 
     /// @notice Get the mined timestamp
-    function _getMinedTs(uint256 _blockNum) internal view returns (uint256) {
-        return _blockTs() - (_blockNumber() - _blockNum) * 12;
+    function _getMinedTs(bytes calldata _headerRlpBytes) internal pure returns (uint256) {
+        return RandaoLib.getTimestampFromHeader(_headerRlpBytes);
     }
 
     /// @notice Get the shard id by kv entry count.
@@ -577,7 +576,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     }
 
     /// @notice Set the mining info
-    function setMiningInfo(uint256 _shardId, MiningLib.MiningInfo memory _info) internal {
+    function _setMiningInfo(uint256 _shardId, MiningLib.MiningInfo memory _info) internal {
         StorageContractStorage storage $ = _getStorageContractStorage();
         $._infos[_shardId] = _info;
     }
