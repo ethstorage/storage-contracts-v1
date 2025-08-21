@@ -145,6 +145,11 @@ else
   exit 1
 fi
 
+if [ ! -d "$REFERENCE_BUILD_INFO_DIR" ]; then
+  echo "Error: Reference build info directory '$REFERENCE_BUILD_INFO_DIR' does not exist."
+  exit 1
+fi
+
 if [ -n "$REFERENCE_CONTRACT" ]; then
   export REFERENCE_CONTRACT
   echo "Using reference contract: $REFERENCE_CONTRACT"
