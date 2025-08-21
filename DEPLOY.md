@@ -62,7 +62,7 @@ To upgrade a deployed contract, pass the deployment file to the upgrade script:
 **Example:**
 
 ```bash
-./script/upgrade.sh deployments/EthStorageContractM2L2_3335_v0.2.0-04b436a.txt.txt
+./script/upgrade.sh deployments/EthStorageContractM2L2_3335_v0.2.0-04b436a.txt
 ```
 
 After the upgrade, a new deployment file will be created with the updated information.
