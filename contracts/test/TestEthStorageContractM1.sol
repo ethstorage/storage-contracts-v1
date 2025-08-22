@@ -13,9 +13,21 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         bytes32[] proofs;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         EthStorageContractM1(_config, _startTime, _storageCost, _dcfFactor)
     {}
+
+    /// @notice Initialize the contract
+    function initialize(
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _owner
+    ) public payable override initializer {
+        super.initialize(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
+    }
 
     function setTimestamp(uint256 ts) public {
         require(ts > currentTimestamp, "ts");

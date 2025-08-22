@@ -63,27 +63,35 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     bytes32 public constant MINER_ROLE = keccak256("MINER_ROLE");
 
     /// @notice Maximum size of a single key-value pair
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable MAX_KV_SIZE_BITS;
 
     /// @notice Storage shard size
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable SHARD_SIZE_BITS;
 
     /// @notice Key-value count per shard
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable SHARD_ENTRY_BITS;
 
     /// @notice Sample count per key-value pair
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable SAMPLE_LEN_BITS;
 
     /// @notice Number of random checks when mining
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable RANDOM_CHECKS;
 
     /// @notice Cutoff time for difficulty adjustment
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable CUTOFF;
 
     /// @notice Difficulty adjustment divisor
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable DIFF_ADJ_DIVISOR;
 
     /// @notice Treasury share in basis points.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable TREASURY_SHARE;
 
     /// @notice Represents the configuration of the storage contract.
@@ -164,6 +172,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     }
 
     /// @notice Constructs the StorageContract contract. Initializes the storage config.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor)
     {

@@ -18,9 +18,21 @@ contract EthStorageContractM2 is EthStorageContract, Decoder2 {
     error EthStorageContractM2_DecodeFailed();
 
     /// @notice Constructs the EthStorageContractM2 contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         EthStorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {}
+
+    /// @notice Initialize the contract
+    function initialize(
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _admin
+    ) public payable virtual override initializer {
+        super.initialize(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _admin);
+    }
 
     /// @notice Verify the masks using the zk proof
     /// @param _masks The masks for the samples

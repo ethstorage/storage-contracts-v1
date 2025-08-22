@@ -53,6 +53,9 @@ EthStorageContractM2L2 inherits from EthStorageContractM2 and is designed for de
  - npm run install:all
  - npm run test
 
+## Deploy
+
+See the [deployment guide](DEPLOY.md) for contract deployment and upgrade instructions.
 
 ## Style Guide
 Smart contracts should be written according to this [STYLE_GUIDE.md](https://github.com/ethstorage/optimism/blob/develop/packages/contracts-bedrock/STYLE_GUIDE.md)

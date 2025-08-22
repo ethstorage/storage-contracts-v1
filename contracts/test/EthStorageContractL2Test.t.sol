@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import "forge-std/Test.sol";
 import "./TestEthStorageContractM2L2.sol";
-import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract SoulGasToken {
     function chargeFromOrigin(uint256 _amount) external pure returns (uint256) {
@@ -22,15 +22,19 @@ contract EthStorageContractL2Test is Test {
     address owner = address(0x1);
 
     function setUp() public {
-        TestEthStorageContractM2L2 imp = new TestEthStorageContractM2L2(
-            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0, UPDATE_LIMIT
-        );
         bytes memory data = abi.encodeWithSelector(
             storageContract.initialize.selector, 0, PREPAID_AMOUNT, 0, address(0x1), address(0x1)
         );
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(imp), owner, data);
+        Options memory opts;
+        opts.constructorData = abi.encode(
+            StorageContract.Config(MAX_KV_SIZE, SHARD_SIZE_BITS, 2, 0, 0, 0), 0, STORAGE_COST, 0, UPDATE_LIMIT
+        );
 
-        storageContract = TestEthStorageContractM2L2(address(proxy));
+        address proxyAddress = Upgrades.deployTransparentProxy(
+            "TestEthStorageContractM2L2.sol:TestEthStorageContractM2L2", owner, data, opts
+        );
+
+        storageContract = TestEthStorageContractM2L2(proxyAddress);
     }
 
     function testUpdateLimit() public {

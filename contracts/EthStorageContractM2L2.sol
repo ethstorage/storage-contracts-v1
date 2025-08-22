@@ -12,6 +12,7 @@ contract EthStorageContractM2L2 is EthStorageContractM2, L2Base {
     error EthStorageContractM2L2_NotEnoughPayment();
 
     /// @notice Constructs the EthStorageContractM2L2 contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         Config memory _config,
         uint256 _startTime,
@@ -19,6 +20,17 @@ contract EthStorageContractM2L2 is EthStorageContractM2, L2Base {
         uint256 _dcfFactor,
         uint256 _updateLimit
     ) EthStorageContractM2(_config, _startTime, _storageCost, _dcfFactor) L2Base(_updateLimit) {}
+
+    /// @notice Initialize the contract.
+    function initialize(
+        uint256 _minimumDiff,
+        uint256 _prepaidAmount,
+        uint256 _nonceLimit,
+        address _treasury,
+        address _admin
+    ) public payable virtual override initializer {
+        super.initialize(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _admin);
+    }
 
     /// @inheritdoc StorageContract
     function _checkAppend(uint256 _batchSize) internal virtual override {

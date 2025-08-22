@@ -22,19 +22,17 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     uint256 internal constant RU_BLS = 0x564c0a11a0f704f4fc3e8acfe0f8245f0ad1347b378fbf96e206da11a5d36306;
 
     /// @notice The root of unity for the BN254 curve
-    uint256 constant RU_BN254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
+    uint256 internal constant RU_BN254 = 0x931d596de2fd10f01ddd073fd5a90a976f169c76f039bb91c4775720042d43a;
 
     /// @notice The modulus for the BN254 curve
-    uint256 constant MODULUS_BN254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
+    uint256 internal constant MODULUS_BN254 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
 
     /// @notice The field elements per BLOB
-    uint256 constant FIELD_ELEMENTS_PER_BLOB = 0x1000;
+    uint256 internal constant FIELD_ELEMENTS_PER_BLOB = 0x1000;
 
     /// @notice Semantic version.
     /// @custom:semver 0.2.0
     string public constant version = "0.2.0";
-
-    // TODO: Reserve extra slots (to a total of 50?) in the storage layout for future upgrades
 
     /// @notice Emitted when a BLOB is appended.
     /// @param kvIdx    The index of the KV pair
@@ -43,6 +41,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     event PutBlob(uint256 indexed kvIdx, uint256 indexed kvSize, bytes32 indexed dataHash);
 
     /// @notice Constructs the EthStorageContract contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
         StorageContract(_config, _startTime, _storageCost, _dcfFactor)
     {
@@ -56,7 +55,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         uint256 _nonceLimit,
         address _treasury,
         address _owner
-    ) public payable initializer {
+    ) public payable virtual initializer {
         __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 

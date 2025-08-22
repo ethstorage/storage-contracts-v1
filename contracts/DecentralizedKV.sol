@@ -35,16 +35,20 @@ contract DecentralizedKV is Initializable {
     uint256 internal constant MAX_OPTIMISM_BLOB_DATA_SIZE = (4 * 31 + 3) * 1024 - 4;
 
     /// @notice Upfront storage cost (pre-dcf)
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable STORAGE_COST;
 
     /// @notice Discounted cash flow factor in seconds
     ///         E.g., 0.85 yearly discount in second = 0.9999999948465585 = 340282365167313208607671216367074279424 in Q128.128
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable DCF_FACTOR;
 
     /// @notice The start time of the storage payment
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable START_TIME;
 
     /// @notice Maximum size of a single key-value pair
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable MAX_KV_SIZE;
 
     /// @notice Represents the metadata of the key-value .
@@ -93,6 +97,7 @@ contract DecentralizedKV is Initializable {
     event Remove(uint256 indexed kvIdx, uint256 indexed kvEntryCount);
 
     /// @notice Constructs the DecentralizedKV contract. Initializes the immutables.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(uint256 _maxKvSize, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor) {
         MAX_KV_SIZE = _maxKvSize;
         START_TIME = _startTime;

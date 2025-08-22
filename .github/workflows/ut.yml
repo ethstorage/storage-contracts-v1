@@ -14,7 +14,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install dependencies
         run: npm install
@@ -23,9 +23,15 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
+          
+      - name: Check Foundry version
+        run: forge --version
 
-      - name: Install forge-std
-        run: git submodule init && git submodule update
+      - name: Install forge deps
+        run: |        
+          git submodule init && git submodule update
+          forge install OpenZeppelin/openzeppelin-foundry-upgrades
+          forge install OpenZeppelin/openzeppelin-contracts-upgradeable
 
       - name: Test
         run: npm run test
