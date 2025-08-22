@@ -16,3 +16,7 @@ fs_permissions = [
 ]
 optimizer = true
 optimizer_runs = 200
+
+[lint]
+severity = ["high"]
+exclude_lints = ["incorrect-shift"]
