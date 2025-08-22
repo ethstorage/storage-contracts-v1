@@ -212,6 +212,13 @@ forge script script/Deploy.s.sol:Deploy \
   "${VERIFY_ARGS[@]}" \
   -vvvv 2>&1 | tee "$OUTPUT_FILE"
 
+# Check if upgrade was successful
+status=${PIPESTATUS[0]}
+if [ "$status" -ne 0 ]; then
+  echo "Upgrade failed. Check the log file: $OUTPUT_FILE"
+  exit 1
+fi
+
 # Extract new implementation address
 NEW_IMPL_ADDRESS=$(grep -E "New implementation address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 if [ -z "$NEW_IMPL_ADDRESS" ]; then
