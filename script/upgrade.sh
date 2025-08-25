@@ -212,6 +212,12 @@ forge script script/Deploy.s.sol:Deploy \
   "${VERIFY_ARGS[@]}" \
   -vvvv 2>&1 | tee "$OUTPUT_FILE"
 
+# Check that the upgrade (although verification may fail) was successful
+if ! grep -q "ONCHAIN EXECUTION COMPLETE & SUCCESSFUL." "$OUTPUT_FILE"; then
+  echo "Error: Upgrade failed. Check the log file: $OUTPUT_FILE"
+  exit 1
+fi
+
 # Extract new implementation address
 NEW_IMPL_ADDRESS=$(grep -E "New implementation address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 if [ -z "$NEW_IMPL_ADDRESS" ]; then
