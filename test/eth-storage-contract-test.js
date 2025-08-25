@@ -56,22 +56,22 @@ describe("EthStorageContract Test", function () {
     const mask = "0x301b9cec8aae1155d883c48308dbd2f24e54aff21bfbd7b3d1afecb5507bf521";
     const proof = [
       [
-        "0x78e4c42fa4f0d326f6ed23e08ccf4a1690d020b5307476339761c878e4fd93b",
-        "0x2f8d5730408615ffd0d78c104faeed0dfc9556bd5cc858ff00d16d5c5ee4bec5"
+        "0x1282d54b7ca32fb9322b14d22b9ed8d8d74a2fa8199fc9b33f692175a0151dfa",
+        "0x2ec90d197f18a88c179a7371d60523308e23239a418cc6f3140683d32f3038c6"
       ],
       [
         [
-          "0x3707dc3b24f4cd77289dc3fd93ac2ba12098f1e93a6c370c70de94051661ceb",
-          "0x16130e5f937a11f65450d3006ebc6d15174f35277ee95989cc73ed661fb84278"
+          "0x1ad0f63458899201b8e4b6ac99745f56a2e3fcb31059daa6316c9bbc1ff98796",
+          "0x06d74f531689723f5bf1256e182cd6c39e5bf31343528cd9ba52e94fadb69c2a"
         ],
         [
-          "0x150f361f8b43acf2f6b2ecabfd0e300e95da35949c5cf80fc811dec7aab968ae",
-          "0xa8d2fb3261418d4ff2ab9dd13e29a79cb3a821aaa30534f7a9a015699c5f274"
+          "0x2bda468dd57d4542b63c1039bebe6308533bd64976bd6820a776a505a601e7f0",
+          "0x1e8b561f1b9aa9ccf3b9fc5178af00b4def50189b4241b24b1437540e71078fa"
         ]
       ],
       [
-        "0x2a4c45f2e1232c2ef8130a52678a22012131f39b4cfdfd1f47daa0a89f14e0c",
-        "0x80b1f60362a990582d231ceac6f8af57feec7d0d342789657cf4377f7c14cd4"
+        "0x2f53719313a92f79ab72d1c9191186ffa20f553b8340070f5f6c120d9e07eefa",
+        "0x2f89e19298611c499aa59fb59f3b0f4459378ca83b13facc2981fa396d202e1c"
       ]
     ];
     const abiCoder = new ethers.AbiCoder();
@@ -144,22 +144,22 @@ describe("EthStorageContract Test", function () {
     const mask = "0x1a3526f58594d237ca2cddc84670a3ebb004e745a57b22acbbaf335d2c13fcd2";
     const decodeProof = [
       [
-        "0x2c033866f9339f6b7e486bd2683ad044c749d938282e182bcfcd361e89c3dcfe",
-        "0x16b919204d3f44e46418e27ca133da6b803649b2f22ad8a7c3fb6a31e5fb1b30",
+        "0x08f2b57a05c4e7d93db6d445a8f41d13d3c7d07ec74b95a2aad5f6400eda803a",
+        "0x1512576a70dc873c5d70d21b584e88f9f497390dc710a0416ef505e39d6954da"
       ],
       [
         [
-          "0x76267516ab7c70392c756aacfbcdbb9726afde5664b334f73b046eeb084b28b",
-          "0x27f6cb07ef3ce13bd0c34221d33521517cb4b690f2b8e8360086008e86dbf75f",
+          "0x1211829efb3afc4a217212703937cad70a4f21db1e6710afe61f7f9e4ea5ba22",
+          "0x01a824f4a072f732a75aa03e89eb5ed299a0d18027ab30eda0961f02e37019b3"
         ],
         [
-          "0x2a13ed27ea4e281f99e73690d3678059bffed60c052573b7c16d84f50dc8af37",
-          "0x16c1ed06157a1c0e115a59134d9912d2cce885f772d369fdc755cef6a5e1e4f7",
-        ],
+          "0x0a41eb1f5a366f1bbb948ffd77671da0e372b6b7b6cfb6e702e90e5d4370cbf2",
+          "0x1e3588c5a06df2a1bcfa1cf57e12d46b5cfa0e21e634b897656fcbae6d08225b"
+        ]
       ],
       [
-        "0x2ac75b5f6e0858b245b6e88362435a5b920904b2dec41e4bf372b1d50b171d24",
-        "0x172cb102a51789ce37fc019d32af773166c4dfee8a5f0d6698735c477cc6ba77",
+        "0x05cad4a375ea33e595a342771c9eb46503dac95de18e38beef5f3186fbdd2a2f",
+        "0x281d9c7b0edc98c9377ce751601d4fd6a2c925b0912d53436fd3eb84f0a67205"
       ]
     ];
     // combine all proof into single decode-and-inclusive proof
@@ -276,22 +276,22 @@ describe("EthStorageContract Test", function () {
     const mask = "0x1a3526f58594d237ca2cddc84670a3ebb004e745a57b22acbbaf335d2c13fcd2";
     const decodeProof = [
       [
-        "0x2c033866f9339f6b7e486bd2683ad044c749d938282e182bcfcd361e89c3dcfe",
-        "0x16b919204d3f44e46418e27ca133da6b803649b2f22ad8a7c3fb6a31e5fb1b30"
+        "0x08f2b57a05c4e7d93db6d445a8f41d13d3c7d07ec74b95a2aad5f6400eda803a",
+        "0x1512576a70dc873c5d70d21b584e88f9f497390dc710a0416ef505e39d6954da"
       ],
       [
         [
-          "0x76267516ab7c70392c756aacfbcdbb9726afde5664b334f73b046eeb084b28b",
-          "0x27f6cb07ef3ce13bd0c34221d33521517cb4b690f2b8e8360086008e86dbf75f"
+          "0x1211829efb3afc4a217212703937cad70a4f21db1e6710afe61f7f9e4ea5ba22",
+          "0x01a824f4a072f732a75aa03e89eb5ed299a0d18027ab30eda0961f02e37019b3"
         ],
         [
-          "0x2a13ed27ea4e281f99e73690d3678059bffed60c052573b7c16d84f50dc8af37",
-          "0x16c1ed06157a1c0e115a59134d9912d2cce885f772d369fdc755cef6a5e1e4f7"
+          "0x0a41eb1f5a366f1bbb948ffd77671da0e372b6b7b6cfb6e702e90e5d4370cbf2",
+          "0x1e3588c5a06df2a1bcfa1cf57e12d46b5cfa0e21e634b897656fcbae6d08225b"
         ]
       ],
       [
-        "0x2ac75b5f6e0858b245b6e88362435a5b920904b2dec41e4bf372b1d50b171d24",
-        "0x172cb102a51789ce37fc019d32af773166c4dfee8a5f0d6698735c477cc6ba77"
+        "0x05cad4a375ea33e595a342771c9eb46503dac95de18e38beef5f3186fbdd2a2f",
+        "0x281d9c7b0edc98c9377ce751601d4fd6a2c925b0912d53436fd3eb84f0a67205"
       ]
     ];
     const abiCoder = new ethers.AbiCoder();
@@ -324,22 +324,22 @@ describe("EthStorageContract Test", function () {
     const nextEncodingKey = await sc.getEncodingKey(nextKvIdx, miner);
     const nextDecodeProof = [
       [
-        "0x2ef7a57d70371f477e072a9407178d7b4c42ca8215843ce12f46010e311b0004",
-        "0x1393325cf0b0e9e46207558c8dd0d273075de56ac78da03217cbbd72aa592609"
+        "0x2505556e329c539570d437dee5e76b753d94c98988bdbd8466131c993bf0e459",
+        "0x19a70541e1fb2436fbb2e9f7b444515f8b7831dbe1731b1d34a2aeec92d1fba9"
       ],
       [
         [
-          "0xca2d640d1612fea57318495313a0f0d77b83e5e62a1ec97dcf4805a745ae1a9",
-          "0x25ae9533cde5b51a30d186ffff4a59522e93ec7521447c1f688492e1fa4b3fe9"
+          "0x20ea125a8fbadc14fa99bb19497b065383d814bb7452227bdeae152c60145267",
+          "0x293b93976a31d8f79d1896b12dbc377fc05b15aac014a79009ea0e39378ede8c"
         ],
         [
-          "0xd2e67ee952009fb593d48320969bf8b22b37ad0fe15310d902171c6acc9c38e",
-          "0xcc0ec025ad9b8220ec9ffb62a6777e6ed801fbe45d6ec5592327cd3d72806b2"
+          "0x2b86da20245342b62e5e0b837c814cb11962b8a7c7489747c953c0f629602826",
+          "0x1e26c4ca8d1f77d3bda5ff318fc315158ebea7701e9be700063b1a859390a06e"
         ]
       ],
       [
-        "0xdb81bb258c62ce5aa5170a1ea35aea4dbddb2833a6a991e6192d5b708083be7",
-        "0xc18b0fc292568fb207f0c2c4694c52127bc55762c8bf96d4d01c96455ade62f"
+        "0x11e399c647363330c3327223bd188712eb4bc84b7f00d0ae48decb8cc26822fd",
+        "0x2b37fb4fbe73864fbb824c06e920b11bcc2a91e5bc9e93ca01b2899426882e6f"
       ]
     ];
 
@@ -429,19 +429,19 @@ describe("EthStorageContract Test", function () {
         "0x0000000000000000000000000000000000000000", // treasury
         ownerAddr
       ], {
-        constructorArgs: [
-          [
-            13, // maxKvSizeBits
-            14, // shardSizeBits
-            2, // randomChecks
-            40, // cutoff
-            1024, // diffAdjDivisor
-            0, // treasuryShare
-          ],
-          0, // startTime
-          0, // storageCost
-          0, // dcfFactor
-        ]
+      constructorArgs: [
+        [
+          13, // maxKvSizeBits
+          14, // shardSizeBits
+          2, // randomChecks
+          40, // cutoff
+          1024, // diffAdjDivisor
+          0, // treasuryShare
+        ],
+        0, // startTime
+        0, // storageCost
+        0, // dcfFactor
+      ]
     }
     );
 

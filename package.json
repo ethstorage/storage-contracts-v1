@@ -27,8 +27,7 @@
     "test": "hardhat test && forge test",
     "clean": "rm -rf cache artifacts out && forge clean",
     "format:check": "forge fmt --check",
-    "format:fix": "forge fmt",
-    "formatjs": "prettier --write test/**/*.js"
+    "format:fix": "forge fmt"
   },
   "workspaces": {
     "packages": [
