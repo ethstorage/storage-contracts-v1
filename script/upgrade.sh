@@ -212,10 +212,9 @@ forge script script/Deploy.s.sol:Deploy \
   "${VERIFY_ARGS[@]}" \
   -vvvv 2>&1 | tee "$OUTPUT_FILE"
 
-# Check if upgrade was successful
-status=${PIPESTATUS[0]}
-if [ "$status" -ne 0 ]; then
-  echo "Upgrade failed. Check the log file: $OUTPUT_FILE"
+# Check that the upgrade (although verification may fail) was successful
+if ! grep -q "ONCHAIN EXECUTION COMPLETE & SUCCESSFUL." "$OUTPUT_FILE"; then
+  echo "Error: Upgrade failed. Check the log file: $OUTPUT_FILE"
   exit 1
 fi
 
