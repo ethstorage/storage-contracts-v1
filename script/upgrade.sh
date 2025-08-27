@@ -92,8 +92,9 @@ compare_version() {
 
 
 if [ $# -eq 0 ]; then
-  echo "Usage: $0 <deployment_file>"
+  echo "Usage: $0 <deployment_file> [prepare]"
   echo "Example: $0 deployments/EthStorageContractM2L2_31337.txt"
+  echo "         $0 deployments/EthStorageContractM2L2_31337.txt prepare"
   exit 1
 fi
 
@@ -101,6 +102,12 @@ fi
 cd "$(dirname "$0")/.."
 
 DEPLOYMENT_FILE=$1
+ACTION=${2:-upgrade}   # upgrade | prepare
+
+if [[ "$ACTION" != "upgrade" && "$ACTION" != "prepare" ]]; then
+  echo "Error: second argument must be either 'prepare' or omitted."
+  exit 1
+fi
 
 if [ ! -f "$DEPLOYMENT_FILE" ]; then
   echo "Error: Deployment file '$DEPLOYMENT_FILE' not found."
@@ -171,7 +178,7 @@ if compare_version "$REFERENCE_BUILD_INFO_DIR"; then
 fi
 
 # To avoid Error - `Build info file ${buildInfoFilePath} is not from a full compilation.`
-forge clean & forge build
+# forge clean & forge build
 
 # Set L1/L2 specific parameters based on contract name
 VERIFY_ARGS=()
@@ -200,21 +207,27 @@ if [ "$CHAIN_ID" -eq 31337 ]; then
 fi
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-OUTPUT_FILE="deployments/logs/${TIMESTAMP}_${CONTRACT_NAME}_${CHAIN_ID}_upgrade.log"
+if [ "$ACTION" = "prepare" ]; then
+  OUTPUT_FILE="deployments/logs/${TIMESTAMP}_${CONTRACT_NAME}_${CHAIN_ID}_prepare.log"
+  SIG="prepareUpgrade()"
+else
+  OUTPUT_FILE="deployments/logs/${TIMESTAMP}_${CONTRACT_NAME}_${CHAIN_ID}_upgrade.log"
+  SIG="upgrade()"
+fi
 
 echo "RPC URL: $RPC_URL"
 
-echo "===== Starting $CONTRACT_NAME Upgrade ====="
+echo "===== Starting $CONTRACT_NAME ${ACTION} ====="
 forge script script/Deploy.s.sol:Deploy \
-  --sig "upgrade()" \
+  --sig "$SIG" \
   --rpc-url "$RPC_URL" \
   --broadcast \
   "${VERIFY_ARGS[@]}" \
   -vvvv 2>&1 | tee "$OUTPUT_FILE"
 
-# Check that the upgrade (although verification may fail) was successful
+# Check that execution succeeded on-chain (verification may fail)
 if ! grep -q "ONCHAIN EXECUTION COMPLETE & SUCCESSFUL." "$OUTPUT_FILE"; then
-  echo "Error: Upgrade failed. Check the log file: $OUTPUT_FILE"
+  echo "Error: ${ACTION^} failed. Check the log file: $OUTPUT_FILE"
   exit 1
 fi
 
@@ -227,16 +240,27 @@ fi
 OWNER_ADDRESS=$(grep -E "Owner address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 DEPLOYER_ADDRESS=$(grep -E "Deployer address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 
-echo "===== Upgrade Complete ====="
-echo "Old Implementation: $IMPLEMENTATION"
-echo "New Implementation: $NEW_IMPL_ADDRESS"
-echo "Upgrade log saved to: $OUTPUT_FILE"
+if [ "$ACTION" = "prepare" ]; then
+  echo "===== Prepare Complete ====="
+  echo "Prepared Implementation: $NEW_IMPL_ADDRESS"
+else
+  echo "===== Upgrade Complete ====="
+  echo "Old Implementation: $IMPLEMENTATION"
+  echo "New Implementation: $NEW_IMPL_ADDRESS"
+fi
+echo "Log saved to: $OUTPUT_FILE"
 
-echo "Verifying upgrade by checking contract version..."
-OLD_VERSION=$(grep -E "^VERSION=" "$DEPLOYMENT_FILE" | cut -d'=' -f2 || echo "unknown")
-NEW_VERSION=$(cast call "$PROXY" "version()" --rpc-url "$RPC_URL" | cast --to-ascii | tr -d ' ')
-FULL_NEW_VERSION="v$NEW_VERSION-$GIT_COMMIT"
-echo "Upgrade completed from version $OLD_VERSION to version $FULL_NEW_VERSION"
+# Version resolution
+if [ "$ACTION" = "upgrade" ]; then
+  OLD_VERSION=$(grep -E "^VERSION=" "$DEPLOYMENT_FILE" | cut -d'=' -f2 || echo "unknown")
+  NEW_VERSION=$(cast call "$PROXY" "version()" --rpc-url "$RPC_URL" | cast --to-ascii | tr -d ' ')
+  FULL_NEW_VERSION="v$NEW_VERSION-$GIT_COMMIT"
+  echo "Upgrade completed from version $OLD_VERSION to version $FULL_NEW_VERSION"
+else
+  CURRENT_SRC_VERSION=$(grep -E 'string public constant version = ' contracts/EthStorageContract.sol | sed -E 's/.*version = "([^"]+)".*/\1/' | tr -d ' ')
+  FULL_NEW_VERSION="v$CURRENT_SRC_VERSION-$GIT_COMMIT"
+  echo "Prepared implementation from source version: $FULL_NEW_VERSION"
+fi
 
 # Backup build info for future upgrades
 echo "Backing up build info for future upgrades..."
@@ -251,6 +275,7 @@ echo "Build info backed up to: $BUILD_INFO_BACKUP_DIR"
 
 # Update deployment file with new implementation
 UPDATED_DEPLOYMENT_FILE="deployments/${CONTRACT_NAME}_${CHAIN_ID}_${FULL_NEW_VERSION}.txt"
+TS_KEY=$([ "$ACTION" = "prepare" ] && echo "PREPARED_AT" || echo "UPGRADED_AT")
 
 cat > "$UPDATED_DEPLOYMENT_FILE" << EOF
 CONTRACT_NAME=$CONTRACT_NAME
@@ -266,7 +291,7 @@ REFERENCE_BUILD_INFO_DIR=$BUILD_INFO_BACKUP_DIR
 REFERENCE_CONTRACT=build-info-$FULL_NEW_VERSION:$CONTRACT_NAME
 
 DEPLOYED_AT=$DEPLOYED_AT
-UPGRADED_AT=$TIMESTAMP
+$TS_KEY=$TIMESTAMP
 EOF
 
 echo "Updated deployment info saved to: $UPDATED_DEPLOYMENT_FILE"

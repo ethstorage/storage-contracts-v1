@@ -73,6 +73,23 @@ contract Deploy is Script {
         vm.stopBroadcast();
     }
 
+    function prepareUpgrade() external {
+        uint256 startTime = vm.envUint("START_TIME");
+
+        string memory contractFQN;
+        bytes memory constructorData;
+        (contractFQN, constructorData,) = _getDeploymentData(contractName, deployer, startTime);
+        Options memory opts;
+        opts.constructorData = constructorData;
+        opts.referenceBuildInfoDir = vm.envString("REFERENCE_BUILD_INFO_DIR");
+        opts.referenceContract = vm.envString("REFERENCE_CONTRACT");
+
+        vm.startBroadcast(deployerPrivateKey);
+        address newImpl = Upgrades.prepareUpgrade(contractFQN, opts);
+        console.log("New implementation address:", newImpl);
+        vm.stopBroadcast();
+    }
+
     function _validateContractName(string memory _contractName) internal pure {
         bytes32 nameHash = keccak256(bytes(_contractName));
 
