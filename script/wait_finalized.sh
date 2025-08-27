@@ -2,9 +2,9 @@
 set -e
 
 source .env
+source $(ls -t deployments/EthStorageContractM2L2*.txt | head -n 1)
 
 RPC_URL=${RPC_URL_L2}
-START_TIME=${START_TIME}
 
 if [ -z "$START_TIME" ]; then
   echo "Please set START_TIME environment variable"
