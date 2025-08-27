@@ -100,6 +100,12 @@ forge script script/Deploy.s.sol:Deploy \
   "${VERIFY_ARGS[@]}" \
   -vvvv 2>&1 | tee "$OUTPUT_FILE"
 
+# Check that the deployment (although verification may fail) was successful
+if ! grep -q "ONCHAIN EXECUTION COMPLETE & SUCCESSFUL." "$OUTPUT_FILE"; then
+  echo "Error: Deployment failed. Check the log file: $OUTPUT_FILE"
+  exit 1
+fi
+
 DEPLOYER_ADDRESS=$(grep -E "Deployer address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 PROXY_ADDRESS=$(grep -E "Proxy address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 ADMIN_ADDRESS=$(grep -E "Proxy admin address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
