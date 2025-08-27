@@ -106,6 +106,7 @@ ADMIN_ADDRESS=$(grep -E "Proxy admin address: " "$OUTPUT_FILE" | tail -1 | awk '
 IMPL_ADDRESS=$(grep -E "Implementation address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 OWNER_ADDRESS=$(grep -E "Owner address: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 START_TIME=$(grep -E "Start time: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
+DEPLOYED_BLOCK=$(grep -E "Deployed block: " "$OUTPUT_FILE" | tail -1 | awk '{print $NF}')
 
 echo "===== Deployment Complete ====="
 echo "Deployer: $DEPLOYER_ADDRESS"
@@ -149,6 +150,7 @@ REFERENCE_BUILD_INFO_DIR=$BUILD_INFO_BACKUP_DIR
 REFERENCE_CONTRACT=build-info-$FULL_CONTRACT_VERSION:$CONTRACT_NAME
 
 DEPLOYED_AT=$TIMESTAMP
+DEPLOYED_BLOCK=$DEPLOYED_BLOCK
 EOF
 
 echo "Deployment addresses saved to $DEPLOYMENT_FILE"

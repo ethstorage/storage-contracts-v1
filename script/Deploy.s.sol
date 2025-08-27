@@ -30,12 +30,13 @@ contract Deploy is Script {
     function run() external {
         address owner = vm.envOr("OWNER_ADDRESS", deployer);
         uint256 startTime = block.timestamp;
+        uint256 blockNumber = block.number;
 
         string memory contractFQN;
         bytes memory constructorData;
         bytes memory initData;
 
-        (contractFQN, constructorData, initData) = _getDeploymentData(contractName, deployer, startTime);
+        (contractFQN, constructorData, initData) = _getDeploymentData(contractName, deployer, blockNumber, startTime);
         Options memory opts;
         opts.constructorData = constructorData;
 
@@ -54,10 +55,11 @@ contract Deploy is Script {
         address proxyAddress = vm.envAddress("PROXY");
         console.log("Proxy address:", proxyAddress);
         uint256 startTime = vm.envUint("START_TIME");
+        uint256 blockNumber = vm.envUint("DEPLOYED_BLOCK");
 
         string memory contractFQN;
         bytes memory constructorData;
-        (contractFQN, constructorData,) = _getDeploymentData(contractName, deployer, startTime);
+        (contractFQN, constructorData,) = _getDeploymentData(contractName, deployer, blockNumber, startTime);
         Options memory opts;
         opts.constructorData = constructorData;
 
@@ -103,7 +105,7 @@ contract Deploy is Script {
         }
     }
 
-    function _getDeploymentData(string memory _contractName, address _deployer, uint256 startTime)
+    function _getDeploymentData(string memory _contractName, address _deployer, uint256 blockNumber, uint256 startTime)
         internal
         view
         returns (string memory contractFQN, bytes memory constructorData, bytes memory initData)
@@ -118,6 +120,7 @@ contract Deploy is Script {
         });
 
         console.log("Start time:", startTime);
+        console.log("Deployed block:", blockNumber);
         uint256 storageCost = vm.envUint("STORAGE_COST");
         uint256 dcfFactor = vm.envUint("DCF_FACTOR");
 
