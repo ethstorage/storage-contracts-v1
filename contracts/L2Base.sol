@@ -102,7 +102,11 @@ abstract contract L2Base {
         return RandaoLib.verifyHeaderAndGetRandao(bh, _headerRlpBytes);
     }
 
-    /// @notice Check if the key-values being updated exceed the limit per block.
+    /**
+     * @notice Check if the key-values being updated exceed the limit per block.
+     * Since we don't charge on updates and off-chain nodes will re-encode every updated data,
+     * imposing rate limit will avoid the DoS attack. Another solution is to charge a dust cost per update.
+     */
     function _checkUpdateLimit(uint256 _updateSize) internal virtual {
         L2BaseStorage storage $ = _getL2BaseStorage();
 

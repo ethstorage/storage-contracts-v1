@@ -252,8 +252,10 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
 
         StorageContractStorage storage $ = _getStorageContractStorage();
         if (_getShardId(totalEntries) > shardId) {
+            // We assume the rate limit (e.g., block gas limit) will ensure _batchSize < (1 << SHARD_ENTRY_BITS).
+            // i.e., at most one new shard will be created in this Tx.
             uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
-            totalPayment += _upfrontPayment(_blockTs()) * kvCountNew;
+            totalPayment += _upfrontPayment(_blockTs()) * kvCountNew; // the shard will use _blockTs() as lastMineTime (see _checkAppend())
             totalPayment += _upfrontPayment($._infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
         } else {
             totalPayment += _upfrontPayment($._infos[shardId].lastMineTime) * _batchSize;
@@ -274,7 +276,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
         StorageContractStorage storage $ = _getStorageContractStorage();
         if (shardId > _getShardId(kvEntryCountPrev)) {
             // Open a new shard and mark the shard is ready to mine.
-            // (TODO): Setup shard difficulty as current difficulty / factor?
+            // The initial diff will be _minimumDiff.
             $._infos[shardId].lastMineTime = _blockTs();
         }
     }

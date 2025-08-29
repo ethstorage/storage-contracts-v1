@@ -51,7 +51,7 @@ contract DecentralizedKV is Initializable {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 internal immutable MAX_KV_SIZE;
 
-    /// @notice Represents the metadata of the key-value .
+    /// @notice Represents the metadata of the key-value.
     /// @custom:field kvIdx  Internal address seeking.
     /// @custom:field kvSize BLOB size.
     /// @custom:field hash   Commitment.
@@ -189,8 +189,10 @@ contract DecentralizedKV is Initializable {
             res[i] = paddr.kvIdx;
         }
 
+        // Check if the payment is sufficient.
         _checkAppend(batchPaymentSize);
         if (keysLength > batchPaymentSize) {
+            // Check the rate-limit control of block-level updates.
             _checkUpdateLimit(keysLength - batchPaymentSize);
         }
 
@@ -218,7 +220,7 @@ contract DecentralizedKV is Initializable {
         return $._kvMap[skey].hash != 0;
     }
 
-    // @notice Return the keyed data given off and len.  This function can be only called in JSON-RPC context of ES L2 node.
+    // @notice Return the keyed data given off and len.  This function can be only called in JSON-RPC context of an ES node.
     /// @param _key        Key of the data.
     /// @param _decodeType Type of decoding.
     /// @param _off        Offset of the data.
