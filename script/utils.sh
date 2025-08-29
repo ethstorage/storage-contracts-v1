@@ -52,9 +52,9 @@ compare_version() {
     return 2
   fi
 
-  local GIT_COMMIT; GIT_COMMIT=$(git rev-parse --short HEAD)
+  local commit="${GIT_COMMIT:-$(git rev-parse --short HEAD)}"
   echo ""
-  echo "Upgrading contract from v$deployed_version_full to v$current_version-$GIT_COMMIT"
+  echo "Upgrading contract from v$deployed_version_full to v$current_version-$commit"
 
   semantic_compare "$current_version" "$deployed_version"
   case $? in
@@ -66,9 +66,10 @@ compare_version() {
 
 setup_environment() {
 
-    export SOURCE_VERSION=$(extract_current_source_version) || { echo "Error: failed to extract version from source"; exit 2; }
-    echo "Current semantic version from source code: v$SOURCE_VERSION"
-    
+    export GIT_COMMIT="$(git rev-parse --short HEAD)"
+    export SOURCE_VERSION="$(extract_current_source_version)" || { echo "Error: failed to extract version from source"; exit 2; }
+    echo "Current version of source code: v$SOURCE_VERSION-$GIT_COMMIT"
+
     # Go to project root directory
     cd "$(dirname "$0")/.."
 
