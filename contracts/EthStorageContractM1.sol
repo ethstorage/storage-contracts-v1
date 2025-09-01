@@ -55,7 +55,6 @@ contract EthStorageContractM1 is EthStorageContract, Decoder {
         pubSignals[0] = _getEncodingKey(_kvIdx, _miner);
         pubSignals[1] = _getXIn(_sampleIdx);
         pubSignals[2] = _mask;
-        // TODO: simple hash to curve mapping
         return this.verifyProof(pA, pB, pC, pubSignals);
     }
 
