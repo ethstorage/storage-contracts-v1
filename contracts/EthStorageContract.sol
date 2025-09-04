@@ -32,7 +32,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
 
     /// @notice Semantic version.
     /// @custom:semver 0.2.0
-    string public constant version = "0.2.0";
+    string public constant version = "0.2.1";
 
     /// @notice Emitted when a BLOB is appended.
     /// @param kvIdx    The index of the KV pair
@@ -91,7 +91,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
 
     /// @notice Compute the encoding key using the kvIdx and miner address
     function _getEncodingKey(uint256 _kvIdx, address _miner) internal view returns (uint256) {
-         // TODO: use simple hash to curve mapping with negligible statistical bias.
+        // TODO: use simple hash to curve mapping with negligible statistical bias.
         return uint256(keccak256(abi.encode(_kvMap(_idxMap(_kvIdx)).hash, _miner, _kvIdx))) % MODULUS_BN254;
     }
 
