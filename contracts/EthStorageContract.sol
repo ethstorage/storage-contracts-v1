@@ -31,7 +31,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     uint256 internal constant FIELD_ELEMENTS_PER_BLOB = 0x1000;
 
     /// @notice Semantic version.
-    /// @custom:semver 0.2.0
+    /// @custom:semver 0.2.1
     string public constant version = "0.2.1";
 
     /// @notice Emitted when a BLOB is appended.

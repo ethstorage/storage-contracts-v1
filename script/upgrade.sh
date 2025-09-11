@@ -21,6 +21,8 @@ forge script script/Deploy.s.sol:Deploy \
   --sig "upgrade()" \
   --rpc-url "$RPC_URL" \
   --broadcast \
+  --retries 30 \
+  --delay 10 \
   "${VERIFY_ARGS[@]}" \
   2>&1 | tee "$LOG_FILE"
 
