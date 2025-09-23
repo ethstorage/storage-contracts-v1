@@ -6,9 +6,9 @@ import "./libraries/RandaoLib.sol";
 /// @title IL1Block
 /// @notice Interface for L1Block contract.
 interface IL1Block {
-    /// @notice Get the blockhash of an L1 history block number.
+    /// @notice Get the blockHash of an L1 history block number.
     /// @param _historyNumber The L1 history block number.
-    /// @return The blockhash of the L1 history block number.
+    /// @return The blockHash of the L1 history block number.
     function blockHash(uint256 _historyNumber) external view returns (bytes32);
 
     /// @notice Get the current L1 block number.
