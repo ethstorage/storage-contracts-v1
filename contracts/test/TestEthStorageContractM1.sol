@@ -49,6 +49,7 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
     }
 
     function putBlob(bytes32 _key, uint256, /* _blobIdx */ uint256 _length) public payable override {
+        /// forge-lint: disable-next-line(incorrect-shift)
         bytes32 dataHash = bytes32(uint256(1 << 8 * 8));
         require(dataHash != 0, "EthStorageContract: failed to get blob hash");
 
@@ -74,6 +75,7 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
 
         bytes32[] memory dataHashes = new bytes32[](_blobIdxs.length);
         for (uint256 i = 0; i < _blobIdxs.length; i++) {
+            /// forge-lint: disable-next-line(incorrect-shift)
             dataHashes[i] = bytes32(i + 1 << 8 * 8); // dummy data hash
             require(dataHashes[i] != 0, "EthStorageContract: failed to get blob hash");
         }
@@ -156,11 +158,13 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
 
     function getSampleIdx(uint256 startShardId, bytes32 hash0) public view returns (uint256, uint256, uint256) {
         // calculate the number of samples range of the sample check
+        /// forge-lint: disable-next-line(incorrect-shift)
         uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS); // kvNumbersPerShard * smapleNumersPerKV
 
         uint256 parent = uint256(hash0) % rows;
         uint256 sampleIdx = parent + (startShardId << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS));
         uint256 kvIdx = sampleIdx >> SAMPLE_LEN_BITS;
+        /// forge-lint: disable-next-line(incorrect-shift)
         uint256 sampleIdxInKv = sampleIdx % (1 << SAMPLE_LEN_BITS);
 
         return (sampleIdx, kvIdx, sampleIdxInKv);

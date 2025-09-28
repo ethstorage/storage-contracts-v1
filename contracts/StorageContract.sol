@@ -174,6 +174,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     /// @notice Constructs the StorageContract contract. Initializes the storage config.
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
+        /// forge-lint: disable-next-line(incorrect-shift)
         DecentralizedKV(1 << _config.maxKvSizeBits, _startTime, _storageCost, _dcfFactor)
     {
         /* Assumptions */
@@ -254,6 +255,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
         if (_getShardId(totalEntries) > shardId) {
             // We assume the rate limit (e.g., block gas limit) will ensure _batchSize < (1 << SHARD_ENTRY_BITS).
             // i.e., at most one new shard will be created in this Tx.
+            /// forge-lint: disable-next-line(incorrect-shift)
             uint256 kvCountNew = totalEntries % (1 << SHARD_ENTRY_BITS);
             totalPayment += _upfrontPayment(_blockTs()) * kvCountNew; // the shard will use _blockTs() as lastMineTime (see _checkAppend())
             totalPayment += _upfrontPayment($._infos[shardId].lastMineTime) * (_batchSize - kvCountNew);
@@ -372,6 +374,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
         if (_shardId < lastShardIdx) {
             reward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
         } else if (_shardId == lastShardIdx) {
+            /// forge-lint: disable-next-line(incorrect-shift)
             reward = _paymentIn(STORAGE_COST * (kvEntryCount() % (1 << SHARD_ENTRY_BITS)), info.lastMineTime, _minedTs);
             // Additional prepaid for the last shard
             if ($._prepaidLastMineTime < _minedTs) {

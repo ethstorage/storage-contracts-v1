@@ -6,6 +6,7 @@ import "./BinaryRelated.sol";
 library MerkleLib {
     // Calculate the Merkle root of a given data with chunk size and number of maximum chunks in the data limit.
     function merkleRoot(bytes memory data, uint256 chunkSize, uint256 nChunkBits) internal pure returns (bytes32) {
+        /// forge-lint: disable-next-line(incorrect-shift)
         uint256 nChunks = 1 << nChunkBits;
         bytes32[] memory nodes = new bytes32[](nChunks);
         for (uint256 i = 0; i < nChunks; i++) {
@@ -81,6 +82,7 @@ library MerkleLib {
     {
         bytes32 hash = dataHash;
         uint256 nChunkBits = proofs.length;
+        /// forge-lint: disable-next-line(incorrect-shift)
         require(chunkIdx < (1 << nChunkBits), "chunkId overflows");
         for (uint256 i = 0; i < nChunkBits; i++) {
             if (chunkIdx % 2 == 0) {
@@ -101,6 +103,7 @@ library MerkleLib {
     {
         bytes32 hash = dataHash;
         uint256 nChunkBits = proofs.length;
+        /// forge-lint: disable-next-line(incorrect-shift)
         require(chunkIdx < (1 << nChunkBits), "chunkId overflows");
         for (uint256 i = 0; i < nChunkBits; i++) {
             if (chunkIdx % 2 == 0) {
@@ -119,6 +122,7 @@ library MerkleLib {
         pure
         returns (bytes32[] memory)
     {
+        /// forge-lint: disable-next-line(incorrect-shift)
         uint256 nChunks = 1 << nChunkBits;
         require(chunkIdx < nChunks, "index out of scope");
         bytes32[] memory nodes = new bytes32[](nChunks);

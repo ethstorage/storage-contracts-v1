@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 library BinaryRelated {
     function pow(uint256 fp, uint256 n) internal pure returns (uint256) {
         // 1.0 in Q128.128
+        /// forge-lint: disable-next-line(incorrect-shift)
         uint256 v = 1 << 128;
         // we can use unchecked here because we know that fp is in the range [0, 2^128), and it can save gas if n is large
         unchecked {
@@ -25,6 +26,7 @@ library BinaryRelated {
     }
 
     function reverseBits(uint256 bits, uint256 input) internal pure returns (uint256) {
+        /// forge-lint: disable-next-line(incorrect-shift)
         assert(input < (1 << bits));
         uint256 n = input;
         uint256 r = 0;
