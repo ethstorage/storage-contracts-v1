@@ -146,7 +146,8 @@ library MerkleLib {
         uint256 proofIdx = 0;
         bytes32[] memory proofs = new bytes32[](nChunkBits);
         while (n != 1) {
-            proofs[proofIdx] = nodes[(chunkIdx / 2) * 2 + 1 - (chunkIdx % 2)];
+            // Get sibling node for proof: flip last bit (even+1, odd-1)
+            proofs[proofIdx] = nodes[chunkIdx ^ 1];
             for (uint256 i = 0; i < n / 2; i++) {
                 nodes[i] = keccak256(abi.encode(nodes[i * 2], nodes[i * 2 + 1]));
             }
