@@ -6,6 +6,8 @@
  */
 pragma solidity 0.8.28;
 
+///forge-lint: disable-next-item(pascal-case-struct)
+
 library RLPReader {
     uint8 constant STRING_SHORT_START = 0x80;
     uint8 constant STRING_LONG_START = 0xb8;

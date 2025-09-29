@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "./EthStorageContract.sol";
-import "./zk-verify/Decoder.sol";
+import {EthStorageContract} from "./EthStorageContract.sol";
+import {StorageContract} from "./StorageContract.sol";
+import {Decoder} from "./zk-verify/Decoder.sol";
 
 /// @custom:proxied
 /// @title EthStorageContractM1

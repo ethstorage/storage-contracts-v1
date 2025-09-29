@@ -20,6 +20,8 @@
 
 pragma solidity 0.8.28;
 
+/// forge-lint: disable-next-item(screaming-snake-case-const)
+
 contract Decoder2 {
     // Scalar field size
     uint256 constant r = 21888242871839275222246405745257275088548364400416034343698204186575808495617;

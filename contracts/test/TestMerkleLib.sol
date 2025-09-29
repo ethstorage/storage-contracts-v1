@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../libraries/MerkleLib.sol";
+import {MerkleLib} from "../libraries/MerkleLib.sol";
 
 contract TestMerkleLib {
     function merkleRoot(bytes memory data, uint256 chunkSize, uint256 nChunkBits) public pure returns (bytes32) {

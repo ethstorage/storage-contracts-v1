@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../DecentralizedKV.sol";
+import {DecentralizedKV} from "../DecentralizedKV.sol";
 
 contract TestDecentralizedKV is DecentralizedKV {
     uint256 public currentTimestamp;
@@ -13,7 +13,7 @@ contract TestDecentralizedKV is DecentralizedKV {
     {}
 
     function initialize() public initializer {
-        __init_KV();
+        initKv();
     }
 
     function setTimestamp(uint256 ts) public {

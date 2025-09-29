@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "./StorageContract.sol";
-import "./libraries//BinaryRelated.sol";
-import "./Interfaces/ISemver.sol";
+import {StorageContract} from "./StorageContract.sol";
+import {BinaryRelated} from "./libraries/BinaryRelated.sol";
+import {ISemver} from "./Interfaces/ISemver.sol";
 
 /// @custom:proxied
 /// @title EthStorageContract
@@ -31,7 +31,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
     uint256 internal constant FIELD_ELEMENTS_PER_BLOB = 0x1000;
 
     /// @notice Semantic version.
-    /// @custom:semver 0.2.0
+    /// @custom:semver 0.2.1
     string public constant version = "0.2.1";
 
     /// @notice Emitted when a BLOB is appended.
@@ -56,7 +56,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         address _treasury,
         address _owner
     ) public payable virtual initializer {
-        __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
+        initStorage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
     /// @notice Performs modular exponentiation, which is a type of exponentiation performed over a modulus.

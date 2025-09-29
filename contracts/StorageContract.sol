@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-
-import "./DecentralizedKV.sol";
-import "./libraries/MiningLib.sol";
-import "./libraries/RandaoLib.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {DecentralizedKV} from "./DecentralizedKV.sol";
+import {MiningLib} from "./libraries/MiningLib.sol";
+import {RandaoLib} from "./libraries/RandaoLib.sol";
 
 /// @custom:upgradeable
 /// @title StorageContract
@@ -131,12 +130,12 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     }
 
     // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.StorageContract")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant StorageContractStorageLocation =
+    bytes32 private constant STORAGE_CONTRACT_STORAGE_LOCATION =
         0x2e87afa02c4126794624df6162c63cb642521b7bea4fc2331190b8ab7e6a0f00;
 
     function _getStorageContractStorage() private pure returns (StorageContractStorage storage $) {
         assembly {
-            $.slot := StorageContractStorageLocation
+            $.slot := STORAGE_CONTRACT_STORAGE_LOCATION
         }
     }
 
@@ -204,7 +203,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     /// @param _nonceLimit    The maximum nonce per block.
     /// @param _treasury      The treasury address.
     /// @param _owner         The contract owner.
-    function __init_storage(
+    function initStorage(
         uint256 _minimumDiff,
         uint256 _prepaidAmount,
         uint256 _nonceLimit,
@@ -214,7 +213,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
 
-        __init_KV();
+        initKv();
 
         StorageContractStorage storage $ = _getStorageContractStorage();
         $._minimumDiff = _minimumDiff;

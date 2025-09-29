@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "./libraries/RandaoLib.sol";
+import {RandaoLib} from "./libraries/RandaoLib.sol";
 
 /// @title IL1Block
 /// @notice Interface for L1Block contract.
@@ -55,11 +55,12 @@ abstract contract L2Base {
     }
 
     // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.L2Base")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant L2BaseStorageLocation = 0x4f2e75529ec26b25c2fdfe7928382000d9e4289cb7792c1db94ef3c9ffecd900;
+    bytes32 private constant L2_BASE_STORAGE_LOCATION =
+        0x4f2e75529ec26b25c2fdfe7928382000d9e4289cb7792c1db94ef3c9ffecd900;
 
     function _getL2BaseStorage() private pure returns (L2BaseStorage storage $) {
         assembly {
-            $.slot := L2BaseStorageLocation
+            $.slot := L2_BASE_STORAGE_LOCATION
         }
     }
 

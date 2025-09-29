@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "forge-std/Script.sol";
-import "forge-std/console.sol";
-import "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {Script} from "forge-std/Script.sol";
+import {console} from "forge-std/console.sol";
+import {Upgrades, Options} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import "../contracts/EthStorageContractM1.sol";
-import "../contracts/EthStorageContractM1L2.sol";
-import "../contracts/EthStorageContractM2.sol";
-import "../contracts/EthStorageContractM2L2.sol";
+import {EthStorageContractM1} from "../contracts/EthStorageContractM1.sol";
+import {EthStorageContractM1L2} from "../contracts/EthStorageContractM1L2.sol";
+import {EthStorageContractM2} from "../contracts/EthStorageContractM2.sol";
+import {EthStorageContractM2L2} from "../contracts/EthStorageContractM2L2.sol";
+import {StorageContract} from "../contracts/StorageContract.sol";
 
 contract Deploy is Script {
     uint256 private deployerPrivateKey;
@@ -31,16 +32,16 @@ contract Deploy is Script {
         address owner = vm.envOr("OWNER_ADDRESS", deployer);
         uint256 startTime = block.timestamp;
 
-        string memory contractFQN;
+        string memory contractFullName;
         bytes memory constructorData;
         bytes memory initData;
 
-        (contractFQN, constructorData, initData) = _getDeploymentData(contractName, deployer, startTime);
+        (contractFullName, constructorData, initData) = _getDeploymentData(contractName, deployer, startTime);
         Options memory opts;
         opts.constructorData = constructorData;
 
         vm.startBroadcast(deployerPrivateKey);
-        address proxy = Upgrades.deployTransparentProxy(contractFQN, owner, initData, opts);
+        address proxy = Upgrades.deployTransparentProxy(contractFullName, owner, initData, opts);
         vm.stopBroadcast();
 
         console.log("Proxy address:", proxy);
@@ -55,16 +56,16 @@ contract Deploy is Script {
         console.log("Proxy address:", proxyAddress);
         uint256 startTime = vm.envUint("START_TIME");
 
-        string memory contractFQN;
+        string memory contractFullName;
         bytes memory constructorData;
-        (contractFQN, constructorData,) = _getDeploymentData(contractName, deployer, startTime);
+        (contractFullName, constructorData,) = _getDeploymentData(contractName, deployer, startTime);
         Options memory opts;
         opts.constructorData = constructorData;
 
         opts.referenceBuildInfoDir = vm.envString("REFERENCE_BUILD_INFO_DIR");
         opts.referenceContract = vm.envString("REFERENCE_CONTRACT");
         vm.startBroadcast(deployerPrivateKey);
-        Upgrades.upgradeProxy(proxyAddress, contractFQN, "", opts);
+        Upgrades.upgradeProxy(proxyAddress, contractFullName, "", opts);
 
         console.log("Upgrade completed successfully!");
         address newImpl = Upgrades.getImplementationAddress(proxyAddress);
@@ -76,16 +77,16 @@ contract Deploy is Script {
     function prepareUpgrade() external {
         uint256 startTime = vm.envUint("START_TIME");
 
-        string memory contractFQN;
+        string memory contractFullName;
         bytes memory constructorData;
-        (contractFQN, constructorData,) = _getDeploymentData(contractName, deployer, startTime);
+        (contractFullName, constructorData,) = _getDeploymentData(contractName, deployer, startTime);
         Options memory opts;
         opts.constructorData = constructorData;
         opts.referenceBuildInfoDir = vm.envString("REFERENCE_BUILD_INFO_DIR");
         opts.referenceContract = vm.envString("REFERENCE_CONTRACT");
 
         vm.startBroadcast(deployerPrivateKey);
-        address newImpl = Upgrades.prepareUpgrade(contractFQN, opts);
+        address newImpl = Upgrades.prepareUpgrade(contractFullName, opts);
         console.log("New implementation address:", newImpl);
         vm.stopBroadcast();
     }
@@ -123,7 +124,7 @@ contract Deploy is Script {
     function _getDeploymentData(string memory _contractName, address _deployer, uint256 startTime)
         internal
         view
-        returns (string memory contractFQN, bytes memory constructorData, bytes memory initData)
+        returns (string memory contractFullName, bytes memory constructorData, bytes memory initData)
     {
         StorageContract.Config memory config = StorageContract.Config({
             maxKvSizeBits: vm.envUint("MAX_KV_SIZE_BITS"),
@@ -150,32 +151,32 @@ contract Deploy is Script {
         bytes32 nameHash = keccak256(bytes(_contractName));
 
         if (nameHash == keccak256("EthStorageContractM1")) {
-            contractFQN = "EthStorageContractM1.sol:EthStorageContractM1";
+            contractFullName = "EthStorageContractM1.sol:EthStorageContractM1";
             initData = abi.encodeWithSelector(
                 EthStorageContractM1.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, owner
             );
             constructorData = abi.encode(config, startTime, storageCost, dcfFactor);
         } else if (nameHash == keccak256("EthStorageContractM1L2")) {
             uint256 updateLimit = vm.envUint("UPDATE_LIMIT");
-            contractFQN = "EthStorageContractM1L2.sol:EthStorageContractM1L2";
+            contractFullName = "EthStorageContractM1L2.sol:EthStorageContractM1L2";
             initData = abi.encodeWithSelector(
                 EthStorageContractM1L2.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, owner
             );
             constructorData = abi.encode(config, startTime, storageCost, dcfFactor, updateLimit);
         } else if (nameHash == keccak256("EthStorageContractM2")) {
-            contractFQN = "EthStorageContractM2.sol:EthStorageContractM2";
+            contractFullName = "EthStorageContractM2.sol:EthStorageContractM2";
             initData = abi.encodeWithSelector(
                 EthStorageContractM2.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, owner
             );
             constructorData = abi.encode(config, startTime, storageCost, dcfFactor);
         } else if (nameHash == keccak256("EthStorageContractM2L2")) {
             uint256 updateLimit = vm.envUint("UPDATE_LIMIT");
-            contractFQN = "EthStorageContractM2L2.sol:EthStorageContractM2L2";
+            contractFullName = "EthStorageContractM2L2.sol:EthStorageContractM2L2";
             initData = abi.encodeWithSelector(
                 EthStorageContractM2L2.initialize.selector, minimumDiff, prepaidAmount, nonceLimit, treasury, owner
             );
             constructorData = abi.encode(config, startTime, storageCost, dcfFactor, updateLimit);
         }
-        return (contractFQN, constructorData, initData);
+        return (contractFullName, constructorData, initData);
     }
 }

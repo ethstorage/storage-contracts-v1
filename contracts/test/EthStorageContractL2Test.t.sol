@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "forge-std/Test.sol";
-import "./TestEthStorageContractM2L2.sol";
-import "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {Test} from "forge-std/Test.sol";
+import {StorageContract} from "../StorageContract.sol";
+import {L2Base} from "../L2Base.sol";
+import {TestEthStorageContractM2L2} from "./TestEthStorageContractM2L2.sol";
+import {EthStorageContractM2L2} from "../EthStorageContractM2L2.sol";
+import {Upgrades, Options, TransparentUpgradeableProxy} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract SoulGasToken {
     function chargeFromOrigin(uint256 _amount) external pure returns (uint256) {

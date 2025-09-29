@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "./BinaryRelated.sol";
+import {BinaryRelated} from "./BinaryRelated.sol";
 
 library MerkleLib {
     // Calculate the Merkle root of a given data with chunk size and number of maximum chunks in the data limit.
