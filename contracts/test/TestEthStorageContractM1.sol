@@ -88,6 +88,7 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
     }
 
     function getEncodingKey(uint256 kvIdx, address miner) public view returns (bytes32) {
+        /// forge-lint: disable-next-line(asm-keccak256)
         return keccak256(abi.encode(_kvMap(_idxMap(kvIdx)).hash, miner, kvIdx));
     }
 
@@ -181,6 +182,7 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
     }
 
     function getInitHash0(bytes32 randao, address miner, uint256 nonce) public pure returns (bytes32) {
+        /// forge-lint: disable-next-line(asm-keccak256)
         bytes32 hash0 = keccak256(abi.encode(miner, randao, nonce));
         return hash0;
     }

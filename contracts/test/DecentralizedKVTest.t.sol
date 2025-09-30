@@ -15,4 +15,11 @@ contract DecentralizedKVTest is Test {
         decentralizedKv = new TestDecentralizedKV(MAX_KV_SIZE, 0, STORAGE_COST, 340282366367469178095360967382638002176);
         decentralizedKv.initialize();
     }
+
+    function test_getStorageKeyEquals() public view {
+        bytes32 k = keccak256("demo-key");
+        bytes32 a = decentralizedKv.storageKey(k);
+        bytes32 b = decentralizedKv.encodedHash(k);
+        assertEq(a, b, "storageKey != keccak256(abi.encode(msg.sender,k))");
+    }
 }

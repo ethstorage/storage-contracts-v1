@@ -116,6 +116,15 @@ contract DecentralizedKV is Initializable {
         return BinaryRelated.pow(_fp, _n);
     }
 
+    /// @notice Get storage key for better gas performance than keccak256(abi.encode(...)).
+    function _getStorageKey(bytes32 b) internal view returns (bytes32 skey) {
+        assembly {
+            mstore(0x00, caller())
+            mstore(0x20, b)
+            skey := keccak256(0x00, 0x40)
+        }
+    }
+
     /// @notice Evaluate payment from [t0, t1) seconds
     function _paymentInInterval(uint256 _x, uint256 _t0, uint256 _t1) internal view returns (uint256) {
         return (_x * (_pow(DCF_FACTOR, _t0) - _pow(DCF_FACTOR, _t1))) >> 128;
@@ -172,7 +181,7 @@ contract DecentralizedKV is Initializable {
         uint256[] memory res = new uint256[](keysLength);
         uint256 batchPaymentSize = 0;
         for (uint256 i = 0; i < keysLength; i++) {
-            bytes32 skey = keccak256(abi.encode(msg.sender, _keys[i]));
+            bytes32 skey = _getStorageKey(_keys[i]);
             PhyAddr memory paddr = $._kvMap[skey];
 
             if (paddr.hash == 0) {
@@ -201,21 +210,21 @@ contract DecentralizedKV is Initializable {
 
     /// @notice Return the size of the keyed value.
     function size(bytes32 _key) public view returns (uint256) {
-        bytes32 skey = keccak256(abi.encode(msg.sender, _key));
+        bytes32 skey = _getStorageKey(_key);
         DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._kvMap[skey].kvSize;
     }
 
     /// @notice Return the dataHash of the keyed value.
     function hash(bytes32 _key) public view returns (bytes24) {
-        bytes32 skey = keccak256(abi.encode(msg.sender, _key));
+        bytes32 skey = _getStorageKey(_key);
         DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._kvMap[skey].hash;
     }
 
     /// @notice Check if the key-value exists.
     function exist(bytes32 _key) public view returns (bool) {
-        bytes32 skey = keccak256(abi.encode(msg.sender, _key));
+        bytes32 skey = _getStorageKey(_key);
         DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._kvMap[skey].hash != 0;
     }
@@ -236,7 +245,7 @@ contract DecentralizedKV is Initializable {
             revert DecentralizedKV_DataLenZero();
         }
 
-        bytes32 skey = keccak256(abi.encode(msg.sender, _key));
+        bytes32 skey = _getStorageKey(_key);
         DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         PhyAddr memory paddr = $._kvMap[skey];
 

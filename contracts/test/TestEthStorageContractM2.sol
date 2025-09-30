@@ -17,6 +17,7 @@ contract TestEthStorageContractM2 is EthStorageContractM2 {
 
     function putBlobs(uint256 num) public payable {
         for (uint256 i = 0; i < num; i++) {
+            /// forge-lint: disable-next-line(asm-keccak256)
             bytes32 key = keccak256(abi.encode(block.number, i));
             putBlob(key, 0, MAX_KV_SIZE);
         }

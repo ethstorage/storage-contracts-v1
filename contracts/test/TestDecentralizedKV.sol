@@ -25,7 +25,16 @@ contract TestDecentralizedKV is DecentralizedKV {
         return _upfrontPayment(currentTimestamp);
     }
 
+    function storageKey(bytes32 k) public view returns (bytes32) {
+        return _getStorageKey(k);
+    }
+
+    function encodedHash(bytes32 k) external view returns (bytes32) {
+        return keccak256(abi.encode(msg.sender, k));
+    }
+
     function put(bytes32 key, bytes memory data) public payable {
+        /// forge-lint: disable-next-line(asm-keccak256)
         bytes32 dataHash = keccak256(data);
 
         bytes32[] memory keys = new bytes32[](1);
@@ -49,7 +58,7 @@ contract TestDecentralizedKV is DecentralizedKV {
             return new bytes(0);
         }
 
-        bytes32 skey = keccak256(abi.encode(msg.sender, key));
+        bytes32 skey = _getStorageKey(key);
         PhyAddr memory paddr = _kvMap(skey);
         if (off >= paddr.kvSize) {
             return new bytes(0);
@@ -69,7 +78,7 @@ contract TestDecentralizedKV is DecentralizedKV {
 
     // Remove an existing KV pair to a recipient.  Refund the cost accordingly.
     function removeTo(bytes32 key, address to) public override {
-        bytes32 skey = keccak256(abi.encode(msg.sender, key));
+        bytes32 skey = _getStorageKey(key);
         PhyAddr memory paddr = _kvMap(skey);
         uint40 kvIdx = paddr.kvIdx;
 
