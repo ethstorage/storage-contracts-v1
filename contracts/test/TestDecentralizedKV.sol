@@ -13,7 +13,7 @@ contract TestDecentralizedKV is DecentralizedKV {
     {}
 
     function initialize() public initializer {
-        initKv();
+        _initKv();
     }
 
     function setTimestamp(uint256 ts) public {

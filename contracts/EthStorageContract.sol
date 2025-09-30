@@ -56,7 +56,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         address _treasury,
         address _owner
     ) public payable virtual initializer {
-        initStorage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
+        _initStorage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
     /// @notice Performs modular exponentiation, which is a type of exponentiation performed over a modulus.
