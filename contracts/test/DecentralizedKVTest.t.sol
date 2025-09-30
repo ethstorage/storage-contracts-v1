@@ -18,8 +18,8 @@ contract DecentralizedKVTest is Test {
 
     function test_getStorageKeyEquals() public view {
         bytes32 k = keccak256("demo-key");
-        bytes32 a = decentralizedKv.storageKey(k);
-        bytes32 b = decentralizedKv.encodedHash(k);
-        assertEq(a, b, "storageKey != keccak256(abi.encode(msg.sender,k))");
+        bytes32 a = decentralizedKv.storageKeyAsm(k);
+        bytes32 b = decentralizedKv.storageKeyAbi(k);
+        assertEq(a, b, "storageKeyAsm != storageKeyAbi");
     }
 }

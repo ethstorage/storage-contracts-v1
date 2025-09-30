@@ -25,11 +25,11 @@ contract TestDecentralizedKV is DecentralizedKV {
         return _upfrontPayment(currentTimestamp);
     }
 
-    function storageKey(bytes32 k) public view returns (bytes32) {
+    function storageKeyAsm(bytes32 k) public view returns (bytes32) {
         return _getStorageKey(k);
     }
 
-    function encodedHash(bytes32 k) external view returns (bytes32) {
+    function storageKeyAbi(bytes32 k) external view returns (bytes32) {
         return keccak256(abi.encode(msg.sender, k));
     }
 
