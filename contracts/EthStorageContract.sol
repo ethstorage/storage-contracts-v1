@@ -32,6 +32,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
 
     /// @notice Semantic version.
     /// @custom:semver 0.2.1
+    ///forge-lint: disable-next-line(screaming-snake-case-const)
     string public constant version = "0.2.1";
 
     /// @notice Emitted when a BLOB is appended.
