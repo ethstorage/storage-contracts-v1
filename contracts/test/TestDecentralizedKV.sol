@@ -30,6 +30,7 @@ contract TestDecentralizedKV is DecentralizedKV {
     }
 
     function storageKeyAbi(bytes32 k) external view returns (bytes32) {
+        /// forge-lint: disable-next-line(asm-keccak256)
         return keccak256(abi.encode(msg.sender, k));
     }
 

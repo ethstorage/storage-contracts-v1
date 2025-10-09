@@ -17,6 +17,7 @@ contract DecentralizedKVTest is Test {
     }
 
     function test_getStorageKeyEquals() public view {
+        /// forge-lint: disable-next-line(asm-keccak256)
         bytes32 k = keccak256("demo-key");
         bytes32 a = decentralizedKv.storageKeyAsm(k);
         bytes32 b = decentralizedKv.storageKeyAbi(k);
