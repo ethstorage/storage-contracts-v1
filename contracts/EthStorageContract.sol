@@ -32,6 +32,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
 
     /// @notice Semantic version.
     /// @custom:semver 0.2.1
+    ///forge-lint: disable-next-line(screaming-snake-case-const)
     string public constant version = "0.2.1";
 
     /// @notice Emitted when a BLOB is appended.
@@ -56,7 +57,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         address _treasury,
         address _owner
     ) public payable virtual initializer {
-        initStorage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
+        _initStorage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
     /// @notice Performs modular exponentiation, which is a type of exponentiation performed over a modulus.

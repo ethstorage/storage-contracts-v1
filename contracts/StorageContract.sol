@@ -203,7 +203,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     /// @param _nonceLimit    The maximum nonce per block.
     /// @param _treasury      The treasury address.
     /// @param _owner         The contract owner.
-    function initStorage(
+    function _initStorage(
         uint256 _minimumDiff,
         uint256 _prepaidAmount,
         uint256 _nonceLimit,
@@ -213,7 +213,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
 
-        initKv();
+        _initKv();
 
         StorageContractStorage storage $ = _getStorageContractStorage();
         $._minimumDiff = _minimumDiff;

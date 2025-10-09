@@ -106,7 +106,7 @@ contract DecentralizedKV is Initializable {
     }
 
     /// @notice Initializer.
-    function initKv() internal onlyInitializing {
+    function _initKv() internal onlyInitializing {
         DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         $._kvEntryCount = 0;
     }

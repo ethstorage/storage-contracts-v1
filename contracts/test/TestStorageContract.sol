@@ -15,7 +15,7 @@ contract TestStorageContract is StorageContract {
         address _treasury,
         address _owner
     ) public payable initializer {
-        initStorage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
+        _initStorage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
     function verifySamples(
