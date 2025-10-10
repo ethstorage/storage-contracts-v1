@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {EthStorageContractM1} from "../EthStorageContractM1.sol";
-import {MerkleLib} from "../libraries/MerkleLib.sol";
+import {EthStorageContractM1} from "../../contracts/EthStorageContractM1.sol";
+import {MerkleLib} from "../../contracts/libraries/MerkleLib.sol";
 
 contract TestEthStorageContractM1 is EthStorageContractM1 {
     uint256 public currentTimestamp;

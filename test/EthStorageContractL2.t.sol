@@ -2,10 +2,10 @@
 pragma solidity 0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {StorageContract} from "../StorageContract.sol";
-import {L2Base} from "../L2Base.sol";
-import {TestEthStorageContractM2L2} from "./TestEthStorageContractM2L2.sol";
-import {EthStorageContractM2L2} from "../EthStorageContractM2L2.sol";
+import {StorageContract} from "../contracts/StorageContract.sol";
+import {L2Base} from "../contracts/L2Base.sol";
+import {TestEthStorageContractM2L2} from "./mocks/TestEthStorageContractM2L2.sol";
+import {EthStorageContractM2L2} from "../contracts/EthStorageContractM2L2.sol";
 import {Upgrades, Options, TransparentUpgradeableProxy} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract SoulGasToken {
