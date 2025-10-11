@@ -2,36 +2,13 @@
 pragma solidity ^0.8.20;
 
 import {RLPWriter} from "./RLPWriter.sol";
+import {ChainDataHelper} from "./ChainDataHelper.sol";
 
 library RandaoProver {
     using RLPWriter for bytes;
     using RLPWriter for bytes[];
 
-    struct BlockHeader {
-        bytes32 parentHash;
-        bytes32 sha3Uncles;
-        address miner;
-        bytes32 stateRoot;
-        bytes32 transactionsRoot;
-        bytes32 receiptsRoot;
-        bytes logsBloom;
-        uint256 difficulty;
-        uint256 number;
-        uint256 gasLimit;
-        uint256 gasUsed;
-        uint256 timestamp;
-        bytes extraData;
-        bytes32 mixHash;
-        uint64 nonce;
-        uint256 baseFeePerGas;
-        bytes32 withdrawalsRoot;
-        uint256 blobGasUsed;
-        uint256 excessBlobGas;
-        bytes32 parentBeaconBlockRoot;
-        bytes32 requestsHash;
-    }
-
-    function generateRandaoProof(BlockHeader memory blockHeader) internal pure returns (bytes memory) {
+    function generateRandaoProof(ChainDataHelper.BlockHeader memory blockHeader) internal pure returns (bytes memory) {
         bytes[] memory header = new bytes[](21);
 
         header[0] = RLPWriter.writeBytes(abi.encodePacked(blockHeader.parentHash));

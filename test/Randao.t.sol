@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {Test, stdJson} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {RandaoLib} from "../contracts/libraries/RandaoLib.sol";
 import {RandaoProver} from "./lib/RandaoProver.sol";
+import {ChainDataHelper} from "./lib/ChainDataHelper.sol";
 
-contract RandaoTest is Test {
-    using stdJson for string;
+contract RandaoTest is Test, ChainDataHelper{
 
     function testStaticRandaoVerify() public pure {
         bytes32 blockHash = 0x8576cd4900e56c1214e2f32fbb194c0ebddde8cffd243194187977583d712aa5;
@@ -18,7 +17,7 @@ contract RandaoTest is Test {
     }
 
     function testLatestBlockVerify() public {
-        (RandaoProver.BlockHeader memory blockHeader, bytes32 blockHash) = _fetchLatestBlockHeader();
+        (ChainDataHelper.BlockHeader memory blockHeader, bytes32 blockHash) = fetchLatestBlockHeader();
 
         // ensure Prague block (requestsHash present)
         assertTrue(blockHeader.requestsHash != bytes32(0), "incorrect fork");
@@ -26,48 +25,5 @@ contract RandaoTest is Test {
         bytes memory encodedHeader = RandaoProver.generateRandaoProof(blockHeader);
         bytes32 randao = RandaoLib.verifyHeaderAndGetRandao(blockHash, encodedHeader);
         assertEq(randao, blockHeader.mixHash, "randao mismatch");
-    }
-
-    function _fetchLatestBlockHeader() internal returns (RandaoProver.BlockHeader memory header, bytes32 blockHash) {
-        string[] memory cmd = new string[](7);
-        cmd[0] = "cast";
-        cmd[1] = "rpc";
-        cmd[2] = "--rpc-url";
-        cmd[3] = vm.envString("RPC_URL_L1");
-        cmd[4] = "eth_getBlockByNumber";
-        cmd[5] = "latest";
-        cmd[6] = "false";
-
-        Vm.FfiResult memory res = vm.tryFfi(cmd);
-        require(res.exitCode == 0, string.concat("cast rpc failed: ", string(res.stderr)));
-        bytes memory stdout = res.stdout;
-        require(stdout.length != 0, "cast rpc returned empty stdout");
-
-        string memory json = string(stdout);
-
-        blockHash = json.readBytes32(".hash");
-        header.parentHash = json.readBytes32(".parentHash");
-        header.sha3Uncles = json.readBytes32(".sha3Uncles");
-        header.miner = json.readAddress(".miner");
-        header.stateRoot = json.readBytes32(".stateRoot");
-        header.transactionsRoot = json.readBytes32(".transactionsRoot");
-        header.receiptsRoot = json.readBytes32(".receiptsRoot");
-        header.logsBloom = json.readBytes(".logsBloom");
-        header.difficulty = json.readUint(".difficulty");
-        header.number = json.readUint(".number");
-        header.gasLimit = json.readUint(".gasLimit");
-        header.gasUsed = json.readUint(".gasUsed");
-        header.timestamp = json.readUint(".timestamp");
-        header.extraData = json.readBytes(".extraData");
-        header.mixHash = json.readBytes32(".mixHash");
-        header.nonce = uint64(json.readUint(".nonce"));
-        header.baseFeePerGas = json.readUint(".baseFeePerGas");
-        header.withdrawalsRoot = json.readBytes32(".withdrawalsRoot");
-        header.blobGasUsed = json.readUintOr(".blobGasUsed", 0);
-        header.excessBlobGas = json.readUintOr(".excessBlobGas", 0);
-        header.parentBeaconBlockRoot = json.readBytes32Or(".parentBeaconBlockRoot", bytes32(0));
-        header.requestsHash = json.readBytes32Or(".requestsHash", bytes32(0));
-
-        return (header, blockHash);
     }
 }
