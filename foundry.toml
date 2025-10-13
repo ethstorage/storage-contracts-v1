@@ -2,6 +2,10 @@
 src = 'contracts'
 out = 'out'
 libs = ['node_modules', 'lib']
+remappings = [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/"
+]
 test = 'test'
 cache_path = 'cache_forge'
 evm_version = 'cancun'
@@ -12,7 +16,11 @@ ast = true
 build_info = true
 extra_output = ["storageLayout"]
 fs_permissions = [
-    { access = "read", path = "./out" }
+    { access = "read", path = "./out" },
+    { access = "read", path = "tmp" },
+    { access = "read", path = "tmp/..." },
+    { access = "write", path = "tmp" },
+    { access = "write", path = "tmp/..." }
 ]
 optimizer = true
 optimizer_runs = 200
