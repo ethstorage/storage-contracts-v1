@@ -9,6 +9,7 @@ contract MerkleLibTest is Test {
     function testFullZeroDataVerify() public pure {
         uint256 chunkSize = 64;
         uint256 nChunkBits = 3;
+        /// forge-lint: disable-next-line(incorrect-shift)
         bytes memory data = new bytes(chunkSize * (1 << nChunkBits));
 
         _assertProofs(data, chunkSize, nChunkBits);
@@ -17,12 +18,13 @@ contract MerkleLibTest is Test {
     function testFullPseudoRandomDataVerify() public pure {
         uint256 chunkSize = 64;
         uint256 nChunkBits = 3;
+        /// forge-lint: disable-next-line(incorrect-shift)
         bytes memory data = _randomBytes(chunkSize * (1 << nChunkBits), bytes32("full-random"));
 
         _assertProofs(data, chunkSize, nChunkBits);
     }
 
-    function testEightKilobyteData() public pure {
+    function test8kData() public pure {
         uint256 chunkSize = 4096;
         uint256 nChunkBits = 1; // 2 chunks
         bytes memory data = _randomBytes(chunkSize * 2, bytes32("8k-data"));

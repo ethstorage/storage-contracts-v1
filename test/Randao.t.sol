@@ -6,8 +6,7 @@ import {RandaoLib} from "../contracts/libraries/RandaoLib.sol";
 import {RandaoProver} from "./lib/RandaoProver.sol";
 import {ChainDataHelper} from "./lib/ChainDataHelper.sol";
 
-contract RandaoTest is Test, ChainDataHelper{
-
+contract RandaoTest is Test, ChainDataHelper {
     function testStaticRandaoVerify() public pure {
         bytes32 blockHash = 0x8576cd4900e56c1214e2f32fbb194c0ebddde8cffd243194187977583d712aa5;
         bytes memory proof =
