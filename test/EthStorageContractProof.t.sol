@@ -187,8 +187,8 @@ contract EthStorageContractProofTest is ChainDataHelper {
             string[] memory curlCmd = new string[](4);
             curlCmd[0] = "curl";
             curlCmd[1] = "-o";
-            curlCmd[2] = ZKEY_PATH;
-            curlCmd[3] = ZKEY_SOURCE;
+            curlCmd[2] = ZKEY_SOURCE;
+            curlCmd[3] = ZKEY_PATH;
             vm.ffi(curlCmd);
             require(_fileExists(ZKEY_PATH), "failed to download zkey");
         }
