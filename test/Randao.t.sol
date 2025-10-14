@@ -16,7 +16,7 @@ contract RandaoTest is Test, ChainDataHelper {
     }
 
     function testLatestBlockVerify() public {
-        if (bytes(vm.envString("RPC_URL_L1")).length == 0) {
+        if (bytes(vm.envOr("RPC_URL_L1", string(""))).length == 0) {
             vm.skip(true, "Skipping testLatestBlockVerify: RPC_URL_L1 not set");
             return;
         }
