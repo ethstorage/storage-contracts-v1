@@ -15,4 +15,12 @@ contract DecentralizedKVTest is Test {
         decentralizedKv = new TestDecentralizedKV(MAX_KV_SIZE, 0, STORAGE_COST, 340282366367469178095360967382638002176);
         decentralizedKv.initialize();
     }
+
+    function test_getStorageKeyEquals() public view {
+        /// forge-lint: disable-next-line(asm-keccak256)
+        bytes32 k = keccak256("demo-key");
+        bytes32 a = decentralizedKv.storageKeyAsm(k);
+        bytes32 b = decentralizedKv.storageKeyAbi(k);
+        assertEq(a, b, "storageKeyAsm != storageKeyAbi");
+    }
 }
