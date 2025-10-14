@@ -21,6 +21,8 @@ contract EthStorageContractProofTest is ChainDataHelper {
     }
 
     string internal constant WASM_PATH = "./test/lib/blob_poseidon.wasm";
+    string internal constant ZKEY_PATH = "./test/lib/blob_poseidon.zkey";
+    string internal constant ZKEY_SOURCE = "https://es-zkey.s3.us-west-2.amazonaws.com/blob_poseidon1_v1.zkey";
     address internal constant MINER = address(0xABcD000000000000000000000000000000000000);
     address internal constant OWNER = address(0x1);
     bytes32 internal constant KEY1 = bytes32(uint256(0x1));
@@ -177,18 +179,18 @@ contract EthStorageContractProofTest is ChainDataHelper {
             vm.skip(true, "Skipping testCompleteMiningProcess: RPC_URL_L1 not set");
             return;
         }
-        string memory zkeyPath = vm.envOr("G16_ZKEY_PATH", string(""));
-        if (bytes(zkeyPath).length == 0) {
-            vm.skip(true, "Skipping testCompleteMiningProcess: G16_ZKEY_PATH is not set");
-            return;
-        }
-        if (!_fileExists(zkeyPath)) {
-            vm.skip(true, "Skipping testCompleteMiningProcess: G16_ZKEY_PATH file does not exist");
-            return;
-        }
         if (!_isSnarkjsInstalled()) {
             vm.skip(true, "Skipping testCompleteMiningProcess: snarkjs is not installed");
             return;
+        }
+        if (!_fileExists(ZKEY_PATH)) {
+            string[] memory curlCmd = new string[](4);
+            curlCmd[0] = "curl";
+            curlCmd[1] = "-o";
+            curlCmd[2] = ZKEY_PATH;
+            curlCmd[3] = ZKEY_SOURCE;
+            vm.ffi(curlCmd);
+            require(_fileExists(ZKEY_PATH), "failed to download zkey");
         }
 
         uint256 randomChecks = 2;
@@ -340,7 +342,7 @@ contract EthStorageContractProofTest is ChainDataHelper {
         string[] memory proveCmd = new string[](6);
         proveCmd[0] = "snarkjs";
         proveCmd[1] = "g16p";
-        proveCmd[2] = vm.envString("G16_ZKEY_PATH");
+        proveCmd[2] = ZKEY_PATH;
         proveCmd[3] = wtnsPath;
         proveCmd[4] = proofPath;
         proveCmd[5] = publicPath;
