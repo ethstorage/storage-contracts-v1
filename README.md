@@ -50,8 +50,8 @@ EthStorageContractM2L2 inherits from EthStorageContractM2 and is designed for de
 
 ## Setup
  - Install foundry by following the [link](https://book.getfoundry.sh/getting-started/installation)
- - npm run install:all
- - npm run test
+ - forge install
+ - forge test
 
 ## Deploy
 
@@ -59,9 +59,3 @@ See the [deployment guide](DEPLOY.md) for contract deployment and upgrade instru
 
 ## Style Guide
 Smart contracts should be written according to this [STYLE_GUIDE.md](https://github.com/ethstorage/optimism/blob/develop/packages/contracts-bedrock/STYLE_GUIDE.md)
-
-## How to verify the contract
-
-For QuarkChain Layer 2 which is using the blockscout, we will use the following command to verify:
-- Implementation: npx hardhat verify --network qkc_testnet <impl-addr> --constructor-args args.js
-- Proxy: npx hardhat verify --force --network qkc_testnet <proxy-addr> <impl-addr> <owner-addr> <data>
