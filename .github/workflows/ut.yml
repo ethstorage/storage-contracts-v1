@@ -28,10 +28,9 @@ jobs:
         run: forge --version
 
       - name: Install forge deps
-        run: |        
-          git submodule init && git submodule update
-          forge install OpenZeppelin/openzeppelin-foundry-upgrades
-          forge install OpenZeppelin/openzeppelin-contracts-upgradeable
+        run: forge install
 
       - name: Test
-        run: forge test
+        env:
+          RPC_URL_L1: ${{ secrets.RPC_URL_L1 }}
+        run: forge test -vvv
