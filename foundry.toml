@@ -17,10 +17,8 @@ build_info = true
 extra_output = ["storageLayout"]
 fs_permissions = [
     { access = "read", path = "./out" },
-    { access = "read", path = "tmp" },
-    { access = "read", path = "tmp/..." },
-    { access = "write", path = "tmp" },
-    { access = "write", path = "tmp/..." }
+    { access = "read", path = "./tmp" },
+    { access = "write", path = "./tmp" }
 ]
 optimizer = true
 optimizer_runs = 200

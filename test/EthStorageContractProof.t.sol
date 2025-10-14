@@ -20,6 +20,7 @@ contract EthStorageContractProofTest is ChainDataHelper {
         uint256[2] c;
     }
 
+    string internal constant WASM_PATH = "./lib/blob_poseidon.wasm";
     address internal constant MINER = address(0xABcD000000000000000000000000000000000000);
     address internal constant OWNER = address(0x1);
     bytes32 internal constant KEY1 = bytes32(uint256(0x1));
@@ -172,14 +173,12 @@ contract EthStorageContractProofTest is ChainDataHelper {
     }
 
     function testCompleteMiningProcess() public {
-        if (bytes(vm.envString("RPC_URL_L1")).length == 0) {
+        if (bytes(vm.envOr("RPC_URL_L1", string(""))).length == 0) {
             vm.skip(true, "Skipping testCompleteMiningProcess: RPC_URL_L1 not set");
             return;
         }
-        string memory zkeyPathEnv = vm.envString("G16_ZKEY_PATH");
-        string memory wasmPathEnv = vm.envString("G16_WASM_PATH");
-        if (bytes(zkeyPathEnv).length == 0 || bytes(wasmPathEnv).length == 0) {
-            vm.skip(true, "Skipping testCompleteMiningProcess: G16_ZKEY_PATH or G16_WASM_PATH is not set");
+        if (bytes(vm.envOr("G16_ZKEY_PATH", string(""))).length == 0) {
+            vm.skip(true, "Skipping testCompleteMiningProcess: G16_ZKEY_PATH is not set");
             return;
         }
         if (!_isSnarkjsInstalled()) {
@@ -313,10 +312,6 @@ contract EthStorageContractProofTest is ChainDataHelper {
         internal
         returns (Groth16Proof memory proof, uint256[3] memory signals)
     {
-        string memory wasmPath = vm.envString("G16_WASM_PATH");
-        string memory zkeyPath = vm.envString("G16_ZKEY_PATH");
-        require(bytes(wasmPath).length != 0 && bytes(zkeyPath).length != 0, "g16 env unset");
-
         string memory tmpDir = "tmp";
         vm.createDir(tmpDir, true);
 
@@ -327,20 +322,20 @@ contract EthStorageContractProofTest is ChainDataHelper {
 
         vm.writeFile(witnessPath, string(witnessJson));
 
-        string[] memory witnessCmd = new string[](6);
+        string[] memory witnessCmd = new string[](5);
         witnessCmd[0] = "snarkjs";
         witnessCmd[1] = "wc";
-        witnessCmd[2] = wasmPath;
+        witnessCmd[2] = WASM_PATH;
         witnessCmd[3] = witnessPath;
         witnessCmd[4] = wtnsPath;
 
         Vm.FfiResult memory witnessRes = vm.tryFfi(witnessCmd);
         require(witnessRes.exitCode == 0, string.concat("wtns calculate failed: ", string(witnessRes.stderr)));
 
-        string[] memory proveCmd = new string[](7);
+        string[] memory proveCmd = new string[](6);
         proveCmd[0] = "snarkjs";
         proveCmd[1] = "g16p";
-        proveCmd[2] = zkeyPath;
+        proveCmd[2] = vm.envString("G16_ZKEY_PATH");
         proveCmd[3] = wtnsPath;
         proveCmd[4] = proofPath;
         proveCmd[5] = publicPath;
