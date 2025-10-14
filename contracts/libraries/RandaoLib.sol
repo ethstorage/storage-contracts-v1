@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "./RLPReader.sol";
+import {RLPReader} from "./RLPReader.sol";
 
 /// @title RandaoLib
 /// @notice Handles Randao related operations

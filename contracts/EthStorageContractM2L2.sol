@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "./EthStorageContractM2.sol";
-import "./L2Base.sol";
+import {EthStorageContractM2} from "./EthStorageContractM2.sol";
+import {L2Base, ISoulGasToken} from "./L2Base.sol";
+import {DecentralizedKV} from "./DecentralizedKV.sol";
+import {StorageContract} from "./StorageContract.sol";
+import {MiningLib} from "./libraries/MiningLib.sol";
 
 /// @custom:proxied
 /// @title EthStorageContractM2L2

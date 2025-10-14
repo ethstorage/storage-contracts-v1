@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import "./TestEthStorageContractM1.sol";
-import "forge-std/Test.sol";
-import "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {TestEthStorageContractM1} from "./TestEthStorageContractM1.sol";
+import {Test} from "forge-std/Test.sol";
+import {Upgrades, Options} from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {StorageContract} from "../StorageContract.sol";
 
 contract EthStorageContractM1Test is Test {
     uint256 constant STORAGE_COST = 1000;

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../EthStorageContractM2L2.sol";
+import {EthStorageContractM2L2} from "../EthStorageContractM2L2.sol";
 // import "forge-std/Test.sol"; // will cause https://zpl.in/upgrades/error-004
 // So we use the base contract directly
-import "forge-std/Base.sol";
+import {CommonBase} from "forge-std/Base.sol";
 
 contract TestEthStorageContractM2L2 is EthStorageContractM2L2, CommonBase {
     /// @custom:oz-upgrades-unsafe-allow constructor

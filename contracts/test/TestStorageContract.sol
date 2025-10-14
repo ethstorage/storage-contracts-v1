@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../StorageContract.sol";
+import {StorageContract} from "../StorageContract.sol";
 
 contract TestStorageContract is StorageContract {
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)
@@ -15,7 +15,7 @@ contract TestStorageContract is StorageContract {
         address _treasury,
         address _owner
     ) public payable initializer {
-        __init_storage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
+        _initStorage(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
     function verifySamples(

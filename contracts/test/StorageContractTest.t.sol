@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import "./TestStorageContract.sol";
-import "../StorageContract.sol";
-import "forge-std/Test.sol";
+import {TestStorageContract} from "./TestStorageContract.sol";
+import {StorageContract} from "../StorageContract.sol";
+import {Test} from "forge-std/Test.sol";
 
 contract StorageContractTest is Test {
     uint256 constant STORAGE_COST = 10000000;

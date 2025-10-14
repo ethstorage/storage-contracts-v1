@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../libraries/RandaoLib.sol";
+import {RandaoLib} from "../libraries/RandaoLib.sol";
 
 contract TestRandao {
     function verifyHeaderAndGetRandao(bytes32 headerHash, bytes memory headerRlpBytes) public pure returns (bytes32) {

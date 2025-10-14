@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./libraries/BinaryRelated.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {BinaryRelated} from "./libraries/BinaryRelated.sol";
 
 /// @custom:upgradeable
 /// @title DecentralizedKV
@@ -72,7 +72,7 @@ contract DecentralizedKV is Initializable {
     }
 
     /// @custom:storage-location erc7201:openzeppelin.storage.DecentralizedKV
-    struct DecentralizedKVStorage {
+    struct DecentralizedKvStorage {
         /// @notice The number of entries in the store
         uint40 _kvEntryCount;
         /// @notice skey and PhyAddr mapping
@@ -82,12 +82,12 @@ contract DecentralizedKV is Initializable {
     }
 
     // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.DecentralizedKV")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant DecentralizedKVStorageLocation =
+    bytes32 private constant DECENTRALIZED_KV_STORAGE_LOCATION =
         0xdddbcfdf01968304fa73e5ba952efaf0203fd233c51e4f58b8a185ceb1c2a300;
 
-    function _getDecentralizedKVStorage() private pure returns (DecentralizedKVStorage storage $) {
+    function _getDecentralizedKvStorage() private pure returns (DecentralizedKvStorage storage $) {
         assembly {
-            $.slot := DecentralizedKVStorageLocation
+            $.slot := DECENTRALIZED_KV_STORAGE_LOCATION
         }
     }
 
@@ -106,8 +106,8 @@ contract DecentralizedKV is Initializable {
     }
 
     /// @notice Initializer.
-    function __init_KV() internal onlyInitializing {
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+    function _initKv() internal onlyInitializing {
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         $._kvEntryCount = 0;
     }
 
@@ -167,7 +167,7 @@ contract DecentralizedKV is Initializable {
             }
         }
 
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
 
         uint256[] memory res = new uint256[](keysLength);
         uint256 batchPaymentSize = 0;
@@ -202,21 +202,21 @@ contract DecentralizedKV is Initializable {
     /// @notice Return the size of the keyed value.
     function size(bytes32 _key) public view returns (uint256) {
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._kvMap[skey].kvSize;
     }
 
     /// @notice Return the dataHash of the keyed value.
     function hash(bytes32 _key) public view returns (bytes24) {
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._kvMap[skey].hash;
     }
 
     /// @notice Check if the key-value exists.
     function exist(bytes32 _key) public view returns (bool) {
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._kvMap[skey].hash != 0;
     }
 
@@ -237,7 +237,7 @@ contract DecentralizedKV is Initializable {
         }
 
         bytes32 skey = keccak256(abi.encode(msg.sender, _key));
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         PhyAddr memory paddr = $._kvMap[skey];
 
         if (paddr.hash == 0) {
@@ -298,7 +298,7 @@ contract DecentralizedKV is Initializable {
         uint256 kvIndicesLength = _kvIndices.length;
 
         bytes32[] memory res = new bytes32[](kvIndicesLength);
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         for (uint256 i = 0; i < kvIndicesLength; i++) {
             PhyAddr memory paddr = $._kvMap[$._idxMap[_kvIndices[i]]];
 
@@ -311,37 +311,37 @@ contract DecentralizedKV is Initializable {
 
     /// @notice Getter for kvEntryCount
     function kvEntryCount() public view returns (uint40) {
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._kvEntryCount;
     }
 
     /// @notice Setter for kvEntryCount
     function _setKvEntryCount(uint40 _value) internal {
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         $._kvEntryCount = _value;
     }
 
     /// @notice Getter for kvMap
     function _kvMap(bytes32 _key) internal view returns (PhyAddr memory) {
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._kvMap[_key];
     }
 
     /// @notice Setter for kvMap
     function _setKvMap(bytes32 _key, PhyAddr memory _value) internal {
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         $._kvMap[_key] = _value;
     }
 
     /// @notice Getter for idxMap
     function _idxMap(uint256 _kvIdx) internal view returns (bytes32) {
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         return $._idxMap[_kvIdx];
     }
 
     /// @notice Setter for idxMap
     function _setIdxMap(uint256 _kvIdx, bytes32 _value) internal {
-        DecentralizedKVStorage storage $ = _getDecentralizedKVStorage();
+        DecentralizedKvStorage storage $ = _getDecentralizedKvStorage();
         $._idxMap[_kvIdx] = _value;
     }
 
