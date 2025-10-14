@@ -76,6 +76,7 @@ contract EthStorageContractM1 is EthStorageContract, Decoder {
         }
 
         // calculate the number of samples range of the sample check
+        /// forge-lint: disable-next-line(incorrect-shift)
         uint256 rows = 1 << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS);
 
         for (uint256 i = 0; i < RANDOM_CHECKS; i++) {

@@ -163,6 +163,7 @@ abstract contract EthStorageContract is StorageContract, ISemver {
         uint256 parent = uint256(_hash0) % _rows;
         uint256 sampleIdx = parent + (_startShardId << (SHARD_ENTRY_BITS + SAMPLE_LEN_BITS));
         uint256 kvIdx = sampleIdx >> SAMPLE_LEN_BITS;
+        /// forge-lint: disable-next-line(incorrect-shift)
         uint256 sampleIdxInKv = sampleIdx % (1 << SAMPLE_LEN_BITS);
         return (kvIdx, sampleIdxInKv);
     }

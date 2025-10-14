@@ -45,6 +45,7 @@ contract EthStorageContractM1Test is Test {
         storageContract.putBlob{value: sufficientCost}(key, blobIdx, length);
 
         assertEq(storageContract.kvEntryCount(), 1);
+        /// forge-lint: disable-next-line(incorrect-shift)
         assertEq(storageContract.hash(key), bytes32(uint256(1 << 8 * 8)));
         assertEq(storageContract.size(key), 10);
 
@@ -54,6 +55,7 @@ contract EthStorageContractM1Test is Test {
         sufficientCost = storageContract.upfrontPayment();
         storageContract.putBlob{value: sufficientCost}(key, blobIdx, length);
         assertEq(storageContract.kvEntryCount(), 2);
+        /// forge-lint: disable-next-line(incorrect-shift)
         assertEq(storageContract.hash(key), bytes32(uint256(1 << 8 * 8)));
         assertEq(storageContract.size(key), 20);
     }
@@ -80,8 +82,10 @@ contract EthStorageContractM1Test is Test {
         storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
 
         assertEq(storageContract.kvEntryCount(), 2);
+        /// forge-lint: disable-start(incorrect-shift)
         assertEq(storageContract.hash(keys[0]), bytes32(uint256(1 << 8 * 8)));
         assertEq(storageContract.hash(keys[1]), bytes32(uint256(2 << 8 * 8)));
+        /// forge-lint: disable-end(incorrect-shift)
         assertEq(storageContract.size(keys[0]), 10);
         assertEq(storageContract.size(keys[1]), 20);
 
@@ -93,9 +97,11 @@ contract EthStorageContractM1Test is Test {
         sufficientCost = storageContract.upfrontPayment();
         storageContract.putBlobs{value: sufficientCost}(keys, blobIdxs, lengths);
         assertEq(storageContract.kvEntryCount(), 3);
+        /// forge-lint: disable-start(incorrect-shift)
         assertEq(storageContract.hash(bytes32(uint256(0))), bytes32(uint256(1 << 8 * 8)));
         assertEq(storageContract.hash(bytes32(uint256(1))), bytes32(uint256(2 << 8 * 8)));
         assertEq(storageContract.hash(bytes32(uint256(2))), bytes32(uint256(2 << 8 * 8)));
+        /// forge-lint: disable-end(incorrect-shift)
         assertEq(storageContract.size(bytes32(uint256(0))), 30);
         assertEq(storageContract.size(bytes32(uint256(1))), 20);
         assertEq(storageContract.size(bytes32(uint256(2))), 30);
