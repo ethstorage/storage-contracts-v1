@@ -183,14 +183,9 @@ contract EthStorageContractProofTest is ChainDataHelper {
             vm.skip(true, "Skipping testCompleteMiningProcess: snarkjs is not installed");
             return;
         }
-        if (!_fileExists(ZKEY_PATH)) {
-            string[] memory curlCmd = new string[](4);
-            curlCmd[0] = "curl";
-            curlCmd[1] = "-o";
-            curlCmd[2] = ZKEY_PATH;
-            curlCmd[3] = ZKEY_SOURCE;
-            vm.ffi(curlCmd);
-            require(_fileExists(ZKEY_PATH), "failed to download zkey");
+        if (!_ensureZkeyAvailable()) {
+            vm.skip(true, "Skipping testCompleteMiningProcess: failed to obtain zkey file");
+            return;
         }
 
         uint256 randomChecks = 2;
@@ -391,6 +386,28 @@ contract EthStorageContractProofTest is ChainDataHelper {
         whichCmd[1] = "snarkjs";
         Vm.FfiResult memory whichRes = vm.tryFfi(whichCmd);
         return whichRes.exitCode == 0;
+    }
+
+    function _ensureZkeyAvailable() internal returns (bool) {
+        if (_fileExists(ZKEY_PATH)) {
+            return true;
+        }
+
+        // Download zkey file from S3
+        string[] memory curlCmd = new string[](6);
+        curlCmd[0] = "curl";
+        curlCmd[1] = "-sS"; // Silent mode with error display only
+        curlCmd[2] = "-L"; // Follow redirects
+        curlCmd[3] = "-o";
+        curlCmd[4] = ZKEY_PATH;
+        curlCmd[5] = ZKEY_SOURCE;
+
+        Vm.FfiResult memory result = vm.tryFfi(curlCmd);
+        if (result.exitCode != 0) {
+            return false;
+        }
+
+        return _fileExists(ZKEY_PATH);
     }
 
     function _buildSequentialBlob(uint256 start, uint256 length) internal pure returns (bytes memory blob) {
