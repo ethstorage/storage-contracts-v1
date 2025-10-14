@@ -34,4 +34,4 @@ jobs:
           forge install OpenZeppelin/openzeppelin-contracts-upgradeable
 
       - name: Test
-        run: npm run test
+        run: forge test
