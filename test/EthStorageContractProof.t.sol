@@ -20,7 +20,7 @@ contract EthStorageContractProofTest is ChainDataHelper {
         uint256[2] c;
     }
 
-    string internal constant WASM_PATH = "./lib/blob_poseidon.wasm";
+    string internal constant WASM_PATH = "./test/lib/blob_poseidon.wasm";
     address internal constant MINER = address(0xABcD000000000000000000000000000000000000);
     address internal constant OWNER = address(0x1);
     bytes32 internal constant KEY1 = bytes32(uint256(0x1));
@@ -177,8 +177,13 @@ contract EthStorageContractProofTest is ChainDataHelper {
             vm.skip(true, "Skipping testCompleteMiningProcess: RPC_URL_L1 not set");
             return;
         }
-        if (bytes(vm.envOr("G16_ZKEY_PATH", string(""))).length == 0) {
+        string memory zkeyPath = vm.envOr("G16_ZKEY_PATH", string(""));
+        if (bytes(zkeyPath).length == 0) {
             vm.skip(true, "Skipping testCompleteMiningProcess: G16_ZKEY_PATH is not set");
+            return;
+        }
+        if (!_fileExists(zkeyPath)) {
+            vm.skip(true, "Skipping testCompleteMiningProcess: G16_ZKEY_PATH file does not exist");
             return;
         }
         if (!_isSnarkjsInstalled()) {
@@ -359,6 +364,14 @@ contract EthStorageContractProofTest is ChainDataHelper {
         signals[0] = vm.parseUint(publicJson.readString(".signals[0]"));
         signals[1] = vm.parseUint(publicJson.readString(".signals[1]"));
         signals[2] = vm.parseUint(publicJson.readString(".signals[2]"));
+    }
+
+    function _fileExists(string memory path) internal returns (bool) {
+        string[] memory cmd = new string[](2);
+        cmd[0] = "ls";
+        cmd[1] = path;
+        Vm.FfiResult memory res = vm.tryFfi(cmd);
+        return res.exitCode == 0;
     }
 
     function _readFileViaCat(string memory path) internal returns (string memory) {
