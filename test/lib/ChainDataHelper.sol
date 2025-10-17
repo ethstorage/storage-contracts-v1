@@ -31,6 +31,7 @@ contract ChainDataHelper is Test {
         bytes32 requestsHash;
     }
 
+    /// @dev Fetches the latest block header from an L1 node using `cast rpc`.
     function fetchLatestBlockHeader() internal returns (ChainDataHelper.BlockHeader memory header, bytes32 blockHash) {
         string[] memory cmd = new string[](7);
         cmd[0] = "cast";

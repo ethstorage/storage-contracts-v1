@@ -8,6 +8,7 @@ library RandaoProver {
     using RLPWriter for bytes;
     using RLPWriter for bytes[];
 
+    /// @dev Generates the RLP-encoded block header for Randao verification.
     function generateRandaoProof(ChainDataHelper.BlockHeader memory blockHeader) internal pure returns (bytes memory) {
         bytes[] memory header = new bytes[](21);
 
