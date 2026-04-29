@@ -59,6 +59,12 @@ contract StorageContractTest is Test {
         storageContract.setKvEntryCount(3);
         (,,, reward) = storageContract.miningRewards(0, 1);
         assertEq(reward, storageContract.paymentIn(PREPAID_AMOUNT + STORAGE_COST * 2, 0, 1));
+
+        // 4 key-value stored on EthStorage fills shard
+        uint256 mineTs = 10000;
+        storageContract.setKvEntryCount(4);
+        (,,, reward) = storageContract.miningRewards(0, mineTs);
+        assertEq(reward, storageContract.paymentIn(STORAGE_COST * 4, 0, mineTs));
     }
 
     function testWithdraw() public {
