@@ -60,11 +60,19 @@ contract StorageContractTest is Test {
         (,,, reward) = storageContract.miningRewards(0, 1);
         assertEq(reward, storageContract.paymentIn(PREPAID_AMOUNT + STORAGE_COST * 2, 0, 1));
 
-        // 4 key-value stored on EthStorage fills shard
+        // full shard reward has no prepaid amount
         uint256 mineTs = 10000;
+        uint256 expectedFullShardReward = storageContract.paymentIn(STORAGE_COST * 4, 0, mineTs);
+
+        // 4 key-value stored on EthStorage fill shard
         storageContract.setKvEntryCount(4);
         (,,, reward) = storageContract.miningRewards(0, mineTs);
-        assertEq(reward, storageContract.paymentIn(STORAGE_COST * 4, 0, mineTs));
+        assertEq(reward, expectedFullShardReward);
+
+        // 8 key-value stored on EthStorage fill 2 shards
+        storageContract.setKvEntryCount(8);
+        (,,, reward) = storageContract.miningRewards(0, mineTs);
+        assertEq(reward, expectedFullShardReward);
     }
 
     function testWithdraw() public {
