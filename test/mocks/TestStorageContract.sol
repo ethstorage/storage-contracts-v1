@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {StorageContract} from "../StorageContract.sol";
+import {StorageContract} from "../../contracts/StorageContract.sol";
 
 contract TestStorageContract is StorageContract {
     constructor(Config memory _config, uint256 _startTime, uint256 _storageCost, uint256 _dcfFactor)

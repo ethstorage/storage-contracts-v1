@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {EthStorageContractM1} from "../EthStorageContractM1.sol";
-import {MerkleLib} from "../libraries/MerkleLib.sol";
+import {EthStorageContractM1} from "../../contracts/EthStorageContractM1.sol";
+import {MerkleLib} from "../../contracts/libraries/MerkleLib.sol";
 
 contract TestEthStorageContractM1 is EthStorageContractM1 {
-    uint256 public currentTimestamp;
+    uint256 private mockBlockNumber;
+    bytes32 private mockRandao;
 
     struct MerkleProof {
         bytes32 data;
@@ -29,9 +30,12 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         super.initialize(_minimumDiff, _prepaidAmount, _nonceLimit, _treasury, _owner);
     }
 
-    function setTimestamp(uint256 ts) public {
-        require(ts > currentTimestamp, "ts");
-        currentTimestamp = ts;
+    function setMockBlockNumber(uint256 blockNumber) external {
+        mockBlockNumber = blockNumber;
+    }
+
+    function setMockRandao(bytes32 randao) external {
+        mockRandao = randao;
     }
 
     function put(bytes32 key, bytes memory data) public payable {
@@ -171,20 +175,9 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         return (sampleIdx, kvIdx, sampleIdxInKv);
     }
 
-    function getNextHash0(bytes32 hash0, bytes32 encodedSample) public pure returns (bytes32) {
-        hash0 = keccak256(abi.encode(hash0, encodedSample));
-        return hash0;
-    }
-
     function getBlockHash(uint256 blockNumber) public view returns (bytes32) {
         bytes32 bh = blockhash(blockNumber);
         return bh;
-    }
-
-    function getInitHash0(bytes32 randao, address miner, uint256 nonce) public pure returns (bytes32) {
-        /// forge-lint: disable-next-line(asm-keccak256)
-        bytes32 hash0 = keccak256(abi.encode(miner, randao, nonce));
-        return hash0;
     }
 
     function _mineWithoutDiffCompare(
@@ -230,6 +223,34 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         );
     }
 
+    function _blockNumber() internal view virtual override returns (uint256) {
+        if (mockBlockNumber != 0) {
+            return mockBlockNumber;
+        }
+        return block.number;
+    }
+
+    function _getRandao(uint256 blockNum, bytes calldata headerRlpBytes)
+        internal
+        view
+        virtual
+        override
+        returns (bytes32)
+    {
+        if (mockRandao != bytes32(0)) {
+            return mockRandao;
+        }
+        return super._getRandao(blockNum, headerRlpBytes);
+    }
+
+    function getXIn(uint256 sampleIdx) public view returns (uint256) {
+        return _getXIn(sampleIdx);
+    }
+
+    function getModBn254() public pure returns (uint256) {
+        return MODULUS_BN254;
+    }
+
     function _mineWithFixedHash0(
         bytes32 initHash0,
         uint256 shardId,
@@ -240,7 +261,6 @@ contract TestEthStorageContractM1 is EthStorageContractM1 {
         bytes[] calldata inclusiveProofs,
         bytes[] calldata decodeProof
     ) internal {
-        // Obtain the blockhash of the block number of recent blocks
         uint256 mineTs = block.timestamp;
 
         // Given a blockhash and a miner, we only allow sampling up to nonce limit times.

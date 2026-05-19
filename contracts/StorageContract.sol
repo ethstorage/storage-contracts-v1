@@ -448,7 +448,7 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
         $._prepaidAmount = _prepaidAmount;
     }
 
-    /// @notice Set the treasury address.
+    /// @notice Set the minimum difficulty.
     function setMinimumDiff(uint256 _minimumDiff) public onlyRole(DEFAULT_ADMIN_ROLE) {
         StorageContractStorage storage $ = _getStorageContractStorage();
         $._minimumDiff = _minimumDiff;
