@@ -366,7 +366,8 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
     {
         StorageContractStorage storage $ = _getStorageContractStorage();
         MiningLib.MiningInfo storage info = $._infos[_shardId];
-        uint256 lastShardIdx = _getShardId(kvEntryCount());
+        uint256 kvCount = kvEntryCount();
+        uint256 lastShardIdx = _getShardId(kvCount);
         bool updatePrepaidTime = false;
         uint256 prepaidAmountSaved = 0;
         uint256 reward = 0;
@@ -374,7 +375,9 @@ abstract contract StorageContract is DecentralizedKV, AccessControlUpgradeable {
             reward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
         } else if (_shardId == lastShardIdx) {
             /// forge-lint: disable-next-line(incorrect-shift)
-            reward = _paymentIn(STORAGE_COST * (kvEntryCount() % (1 << SHARD_ENTRY_BITS)), info.lastMineTime, _minedTs);
+            uint256 shardEntryCount = 1 << SHARD_ENTRY_BITS;
+            uint256 entriesInLastShard = kvCount == 0 ? 0 : ((kvCount - 1) % shardEntryCount) + 1;
+            reward = _paymentIn(STORAGE_COST * entriesInLastShard, info.lastMineTime, _minedTs);
             // Additional prepaid for the last shard
             if ($._prepaidLastMineTime < _minedTs) {
                 uint256 fullReward = _paymentIn(STORAGE_COST << SHARD_ENTRY_BITS, info.lastMineTime, _minedTs);
